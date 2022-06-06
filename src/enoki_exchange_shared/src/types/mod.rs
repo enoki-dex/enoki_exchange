@@ -10,6 +10,7 @@ mod conversion;
 pub enum TxError {
     InsufficientFunds,
     Unauthorized,
+    UserNotRegistered,
     CallbackError(String),
     Other(String),
 }
@@ -31,10 +32,10 @@ pub enum EnokiToken {
     TokenB,
 }
 
-#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(CandidType, Debug, Clone, Hash, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ShardedPrincipal {
-    shard: Principal,
-    principal: Principal,
+    pub shard: Principal,
+    pub principal: Principal,
 }
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]

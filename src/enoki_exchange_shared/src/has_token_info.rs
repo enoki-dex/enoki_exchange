@@ -90,6 +90,13 @@ pub fn get_assigned_shards() -> AssignedShards {
     STATE.with(|s| s.borrow().assigned_shards.clone())
 }
 
+pub fn get_assigned_shard(for_token: &EnokiToken) -> Principal {
+    STATE.with(|s| match for_token {
+        EnokiToken::TokenA => s.borrow().assigned_shards.token_a,
+        EnokiToken::TokenB => s.borrow().assigned_shards.token_a,
+    })
+}
+
 pub fn parse_from() -> Result<EnokiToken> {
     let caller = ic_cdk::caller();
     STATE.with(|s| {

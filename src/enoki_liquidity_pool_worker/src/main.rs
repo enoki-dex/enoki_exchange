@@ -15,6 +15,8 @@ use enoki_exchange_shared::is_owned::OwnershipData;
 use enoki_exchange_shared::{has_token_info, types::*};
 #[allow(unused_imports)]
 use enoki_exchange_shared::has_token_info::AssignedShards;
+#[allow(unused_imports)]
+use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 
 #[init]
 #[candid_method(init)]
