@@ -275,6 +275,7 @@ dependencies = [
  "candid",
  "ic-cdk",
  "ic-cdk-macros",
+ "lazy_static",
  "serde",
 ]
 

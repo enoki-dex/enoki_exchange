@@ -13,6 +13,8 @@ use enoki_exchange_shared::is_owned;
 use enoki_exchange_shared::is_owned::OwnershipData;
 #[allow(unused_imports)]
 use enoki_exchange_shared::{has_token_info, types::*};
+#[allow(unused_imports)]
+use enoki_exchange_shared::has_token_info::AssignedShards;
 
 #[init]
 #[candid_method(init)]

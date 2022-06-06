@@ -1,5 +1,7 @@
 use std::ops::{AddAssign, SubAssign};
 
+use lazy_static::lazy_static;
+
 use crate::types::*;
 
 impl From<Nat> for StableNat {
@@ -28,6 +30,28 @@ impl FromIterator<TokenAmount> for LiquidityAmount {
             }
         }
         result
+    }
+}
+
+impl LiquidityAmount {
+    pub fn get_mut(&mut self, token: &EnokiToken) -> &mut StableNat {
+        match token {
+            EnokiToken::TokenA => &mut self.token_a,
+            EnokiToken::TokenB => &mut self.token_b,
+        }
+    }
+}
+
+lazy_static! {
+    static ref ZERO: Nat = Nat::from(0);
+}
+
+impl StableNat {
+    pub fn min(&self, other: &Self) -> Self {
+        Self(self.0.clone().min(other.0.clone()))
+    }
+    pub fn is_nonzero(&self) -> bool {
+        self.0 > *ZERO
     }
 }
 

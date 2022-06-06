@@ -8,6 +8,7 @@ mod conversion;
 
 #[derive(CandidType, Debug, Deserialize)]
 pub enum TxError {
+    InsufficientFunds,
     Unauthorized,
     CallbackError(String),
     Other(String),
@@ -31,13 +32,19 @@ pub enum EnokiToken {
 }
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ShardedPrincipal {
+    shard: Principal,
+    principal: Principal,
+}
+
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TokenAmount {
-    token: EnokiToken,
-    amount: StableNat,
+    pub token: EnokiToken,
+    pub amount: StableNat,
 }
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
 pub struct LiquidityAmount {
-    token_a: StableNat,
-    token_b: StableNat,
+    pub token_a: StableNat,
+    pub token_b: StableNat,
 }
