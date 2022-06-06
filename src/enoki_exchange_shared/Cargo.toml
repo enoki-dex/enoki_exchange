@@ -1,14 +1,13 @@
 [package]
-name = "enoki_exchange"
+name = "enoki_exchange_shared"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-enoki_exchange_shared = { path = "../enoki_exchange_shared" }
 candid = "0.7.4"
 ic-cdk = "0.4"
 ic-cdk-macros = "0.4"
 serde = "1.0.137"
-futures = "0.3.21"
+

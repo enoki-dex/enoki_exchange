@@ -5,6 +5,11 @@
       "package": "enoki_exchange",
       "type": "rust"
     },
+    "enoki_liquidity_pool": {
+      "candid": "src/enoki_liquidity_pool/enoki_liquidity_pool.did",
+      "package": "enoki_liquidity_pool",
+      "type": "rust"
+    },
     "enoki_exchange_assets": {
       "dependencies": [
         "enoki_exchange"
