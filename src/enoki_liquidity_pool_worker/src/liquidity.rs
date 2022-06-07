@@ -1,7 +1,7 @@
 use std::borrow::BorrowMut;
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
-use std::ops::{AddAssign, SubAssign};
+use std::ops::{AddAssign, Div, Mul, SubAssign};
 
 use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
 use ic_cdk_macros::*;
@@ -14,11 +14,8 @@ use enoki_exchange_shared::has_token_info::{
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 use enoki_exchange_shared::is_managed;
 use enoki_exchange_shared::is_managed::get_manager;
+use enoki_exchange_shared::liquidity::liquidity_pool::LiquidityPool;
 use enoki_exchange_shared::types::*;
-
-use crate::liquidity::pool::Pool;
-
-mod pool;
 
 thread_local! {
     static STATE: RefCell<LiquidityState> = RefCell::new(LiquidityState::default());
@@ -27,7 +24,7 @@ thread_local! {
 #[derive(Deserialize, CandidType, Clone, Debug, Default)]
 struct LiquidityState {
     locked: bool,
-    pool: Pool,
+    pool: LiquidityPool,
     earnings_pending: Vec<(Principal, TokenAmount)>,
 }
 
@@ -55,21 +52,23 @@ pub async fn update_liquidity_with_manager() {
             s.pool.count_locked_remove_liquidity(),
         )
     });
-    let response: Result<(Result<(LiquidityAmount, LiquidityAmount)>,)> = ic_cdk::call(
-        get_manager(),
-        "updateLiquidity",
-        (pending_add, pending_remove),
-    )
-    .await
-    .map_err(|e| e.into());
+    let response: Result<(Result<(LiquidityAmount, LiquidityAmount, LiquidityAmount)>,)> =
+        ic_cdk::call(
+            get_manager(),
+            "updateLiquidity",
+            (pending_add, pending_remove),
+        )
+        .await
+        .map_err(|e| e.into());
     let final_result: Result<Vec<(Principal, TokenAmount)>> = match response {
-        Ok((Ok((added, removed)),)) => STATE.with(|s| {
+        Ok((Ok((added, removed, rewards)),)) => STATE.with(|s| {
             let mut s = s.borrow_mut();
             s.locked = false;
+            award_users(rewards, &mut s.pool);
             apply_new_liquidity(added, &mut s.pool);
-            let earnings = calculate_earnings(removed, &mut s.pool);
+            let withdrawals = calculate_withdrawals(removed, &mut s.pool);
             s.pool.remove_zeros();
-            Ok(earnings)
+            Ok(withdrawals)
         }),
         Ok((Err(err),)) | Err(err) => {
             STATE.with(|s| {
@@ -80,8 +79,8 @@ pub async fn update_liquidity_with_manager() {
         }
     };
     match final_result {
-        Ok(earnings) => {
-            ic_cdk::spawn(distribute_earnings(earnings));
+        Ok(withdrawals) => {
+            ic_cdk::spawn(distribute_withdrawals(withdrawals));
         }
         Err(error) => {
             ic_cdk::print(format!(
@@ -92,7 +91,37 @@ pub async fn update_liquidity_with_manager() {
     }
 }
 
-fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut Pool) {
+fn award_users(rewards: LiquidityAmount, pool: &mut LiquidityPool) {
+    let balances = pool.get_liquidity_by_principal();
+
+    let rewards_per_user =
+        |balance_token: &EnokiToken, rewards_token: &EnokiToken| -> HashMap<Principal, StableNat> {
+            let total: StableNat = balances.values().map(|val| val.get(balance_token).clone()).sum();
+            if !total.is_nonzero() {
+                return Default::default();
+            }
+            balances
+                .iter()
+                .map(|(&user, balance)| {
+                    (
+                        user,
+                        balance
+                            .get(balance_token)
+                            .clone()
+                            .mul(rewards.get(rewards_token).clone())
+                            .div(total.clone()),
+                    )
+                })
+                .collect()
+        };
+
+    let rewards_a = rewards_per_user(&EnokiToken::TokenB, &EnokiToken::TokenA);
+    let rewards_b = rewards_per_user(&EnokiToken::TokenA, &EnokiToken::TokenB);
+
+    pool.apply_rewards(&rewards_a, &rewards_b);
+}
+
+fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut LiquidityPool) {
     let mut i = 0;
     while amount.token_a.is_nonzero() || amount.token_b.is_nonzero() {
         let item = pool
@@ -111,9 +140,9 @@ fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut Pool) {
     }
 }
 
-fn calculate_earnings(
+fn calculate_withdrawals(
     mut amount: LiquidityAmount,
-    pool: &mut Pool,
+    pool: &mut LiquidityPool,
 ) -> Vec<(Principal, TokenAmount)> {
     let mut amounts_to_distribute: Vec<(Principal, TokenAmount)> = Default::default();
     let mut i = 0;
@@ -147,13 +176,13 @@ fn calculate_earnings(
     amounts_to_distribute
 }
 
-async fn distribute_earnings(mut earnings: Vec<(Principal, TokenAmount)>) {
+async fn distribute_withdrawals(mut withdrawals: Vec<(Principal, TokenAmount)>) {
     let mut past_pending = STATE.with(|s| std::mem::take(&mut s.borrow_mut().earnings_pending));
-    earnings.append(&mut past_pending);
+    withdrawals.append(&mut past_pending);
     let results = futures::future::join_all(
-        earnings
+        withdrawals
             .into_iter()
-            .map(|(user, earning)| distribute_earnings_to_user(user, earning)),
+            .map(|(user, withdrawal)| withdraw_for_user(user, withdrawal)),
     )
     .await;
     STATE.with(|s| {
@@ -163,12 +192,12 @@ async fn distribute_earnings(mut earnings: Vec<(Principal, TokenAmount)>) {
     });
 }
 
-async fn distribute_earnings_to_user(
+async fn withdraw_for_user(
     user: Principal,
-    earnings: TokenAmount,
+    withdrawal: TokenAmount,
 ) -> Option<(Principal, TokenAmount)> {
     let user_shard = get_user_shard(user);
-    let TokenAmount { token, amount } = earnings.clone();
+    let TokenAmount { token, amount } = withdrawal.clone();
     let amount: Nat = amount.into();
     let my_shard = get_assigned_shard(&token);
     let result: Result<()> = ic_cdk::call(my_shard, "shardTransfer", (user_shard, user, amount))
@@ -178,7 +207,7 @@ async fn distribute_earnings_to_user(
         Ok(_) => None,
         Err(err) => {
             ic_cdk::api::print(format!("failed to remove liquidity: {:?}", err));
-            Some((user, earnings))
+            Some((user, withdrawal))
         }
     }
 }

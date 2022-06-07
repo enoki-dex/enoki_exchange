@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use candid::{candid_method, CandidType, Deserialize, Principal};
 use ic_cdk_macros::*;
+use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
 
 use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::is_owned;
@@ -40,13 +41,21 @@ fn get_workers() -> WorkerContractData {
 #[candid_method(update, rename = "addWorker")]
 async fn add_worker(worker: Principal) -> Result<()> {
     is_owned::assert_is_owner()?;
-    let response: Result<()> =
+    let response: Result<(Principal,)> =
         ic_cdk::call(worker, "initWorker", (has_token_info::get_token_info(),))
             .await
             .map_err(|e| e.into());
-    response?;
+    let worker_shard = response?.0;
     WORKERS.with(|s| s.borrow_mut().workers.insert(worker, Worker { id: worker }));
+    register_user(ShardedPrincipal {
+        shard: worker_shard,
+        principal: worker
+    });
     Ok(())
+}
+
+pub fn get_worker_shard(worker: Principal) -> Result<Principal> {
+    get_user_shard(worker)
 }
 
 pub fn export_stable_storage() -> (WorkerContractData,) {

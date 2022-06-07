@@ -9,8 +9,10 @@ use enoki_exchange_shared::is_owned::OwnershipData;
 use enoki_exchange_shared::{has_token_info, has_token_info::TokenInfo, types::*};
 #[allow(unused_imports)]
 use workers::WorkerContractData;
+#[allow(unused_imports)]
+use std::collections::HashMap;
 
-mod exchange_information;
+mod exchange;
 mod liquidity;
 mod workers;
 
@@ -21,7 +23,7 @@ async fn init(owner: Principal, exchange: Principal, token_a: Principal, token_b
         owner,
         deploy_time: ic_cdk::api::time(),
     });
-    exchange_information::init_exchange_information(exchange);
+    exchange::init_exchange_information(exchange);
     let token_info = TokenInfo { token_a, token_b };
     let (assigned_a, assigned_b) = register_tokens(&token_info).await.unwrap();
     has_token_info::init_token_info(

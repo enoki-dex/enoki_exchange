@@ -6,14 +6,10 @@ use std::ops::{AddAssign, SubAssign};
 use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_token_info;
-use enoki_exchange_shared::has_token_info::{get_assigned_shards, AssignedShards};
-use enoki_exchange_shared::is_managed;
-use enoki_exchange_shared::is_managed::get_manager;
-use enoki_exchange_shared::types::*;
+use crate::types::*;
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
-pub struct Pool {
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
+pub struct LiquidityPool {
     liquidity: HashMap<Principal, LiquidityAmount>,
     pending_add: Vec<(Principal, TokenAmount)>,
     pending_remove: Vec<(Principal, TokenAmount)>,
@@ -21,7 +17,7 @@ pub struct Pool {
     pending_remove_locked: Vec<(Principal, TokenAmount)>,
 }
 
-impl Pool {
+impl LiquidityPool {
     pub fn get_user_liquidity(&self, user: Principal) -> Option<LiquidityAmount> {
         self.liquidity.get(&user).cloned()
     }
@@ -29,7 +25,9 @@ impl Pool {
         self.pending_add.is_empty() && self.pending_remove.is_empty()
     }
     pub fn user_add_liquidity(&mut self, user: Principal, amount: TokenAmount) {
-        self.pending_add.push((user, amount));
+        if amount.amount.is_nonzero() {
+            self.pending_add.push((user, amount));
+        }
     }
     pub fn user_remove_liquidity(
         &mut self,
@@ -78,6 +76,31 @@ impl Pool {
             .map(|i| i.1.clone())
             .collect()
     }
+    fn consolidate_liquidity_by_principal(
+        liquidity: &[(Principal, TokenAmount)],
+    ) -> HashMap<Principal, LiquidityAmount> {
+        liquidity
+            .iter()
+            .fold(HashMap::new(), |mut total, (principal, amount)| {
+                total
+                    .entry(*principal)
+                    .or_default()
+                    .get_mut(&amount.token)
+                    .add_assign(amount.amount.clone());
+                total
+            })
+    }
+    pub fn count_locked_add_liquidity_by_principal(&self) -> HashMap<Principal, LiquidityAmount> {
+        Self::consolidate_liquidity_by_principal(&self.pending_add_locked)
+    }
+    pub fn count_locked_remove_liquidity_by_principal(
+        &self,
+    ) -> HashMap<Principal, LiquidityAmount> {
+        Self::consolidate_liquidity_by_principal(&self.pending_remove_locked)
+    }
+    pub fn get_liquidity_by_principal(&self) -> &HashMap<Principal, LiquidityAmount> {
+        &self.liquidity
+    }
     pub fn get_locked_add_item(&mut self, index: usize) -> Option<&mut (Principal, TokenAmount)> {
         if self.pending_add_locked.len() < index {
             Some(&mut self.pending_add_locked[index])
@@ -107,5 +130,23 @@ impl Pool {
             .retain(|(_, amount)| amount.amount.is_nonzero());
         self.pending_remove_locked
             .retain(|(_, amount)| amount.amount.is_nonzero());
+    }
+    pub fn apply_rewards(
+        &mut self,
+        rewards_a: &HashMap<Principal, StableNat>,
+        rewards_b: &HashMap<Principal, StableNat>,
+    ) {
+        for (user, liquidity) in self.liquidity.iter_mut() {
+            if let Some(reward_a) = rewards_a.get(user) {
+                liquidity
+                    .get_mut(&EnokiToken::TokenA)
+                    .add_assign(reward_a.clone());
+            }
+            if let Some(reward_b) = rewards_b.get(user) {
+                liquidity
+                    .get_mut(&EnokiToken::TokenB)
+                    .add_assign(reward_b.clone());
+            }
+        }
     }
 }
