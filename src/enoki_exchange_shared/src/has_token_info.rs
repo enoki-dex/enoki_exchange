@@ -63,16 +63,24 @@ pub fn import_stable_storage(token_info: TokenInfo, assigned_shards: AssignedSha
     });
 }
 
-pub fn init_token_info(token_info: TokenInfo, assigned_shards: AssignedShards) {
+pub async fn init_token_info(token_info: TokenInfo) -> Result<()> {
+    let (token_a, token_b) = register_tokens(&token_info).await?;
     STATE.with(|s| {
         s.replace(State {
             token_info,
-            assigned_shards,
+            assigned_shards: AssignedShards { token_a, token_b },
         })
     });
+    Ok(())
 }
 
-pub async fn register(with_token: Principal) -> Result<Principal> {
+async fn register_tokens(token_info: &TokenInfo) -> Result<(Principal, Principal)> {
+    let (assigned_a, assigned_b) =
+        futures::future::join(register(token_info.token_a), register(token_info.token_b)).await;
+    Ok((assigned_a?, assigned_b?))
+}
+
+async fn register(with_token: Principal) -> Result<Principal> {
     let result: Result<(Result<Principal>,)> =
         ic_cdk::call(with_token, "register", (ic_cdk::id(),))
             .await

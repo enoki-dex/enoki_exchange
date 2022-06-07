@@ -1,3 +1,6 @@
+#[allow(unused_imports)]
+use std::collections::HashMap;
+
 use candid::{candid_method, Nat, Principal};
 use ic_cdk_macros::*;
 
@@ -9,8 +12,6 @@ use enoki_exchange_shared::is_owned::OwnershipData;
 use enoki_exchange_shared::{has_token_info, has_token_info::TokenInfo, types::*};
 #[allow(unused_imports)]
 use workers::WorkerContractData;
-#[allow(unused_imports)]
-use std::collections::HashMap;
 
 mod exchange;
 mod liquidity;
@@ -25,22 +26,7 @@ async fn init(owner: Principal, exchange: Principal, token_a: Principal, token_b
     });
     exchange::init_exchange_information(exchange);
     let token_info = TokenInfo { token_a, token_b };
-    let (assigned_a, assigned_b) = register_tokens(&token_info).await.unwrap();
-    has_token_info::init_token_info(
-        token_info,
-        AssignedShards {
-            token_a: assigned_a,
-            token_b: assigned_b,
-        },
-    );
-}
-
-async fn register_tokens(token_info: &TokenInfo) -> Result<(Principal, Principal)> {
-    let (assigned_a, assigned_b) = tokio::join!(
-        has_token_info::register(token_info.token_a),
-        has_token_info::register(token_info.token_b)
-    );
-    Ok((assigned_a?, assigned_b?))
+    has_token_info::init_token_info(token_info).await.unwrap();
 }
 
 #[cfg(any(target_arch = "wasm32", test))]
