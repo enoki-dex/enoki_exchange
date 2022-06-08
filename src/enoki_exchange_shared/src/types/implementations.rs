@@ -47,9 +47,11 @@ impl LiquidityAmount {
             EnokiToken::TokenB => &mut self.token_b,
         }
     }
-    pub fn div_assign_int(&mut self, val: usize) {
-        self.token_a.0.div_assign(val);
-        self.token_b.0.div_assign(val);
+    pub fn div_int(self, val: usize) -> Self {
+        Self {
+            token_a: StableNat(self.token_a.0.div(val)),
+            token_b: StableNat(self.token_b.0.div(val))
+        }
     }
     pub fn sub_assign_or_zero(&mut self, other: Self) {
         if self.token_a > other.token_a {
@@ -63,7 +65,7 @@ impl LiquidityAmount {
             self.token_b = StableNat::zero();
         }
     }
-    pub fn diff_or_zero(&self, other: &Self) -> Self {
+    pub fn sub_or_zero(&self, other: &Self) -> Self {
         Self {
             token_a: if self.token_a > other.token_a {
                 self.token_a.clone().sub(other.token_a.clone())

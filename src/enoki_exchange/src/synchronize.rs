@@ -4,8 +4,8 @@ use std::collections::HashMap;
 
 use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk_macros::*;
-use enoki_exchange_shared::liquidity::ResponseAboutLiquidityChanges;
 
+use enoki_exchange_shared::liquidity::ResponseAboutLiquidityChanges;
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::flat_map_vecs;
 
@@ -53,14 +53,12 @@ pub async fn run() {
 }
 
 async fn do_run() -> Result<()> {
-    let mut proposed_liquidity_changes_for_brokers =
+    let proposed_liquidity_target_for_brokers =
         liquidity::get_updated_liquidity_from_pool().await?;
 
     let (new_orders, orders_to_cancel) = flat_map_vecs(
-        foreach_broker("retrieve_orders", |id| {
-            (proposed_liquidity_changes_for_brokers
-                .remove(&id)
-                .expect("inconsistent state between brokers and liquidity"),)
+        foreach_broker("retrieve_orders", |_| {
+            (proposed_liquidity_target_for_brokers.clone(),)
         })
         .await?,
     );

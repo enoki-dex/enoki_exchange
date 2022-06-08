@@ -7,7 +7,9 @@ use candid::{candid_method, CandidType, Nat, Principal};
 use futures::AsyncReadExt;
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::liquidity::{RequestForLiquidityChanges, ResponseAboutLiquidityChanges};
+use enoki_exchange_shared::liquidity::{
+    RequestForLiquidityChanges, RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
+};
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::map_assign;
 
@@ -18,33 +20,41 @@ thread_local! {
 #[derive(serde::Deserialize, serde::Serialize, CandidType, Clone, Debug)]
 pub struct LiquidityState {
     pool_address: Principal,
-    broker_liquidity: HashMap<Principal, HashMap<Principal, LiquidityAmount>>,
-    excess_liquidity: HashMap<Principal, LiquidityAmount>,
-    proposed_changes: ProposedLiquidityChangesByWorker,
+    worker_pool_address: Principal,
+    broker_liquidity: HashMap<Principal, LiquidityAmount>,
+    excess_liquidity: LiquidityAmount,
+    lp_proposed_changes: RequestForLiquidityChanges,
 }
 
 impl Default for LiquidityState {
     fn default() -> Self {
         Self {
             pool_address: Principal::anonymous(),
+            worker_pool_address: Principal::anonymous(),
             broker_liquidity: Default::default(),
             excess_liquidity: Default::default(),
-            proposed_changes: Default::default(),
+            lp_proposed_changes: Default::default(),
         }
     }
 }
 
 #[derive(serde::Deserialize, serde::Serialize, CandidType, Clone, Debug, Default)]
-pub struct ProposedLiquidityChangesByWorker {
-    to_add: HashMap<Principal, LiquidityAmount>,
-    to_remove: HashMap<Principal, LiquidityAmount>,
+pub struct ProposedLiquidityChanges {
+    to_add: LiquidityAmount,
+    to_remove: LiquidityAmount,
 }
 
-pub fn init_pool(pool: Principal) {
-    STATE.with(|s| s.borrow_mut().pool_address = pool);
+#[update(name = "initPool")]
+#[candid_method(update, rename = "initPool")]
+pub fn init_pool(pool: Principal, worker: Principal) {
+    STATE.with(|s| {
+        let mut s = s.borrow_mut();
+        s.pool_address = pool;
+        s.worker_pool_address = worker;
+    });
 }
 
-pub fn add_broker(broker: Principal) {
+pub fn init_broker_lp(broker: Principal) {
     STATE.with(|s| {
         s.borrow_mut()
             .broker_liquidity
@@ -56,126 +66,81 @@ pub fn get_pool_contract() -> Principal {
     STATE.with(|s| s.borrow().pool_address)
 }
 
-pub async fn get_updated_liquidity_from_pool(
-) -> Result<HashMap<Principal, RequestForLiquidityChanges>> {
-    let result: Result<(
-        HashMap<Principal, LiquidityAmount>,
-        HashMap<Principal, LiquidityAmount>,
-    )> = ic_cdk::call(get_pool_contract(), "getUpdatedLiquidity", ())
-        .await
-        .map_err(|e| e.into());
-    let (to_add, to_remove) = result?;
-    let proposed_changes_by_broker =
-        create_requests_for_broker_liquidity_changes(&to_add, &to_remove);
-    STATE.with(|s| {
-        s.borrow_mut().proposed_changes = ProposedLiquidityChangesByWorker { to_add, to_remove }
-    });
-    Ok(proposed_changes_by_broker)
+pub fn get_liquidity_location() -> Principal {
+    let location = STATE.with(|s| s.borrow().worker_pool_address);
+    assert_ne!(
+        location,
+        Principal::anonymous(),
+        "LP has not yet been initialized"
+    );
+    location
 }
 
-fn create_requests_for_broker_liquidity_changes(
-    proposed_added_liquidity: &HashMap<Principal, LiquidityAmount>,
-    proposed_remove_liquidity: &HashMap<Principal, LiquidityAmount>,
-) -> HashMap<Principal, RequestForLiquidityChanges> {
+pub async fn get_updated_liquidity_from_pool() -> Result<RequestForNewLiquidityTarget> {
+    let result: Result<(LiquidityAmount, LiquidityAmount)> =
+        ic_cdk::call(get_pool_contract(), "getUpdatedLiquidity", ())
+            .await
+            .map_err(|e| e.into());
+    let (to_add, to_remove) = result?;
+    let request_from_pool = RequestForLiquidityChanges { to_add, to_remove };
+    let proposed_target_for_brokers =
+        create_requests_for_broker_liquidity_targets(&request_from_pool);
+    STATE.with(|s| s.borrow_mut().lp_proposed_changes = request_from_pool);
+    Ok(proposed_target_for_brokers)
+}
+
+fn create_requests_for_broker_liquidity_targets(
+    request_from_pool: &RequestForLiquidityChanges,
+) -> RequestForNewLiquidityTarget {
     let current_liquidity = STATE.with(|s| s.borrow().broker_liquidity.clone());
     let broker_count = current_liquidity.len();
 
-    //TODO: maybe a flat map with respect to lp workers gives a better target total liquidity,
-    // but this is simpler for now, especially with only 1 lp worker
-    let mut total_liquidity_target: HashMap<Principal, LiquidityAmount> = current_liquidity
+    let mut liquidity_reserves = request_from_pool.to_add.clone();
+    liquidity_reserves.add_assign(STATE.with(|s| s.borrow().excess_liquidity.clone()));
+    let max_currently_available_per_broker = liquidity_reserves.clone().div_int(broker_count);
+
+    let mut total_liquidity_target: LiquidityAmount = current_liquidity
         .into_iter()
         .map(|(_broker, current_amount)| current_amount)
-        .fold(HashMap::new(), |mut sum, next| {
-            map_assign(&mut sum, next, |s, n| s.add_assign(n));
+        .fold(LiquidityAmount::default(), |mut sum, next| {
+            sum.add_assign(next);
             sum
         });
-    map_assign(
-        &mut total_liquidity_target,
-        proposed_added_liquidity.clone(),
-        |s, n| s.add_assign(n),
-    );
-    map_assign(
-        &mut total_liquidity_target,
-        STATE.with(|s| s.borrow().excess_liquidity.clone()),
-        |s, n| s.add_assign(n),
-    );
-    map_assign(
-        &mut total_liquidity_target,
-        proposed_remove_liquidity.clone(),
-        |s, n| s.sub_assign_or_zero(n),
-    );
+    total_liquidity_target.add_assign(liquidity_reserves);
+    total_liquidity_target.sub_assign_or_zero(request_from_pool.to_remove.clone());
 
-    for (_, liq) in total_liquidity_target.iter_mut() {
-        liq.div_assign_int(broker_count);
+    let target_liquidity_per_broker = total_liquidity_target.clone().div_int(broker_count);
+
+    RequestForNewLiquidityTarget {
+        target: target_liquidity_per_broker,
+        extra_liquidity_available: max_currently_available_per_broker,
     }
-    let target_liquidity_per_broker = total_liquidity_target;
-
-    target_liquidity_per_broker
-        .into_iter()
-        .map(|(broker, target)| {
-            
-        });
-    todo!()
 }
 
 pub async fn update_committed_broker_liquidity(
     response: HashMap<Principal, ResponseAboutLiquidityChanges>,
 ) -> Result<()> {
     apply_changes(&response);
-    let proposed_by_lp = STATE.with(|s| std::mem::take(&mut s.borrow_mut().proposed_changes));
-    let (mut added, mut removed, traded): (
-        HashMap<Principal, LiquidityAmount>,
-        HashMap<Principal, LiquidityAmount>,
-        HashMap<Principal, LiquidityTrades>,
-    ) = response.into_iter().fold(
-        (Default::default(), Default::default(), Default::default()),
-        |(mut added, mut removed, mut traded): (
-            HashMap<Principal, LiquidityAmount>,
-            HashMap<Principal, LiquidityAmount>,
-            HashMap<Principal, LiquidityTrades>,
-        ),
-         (_, changes)| {
-            for (id, a) in changes.added.into_iter() {
-                added.entry(id).or_default().add_assign(a);
-            }
-            for (id, r) in changes.removed.into_iter() {
-                removed.entry(id).or_default().add_assign(r);
-            }
-            for (id, t) in changes.traded.into_iter() {
-                traded.entry(id).or_default().add_assign(t);
-            }
-            (added, removed, traded)
-        },
-    );
-    let mut excess_added: HashMap<Principal, LiquidityAmount> = added
-        .iter_mut()
-        .map(|(worker, added_amount)| {
-            if let Some(proposed_add) = proposed_by_lp.to_add.get(worker) {
-                let diff = added_amount.diff_or_zero(proposed_add);
-                added_amount.sub_assign(diff.clone());
-                (*worker, diff)
-            } else {
-                (*worker, LiquidityAmount::default())
-            }
-        })
-        .collect();
-    let mut excess_removed: HashMap<Principal, LiquidityAmount> = removed
-        .iter_mut()
-        .map(|(worker, removed_amount)| {
-            if let Some(proposed_remove) = proposed_by_lp.to_remove.get(worker) {
-                let diff = removed_amount.diff_or_zero(proposed_remove);
-                removed_amount.sub_assign(diff.clone());
-                (*worker, diff)
-            } else {
-                (*worker, LiquidityAmount::default())
-            }
-        })
-        .collect();
+    let (mut added, mut removed, traded): (LiquidityAmount, LiquidityAmount, LiquidityTrades) =
+        response.into_iter().fold(
+            (Default::default(), Default::default(), Default::default()),
+            |(mut added, mut removed, mut traded), (_, changes)| {
+                added.add_assign(changes.added);
+                removed.add_assign(changes.removed);
+                traded.add_assign(changes.traded);
+                (added, removed, traded)
+            },
+        );
+
+    let proposed_by_lp = STATE.with(|s| std::mem::take(&mut s.borrow_mut().lp_proposed_changes));
+    let excess_added = added.sub_or_zero(&proposed_by_lp.to_add);
+    added.sub_assign(excess_added.clone());
+    let excess_removed = removed.sub_or_zero(&proposed_by_lp.to_remove);
+    removed.sub_assign(excess_removed.clone());
     STATE.with(|s| {
-        for (worker, amount) in s.borrow_mut().excess_liquidity.iter_mut() {
-            amount.add_assign(excess_removed.remove(worker).unwrap_or_default());
-            amount.sub_assign(excess_added.remove(worker).unwrap_or_default());
-        }
+        let mut s = s.borrow_mut();
+        s.excess_liquidity.add_assign(excess_added);
+        s.excess_liquidity.sub_assign(excess_removed);
     });
 
     let result: Result<()> = ic_cdk::call(
@@ -192,28 +157,10 @@ fn apply_changes(changes: &HashMap<Principal, ResponseAboutLiquidityChanges>) {
     STATE.with(|s| {
         for (broker_id, liquidity) in s.borrow_mut().broker_liquidity.iter_mut() {
             if let Some(changes) = changes.get(broker_id) {
-                for (&worker_id, traded) in &changes.traded {
-                    liquidity
-                        .entry(worker_id)
-                        .or_default()
-                        .add_assign(traded.increased.clone());
-                    liquidity
-                        .entry(worker_id)
-                        .or_default()
-                        .sub_assign(traded.decreased.clone());
-                }
-                for (&worker_id, added) in &changes.added {
-                    liquidity
-                        .entry(worker_id)
-                        .or_default()
-                        .add_assign(added.clone());
-                }
-                for (&worker_id, removed) in &changes.removed {
-                    liquidity
-                        .entry(worker_id)
-                        .or_default()
-                        .sub_assign(removed.clone());
-                }
+                liquidity.add_assign(changes.traded.increased.clone());
+                liquidity.sub_assign(changes.traded.decreased.clone());
+                liquidity.add_assign(changes.added.clone());
+                liquidity.sub_assign(changes.removed.clone());
             }
         }
     })

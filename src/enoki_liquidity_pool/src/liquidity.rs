@@ -1,25 +1,21 @@
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::ops::AddAssign;
 
-use candid::{candid_method, CandidType, Deserialize, Principal};
+use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_token_info;
-use enoki_exchange_shared::is_managed;
-use enoki_exchange_shared::liquidity::liquidity_pool::LiquidityPool;
+use enoki_exchange_shared::liquidity::single_user_liquidity_pool::SingleUserLiquidityPool;
 use enoki_exchange_shared::types::*;
 
 use crate::exchange::assert_is_exchange;
-use crate::workers::assert_is_worker_contract;
+use crate::worker::assert_is_worker_contract;
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct PooledAmounts {
-    workers_pool: LiquidityPool,
-    added: HashMap<Principal, LiquidityAmount>,
-    removed: HashMap<Principal, LiquidityAmount>,
-    traded: HashMap<Principal, LiquidityTrades>,
+    worker_pool: SingleUserLiquidityPool,
+    added: LiquidityAmount,
+    removed: LiquidityAmount,
+    traded: LiquidityTrades,
 }
 
 thread_local! {
@@ -36,15 +32,15 @@ pub fn import_stable_storage(data: PooledAmounts) {
 }
 
 pub fn lock_liquidity() -> (
-    HashMap<Principal, LiquidityAmount>,
-    HashMap<Principal, LiquidityAmount>,
+    LiquidityAmount,
+    LiquidityAmount,
 ) {
     STATE.with(|s| {
         let mut s = s.borrow_mut();
-        s.workers_pool.lock_liquidity();
+        s.worker_pool.lock_liquidity();
         (
-            s.workers_pool.count_locked_add_liquidity_by_principal(),
-            s.workers_pool.count_locked_remove_liquidity_by_principal(),
+            s.worker_pool.count_locked_add_liquidity(),
+            s.worker_pool.count_locked_remove_liquidity(),
         )
     })
 }
@@ -52,8 +48,8 @@ pub fn lock_liquidity() -> (
 #[update(name = "getUpdatedLiquidity")]
 #[candid_method(update, rename = "getUpdatedLiquidity")]
 fn get_updated_liquidity() -> (
-    HashMap<Principal, LiquidityAmount>,
-    HashMap<Principal, LiquidityAmount>,
+    LiquidityAmount,
+    LiquidityAmount,
 ) {
     assert_is_exchange().unwrap();
     lock_liquidity()
@@ -62,23 +58,17 @@ fn get_updated_liquidity() -> (
 #[update(name = "resolveLiquidity")]
 #[candid_method(update, rename = "resolveLiquidity")]
 fn resolve_liquidity(
-    added: HashMap<Principal, LiquidityAmount>,
-    removed: HashMap<Principal, LiquidityAmount>,
-    traded: HashMap<Principal, LiquidityTrades>,
+    added: LiquidityAmount,
+    removed: LiquidityAmount,
+    traded: LiquidityTrades,
 ) {
     assert_is_exchange().unwrap();
     STATE.with(|s| {
         let mut s = s.borrow_mut();
-        for (worker, a) in added {
-            s.added.entry(worker).or_default().add_assign(a);
-        }
-        for (worker, r) in removed {
-            s.removed.entry(worker).or_default().add_assign(r);
-        }
-        s.workers_pool.apply_traded(&traded);
-        for (worker, traded) in traded {
-            s.traded.entry(worker).or_default().add_assign(traded);
-        }
+        s.added.add_assign(added);
+        s.removed.add_assign(removed);
+        s.worker_pool.apply_traded(&traded);
+        s.traded.add_assign(traded);
     });
 }
 
@@ -89,32 +79,28 @@ fn update_liquidity(
     pending_remove: LiquidityAmount,
 ) -> Result<(LiquidityAmount, LiquidityAmount, LiquidityTrades)> {
     assert_is_worker_contract()?;
-    let worker = ic_cdk::caller();
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         let LiquidityAmount {
             token_a: add_a,
             token_b: add_b,
         } = pending_add;
-        s.workers_pool.user_add_liquidity(
-            worker,
+        s.worker_pool.user_add_liquidity(
             TokenAmount {
                 token: EnokiToken::TokenA,
                 amount: add_a,
             },
         );
-        s.workers_pool.user_add_liquidity(
-            worker,
+        s.worker_pool.user_add_liquidity(
             TokenAmount {
                 token: EnokiToken::TokenB,
                 amount: add_b,
             },
         );
-        s.workers_pool
-            .user_remove_liquidity(worker, pending_remove)?;
-        let added = std::mem::take(s.added.entry(worker).or_default());
-        let removed = std::mem::take(s.removed.entry(worker).or_default());
-        let rewards = std::mem::take(s.traded.entry(worker).or_default());
-        Ok((added, removed, rewards))
+        s.worker_pool.user_remove_liquidity(pending_remove)?;
+        let added = std::mem::take(&mut s.added);
+        let removed = std::mem::take(&mut s.removed);
+        let traded = std::mem::take(&mut s.traded);
+        Ok((added, removed, traded))
     })
 }

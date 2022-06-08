@@ -39,3 +39,4 @@ Once the job completes, your application will be available at `http://localhost:
 # Pending Features
 
 - move order_matcher state to a distributed big-map to allow more scaling
+- bulk transfer liquidity from LP worker to broker canisters to decentralize liquidity location among subnets

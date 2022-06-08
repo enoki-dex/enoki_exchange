@@ -11,11 +11,11 @@ use enoki_exchange_shared::is_owned::OwnershipData;
 #[allow(unused_imports)]
 use enoki_exchange_shared::{has_token_info, has_token_info::TokenInfo, types::*};
 #[allow(unused_imports)]
-use workers::WorkerContractData;
+use worker::WorkerContractData;
 
 mod exchange;
 mod liquidity;
-mod workers;
+mod worker;
 
 #[init]
 #[candid_method(init)]
