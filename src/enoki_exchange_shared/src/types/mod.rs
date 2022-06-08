@@ -52,6 +52,12 @@ pub struct LiquidityAmount {
     pub token_b: StableNat,
 }
 
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
+pub struct LiquidityTrades {
+    pub increased: LiquidityAmount,
+    pub decreased: LiquidityAmount,
+}
+
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Side {
     Buy,
@@ -106,7 +112,7 @@ pub enum OrderStatus {
 pub struct OrderState {
     pub status: OrderStatus,
     pub quantity_remaining: u64,
-    pub transactions: Vec<CounterpartyInfo>,
+    pub marker_makers: Vec<CounterpartyInfo>,
 }
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -122,7 +128,7 @@ pub struct CounterpartyInfo {
     pub quantity: u64,
 }
 
-#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
 pub struct AggregateBidAsk {
     pub bids: BTreeMap<u64, Vec<CounterpartyInfo>>,
     pub asks: BTreeMap<u64, Vec<CounterpartyInfo>>,

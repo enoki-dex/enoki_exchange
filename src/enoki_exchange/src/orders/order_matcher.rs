@@ -3,7 +3,8 @@ use std::collections::{BTreeMap, HashMap};
 use candid::{candid_method, CandidType, Nat, Principal};
 
 use enoki_exchange_shared::types::*;
-use crate::orders::matching::{BidAsk, OrderMatching};
+use crate::orders::matching::{OrderMatching};
+use crate::orders::bid_ask::{BidAsk};
 
 #[derive(serde::Deserialize, serde::Serialize, CandidType, Clone, Debug, Default)]
 pub struct OrderMatcher {

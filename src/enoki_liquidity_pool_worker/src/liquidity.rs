@@ -26,7 +26,7 @@ struct LiquidityState {
     locked: bool,
     pool: LiquidityPool,
     earnings_pending: Vec<(Principal, TokenAmount)>,
-    excess_rewards: LiquidityAmount, //TODO: send these to the accrued fees
+    rounding_error: LiquidityTrades, //TODO: send these to the accrued fees / use fees to pay for these
 }
 
 #[query(name = "getLiquidity")]
@@ -53,7 +53,7 @@ pub async fn update_liquidity_with_manager() {
             s.pool.count_locked_remove_liquidity(),
         )
     });
-    let response: Result<(Result<(LiquidityAmount, LiquidityAmount, LiquidityAmount)>,)> =
+    let response: Result<(Result<(LiquidityAmount, LiquidityAmount, LiquidityTrades)>,)> =
         ic_cdk::call(
             get_manager(),
             "updateLiquidity",
@@ -62,10 +62,10 @@ pub async fn update_liquidity_with_manager() {
         .await
         .map_err(|e| e.into());
     let final_result: Result<Vec<(Principal, TokenAmount)>> = match response {
-        Ok((Ok((added, removed, rewards)),)) => STATE.with(|s| {
+        Ok((Ok((added, removed, traded)),)) => STATE.with(|s| {
             let mut s = s.borrow_mut();
             s.locked = false;
-            award_users(rewards, &mut s.pool);
+            apply_traded(traded, &mut s.pool);
             apply_new_liquidity(added, &mut s.pool);
             let withdrawals = calculate_withdrawals(removed, &mut s.pool);
             s.pool.remove_zeros();
@@ -92,52 +92,83 @@ pub async fn update_liquidity_with_manager() {
     }
 }
 
-fn award_users(rewards: LiquidityAmount, pool: &mut LiquidityPool) {
+fn apply_traded(traded: LiquidityTrades, pool: &mut LiquidityPool) {
     let balances = pool.get_liquidity_by_principal();
+    let total_a: StableNat = balances
+        .values()
+        .map(|val| val.get(&EnokiToken::TokenA).clone())
+        .sum();
+    let total_b: StableNat = balances
+        .values()
+        .map(|val| val.get(&EnokiToken::TokenA).clone())
+        .sum();
 
-    let rewards_per_user =
-        |balance_token: &EnokiToken, rewards_token: &EnokiToken| -> HashMap<Principal, StableNat> {
-            let total: StableNat = balances
-                .values()
-                .map(|val| val.get(balance_token).clone())
-                .sum();
-            if !total.is_nonzero() {
-                return Default::default();
+    let changes_per_user = balances
+        .into_iter()
+        .map(|(&id, balances)| {
+            let plus_a;
+            let minus_a;
+            let plus_b;
+            let minus_b;
+            if total_a.is_nonzero() {
+                minus_a = balances
+                    .token_a
+                    .clone()
+                    .mul(traded.decreased.token_a.clone())
+                    .div(total_a.clone());
+                plus_b = balances
+                    .token_a
+                    .clone()
+                    .mul(traded.increased.token_b.clone())
+                    .div(total_a.clone());
+            } else {
+                minus_a = Default::default();
+                plus_b = Default::default();
             }
-            balances
-                .iter()
-                .map(|(&user, balance)| {
-                    (
-                        user,
-                        balance
-                            .get(balance_token)
-                            .clone()
-                            .mul(rewards.get(rewards_token).clone())
-                            .div(total.clone()),
-                    )
-                })
-                .collect()
-        };
-
-    let rewards_a = rewards_per_user(&EnokiToken::TokenB, &EnokiToken::TokenA);
-    let rewards_b = rewards_per_user(&EnokiToken::TokenA, &EnokiToken::TokenB);
-
-    pool.apply_rewards(&rewards_a, &rewards_b);
-
-    let excess_rewards_a = rewards
-        .token_a
-        .sub(rewards_a.into_iter().map(|(_, val)| val).sum());
-    let excess_rewards_b = rewards
-        .token_b
-        .sub(rewards_b.into_iter().map(|(_, val)| val).sum());
-    if excess_rewards_a.is_nonzero() || excess_rewards_b.is_nonzero() {
-        STATE.with(|s| {
-            s.borrow_mut().excess_rewards.add_assign(LiquidityAmount {
-                token_a: excess_rewards_a,
-                token_b: excess_rewards_b,
-            })
+            if total_b.is_nonzero() {
+                minus_b = balances
+                    .token_b
+                    .clone()
+                    .mul(traded.decreased.token_b.clone())
+                    .div(total_b.clone());
+                plus_a = balances
+                    .token_b
+                    .clone()
+                    .mul(traded.increased.token_a.clone())
+                    .div(total_b.clone());
+            } else {
+                minus_b = Default::default();
+                plus_a = Default::default();
+            }
+            (
+                id,
+                LiquidityTrades {
+                    increased: LiquidityAmount {
+                        token_a: plus_a,
+                        token_b: plus_b,
+                    },
+                    decreased: LiquidityAmount {
+                        token_a: minus_a,
+                        token_b: minus_b,
+                    },
+                },
+            )
         })
-    }
+        .collect();
+
+    pool.apply_traded(&changes_per_user);
+
+    let aggr_changes_for_users = changes_per_user.into_iter().map(|(_, val)| val)
+        .fold(LiquidityTrades::default(), |mut sum, next| {
+            sum.add_assign(next);
+            sum
+        });
+
+    let mut rounding_error = traded;
+    rounding_error.sub_assign(aggr_changes_for_users);
+    STATE.with(|s| {
+        s.borrow_mut().rounding_error.add_assign(rounding_error);
+    });
 }
 
 fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut LiquidityPool) {

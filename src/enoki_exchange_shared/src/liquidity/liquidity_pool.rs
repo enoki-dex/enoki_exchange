@@ -131,21 +131,14 @@ impl LiquidityPool {
         self.pending_remove_locked
             .retain(|(_, amount)| amount.amount.is_nonzero());
     }
-    pub fn apply_rewards(
+    pub fn apply_traded(
         &mut self,
-        rewards_a: &HashMap<Principal, StableNat>,
-        rewards_b: &HashMap<Principal, StableNat>,
+        traded: &HashMap<Principal, LiquidityTrades>
     ) {
         for (user, liquidity) in self.liquidity.iter_mut() {
-            if let Some(reward_a) = rewards_a.get(user) {
-                liquidity
-                    .get_mut(&EnokiToken::TokenA)
-                    .add_assign(reward_a.clone());
-            }
-            if let Some(reward_b) = rewards_b.get(user) {
-                liquidity
-                    .get_mut(&EnokiToken::TokenB)
-                    .add_assign(reward_b.clone());
+            if let Some(traded) = traded.get(user) {
+                liquidity.add_assign(traded.increased.clone());
+                liquidity.sub_assign(traded.decreased.clone());
             }
         }
     }

@@ -124,13 +124,34 @@ impl AddAssign for LiquidityAmount {
     }
 }
 
+impl SubAssign for LiquidityAmount {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.token_a.sub_assign(rhs.token_a);
+        self.token_b.sub_assign(rhs.token_b);
+    }
+}
+
+impl AddAssign for LiquidityTrades {
+    fn add_assign(&mut self, rhs: Self) {
+        self.increased.add_assign(rhs.increased);
+        self.decreased.add_assign(rhs.decreased);
+    }
+}
+
+impl SubAssign for LiquidityTrades {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.increased.sub_assign(rhs.increased);
+        self.decreased.sub_assign(rhs.decreased);
+    }
+}
+
 impl From<OrderInfo> for Order {
     fn from(info: OrderInfo) -> Self {
         Self {
             state: OrderState {
                 status: OrderStatus::Pending,
                 quantity_remaining: info.quantity,
-                transactions: vec![]
+                marker_makers: vec![],
             },
             info,
         }
@@ -142,7 +163,35 @@ impl From<&Order> for CounterpartyInfo {
         Self {
             broker: order.info.broker,
             user: order.info.user,
-            quantity: order.state.quantity_remaining
+            quantity: order.state.quantity_remaining,
         }
+    }
+}
+
+impl AggregateBidAsk {
+    pub fn change_to_next(&mut self, next: &Self) {
+        let mut next = next.clone();
+        //for security/extreme arbitrage reasons (waiting for brokers to be synchronized), bid/ask cannot intersect between rounds
+        let last_bid = self.bids.keys().last();
+        let last_ask = self.asks.keys().next();
+        if let Some(&last_bid) = last_bid {
+            while let Some(&ask) = next.asks.keys().next() {
+                if ask < last_bid {
+                    next.asks.remove(&ask);
+                } else {
+                    break;
+                }
+            }
+        }
+        if let Some(&last_ask) = last_ask {
+            while let Some(&bid) = next.bids.keys().last() {
+                if bid > last_ask {
+                    next.bids.remove(&bid);
+                } else {
+                    break;
+                }
+            }
+        }
+        *self = next;
     }
 }

@@ -9,8 +9,9 @@ use enoki_exchange_shared::types::*;
 
 use crate::orders::order_matcher::OrderMatcher;
 
-mod order_matcher;
+mod bid_ask;
 mod matching;
+mod order_matcher;
 
 thread_local! {
     static STATE: RefCell<OrdersState> = RefCell::new(OrdersState::default());

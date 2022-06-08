@@ -19,7 +19,7 @@ pub struct PooledAmounts {
     workers_pool: LiquidityPool,
     added: HashMap<Principal, LiquidityAmount>,
     removed: HashMap<Principal, LiquidityAmount>,
-    rewards: HashMap<Principal, LiquidityAmount>,
+    traded: HashMap<Principal, LiquidityTrades>,
 }
 
 thread_local! {
@@ -64,17 +64,9 @@ fn get_updated_liquidity() -> (
 fn resolve_liquidity(
     added: HashMap<Principal, LiquidityAmount>,
     removed: HashMap<Principal, LiquidityAmount>,
-    rewards: HashMap<Principal, LiquidityAmount>,
+    traded: HashMap<Principal, LiquidityTrades>,
 ) {
     assert_is_exchange().unwrap();
-    let rewards_a = rewards
-        .iter()
-        .map(|(&worker, amount)| (worker, amount.get(&EnokiToken::TokenA).clone()))
-        .collect();
-    let rewards_b = rewards
-        .iter()
-        .map(|(&worker, amount)| (worker, amount.get(&EnokiToken::TokenB).clone()))
-        .collect();
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         for (worker, a) in added {
@@ -83,9 +75,9 @@ fn resolve_liquidity(
         for (worker, r) in removed {
             s.removed.entry(worker).or_default().add_assign(r);
         }
-        s.workers_pool.apply_rewards(&rewards_a, &rewards_b);
-        for (worker, reward) in rewards {
-            s.rewards.entry(worker).or_default().add_assign(reward);
+        s.workers_pool.apply_traded(&traded);
+        for (worker, traded) in traded {
+            s.traded.entry(worker).or_default().add_assign(traded);
         }
     });
 }
@@ -95,7 +87,7 @@ fn resolve_liquidity(
 fn update_liquidity(
     pending_add: LiquidityAmount,
     pending_remove: LiquidityAmount,
-) -> Result<(LiquidityAmount, LiquidityAmount, LiquidityAmount)> {
+) -> Result<(LiquidityAmount, LiquidityAmount, LiquidityTrades)> {
     assert_is_worker_contract()?;
     let worker = ic_cdk::caller();
     STATE.with(|s| {
@@ -122,7 +114,7 @@ fn update_liquidity(
             .user_remove_liquidity(worker, pending_remove)?;
         let added = std::mem::take(s.added.entry(worker).or_default());
         let removed = std::mem::take(s.removed.entry(worker).or_default());
-        let rewards = std::mem::take(s.rewards.entry(worker).or_default());
+        let rewards = std::mem::take(s.traded.entry(worker).or_default());
         Ok((added, removed, rewards))
     })
 }

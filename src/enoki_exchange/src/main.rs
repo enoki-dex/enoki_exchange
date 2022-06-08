@@ -13,6 +13,7 @@ mod brokers;
 mod heartbeat;
 mod orders;
 mod synchronize;
+mod liquidity;
 
 #[init]
 #[candid_method(init)]

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use candid::utils::{ArgumentDecoder, ArgumentEncoder};
 use candid::{candid_method, CandidType, Deserialize, Principal};
+use futures::{StreamExt, TryFutureExt};
 use ic_cdk_macros::*;
 
 use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
@@ -32,20 +33,44 @@ thread_local! {
     static STATE: RefCell<BrokerState> = RefCell::new(BrokerState::default());
 }
 
-pub async fn foreach_broker<T: ArgumentEncoder + Clone, R: for<'a> ArgumentDecoder<'a>>(
+pub async fn foreach_broker<
+    T: ArgumentEncoder,
+    R: for<'a> ArgumentDecoder<'a>,
+    TF: FnMut(Principal) -> T,
+>(
     method: &str,
-    args: T,
+    mut args_getter: TF,
 ) -> Result<Vec<R>> {
     let ids = get_broker_ids();
     let responses: Vec<std::result::Result<R, _>> = futures::future::join_all(
         ids.into_iter()
-            .map(|id| ic_cdk::call(id, method, args.clone())),
+            .map(|id| ic_cdk::call(id, method, args_getter(id))),
     )
     .await;
     responses
         .into_iter()
         .collect::<std::result::Result<Vec<R>, _>>()
         .map_err(|err| err.into())
+}
+
+pub async fn foreach_broker_map<
+    T: ArgumentEncoder,
+    R: for<'a> ArgumentDecoder<'a>,
+    TF: FnMut(Principal) -> T,
+    FR,
+    RM: Fn(R) -> FR
+>(
+    method: &str,
+    args_getter: TF,
+    results_mapper: RM
+) -> Result<HashMap<Principal, FR>> {
+    let ids = get_broker_ids();
+    Ok(foreach_broker(method, args_getter)
+        .await?
+        .into_iter()
+        .enumerate()
+        .map(|(i, res)| (ids[i], results_mapper(res)))
+        .collect())
 }
 
 #[query(name = "getBrokers")]
@@ -56,8 +81,10 @@ fn get_brokers() -> BrokerState {
 
 #[query(name = "getBrokerIds")]
 #[candid_method(query, rename = "getBrokerIds")]
-fn get_broker_ids() -> Vec<Principal> {
-    STATE.with(|s| s.borrow().brokers.keys().copied().collect())
+pub fn get_broker_ids() -> Vec<Principal> {
+    let mut ids: Vec<Principal> = STATE.with(|s| s.borrow().brokers.keys().copied().collect());
+    ids.sort();
+    ids
 }
 
 #[update(name = "addBroker")]
