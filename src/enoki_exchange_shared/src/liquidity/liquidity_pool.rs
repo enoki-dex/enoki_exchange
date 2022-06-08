@@ -38,8 +38,8 @@ impl LiquidityPool {
             .liquidity
             .get(&user)
             .ok_or(TxError::UserNotRegistered)?;
-        let amount_a = amount.token_a.min(&existing.token_a);
-        let amount_b = amount.token_b.min(&existing.token_b);
+        let amount_a = amount.token_a.min(existing.token_a.clone());
+        let amount_b = amount.token_b.min(existing.token_b.clone());
         if amount_a.is_nonzero() {
             self.pending_remove.push((
                 user,

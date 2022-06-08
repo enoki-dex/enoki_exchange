@@ -180,7 +180,7 @@ fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut LiquidityPool) {
         let token = item.1.token.clone();
         let amount_left = amount.get_mut(&token);
         if amount_left.is_nonzero() {
-            let diff = amount_left.min(&item.1.amount);
+            let diff = amount_left.clone().min(item.1.amount.clone());
             amount_left.sub_assign(diff.clone());
             item.1.amount.sub_assign(diff.clone());
             let addr = item.0;
@@ -206,8 +206,8 @@ fn calculate_withdrawals(
             let addr = item.0;
             let amount_in_lp = pool.get_user_liquidity_mut(addr, &token).clone();
             let item = pool.get_locked_remove_item(i).unwrap();
-            item.1.amount = item.1.amount.min(&amount_in_lp);
-            let diff = amount_left.min(&item.1.amount);
+            item.1.amount = item.1.amount.clone().min(amount_in_lp.clone());
+            let diff = amount_left.clone().min(item.1.amount.clone());
             amount_left.sub_assign(diff.clone());
             item.1.amount.sub_assign(diff.clone());
             pool.get_user_liquidity_mut(addr, &token)

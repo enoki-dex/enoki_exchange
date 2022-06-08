@@ -1,5 +1,5 @@
 use std::iter::Sum;
-use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Sub, SubAssign};
 
 use lazy_static::lazy_static;
 
@@ -47,6 +47,36 @@ impl LiquidityAmount {
             EnokiToken::TokenB => &mut self.token_b,
         }
     }
+    pub fn div_assign_int(&mut self, val: usize) {
+        self.token_a.0.div_assign(val);
+        self.token_b.0.div_assign(val);
+    }
+    pub fn sub_assign_or_zero(&mut self, other: Self) {
+        if self.token_a > other.token_a {
+            self.token_a.sub_assign(other.token_a);
+        } else {
+            self.token_a = StableNat::zero();
+        }
+        if self.token_b > other.token_b {
+            self.token_b.sub_assign(other.token_b);
+        } else {
+            self.token_b = StableNat::zero();
+        }
+    }
+    pub fn diff_or_zero(&self, other: &Self) -> Self {
+        Self {
+            token_a: if self.token_a > other.token_a {
+                self.token_a.clone().sub(other.token_a.clone())
+            } else {
+                StableNat::zero()
+            },
+            token_b: if self.token_b > other.token_b {
+                self.token_b.clone().sub(other.token_b.clone())
+            } else {
+                StableNat::zero()
+            }
+        }
+    }
 }
 
 lazy_static! {
@@ -54,11 +84,11 @@ lazy_static! {
 }
 
 impl StableNat {
-    pub fn min(&self, other: &Self) -> Self {
-        Self(self.0.clone().min(other.0.clone()))
-    }
     pub fn is_nonzero(&self) -> bool {
         self.0 > *ZERO
+    }
+    pub fn zero() -> Self {
+        Self(Nat::from(0))
     }
 }
 

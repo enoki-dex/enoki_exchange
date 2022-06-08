@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk_macros::*;
+use enoki_exchange_shared::liquidity::ResponseAboutLiquidityChanges;
 
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::flat_map_vecs;
@@ -52,12 +53,12 @@ pub async fn run() {
 }
 
 async fn do_run() -> Result<()> {
-    let mut proposed_new_liquidity_for_brokers =
+    let mut proposed_liquidity_changes_for_brokers =
         liquidity::get_updated_liquidity_from_pool().await?;
 
     let (new_orders, orders_to_cancel) = flat_map_vecs(
         foreach_broker("retrieve_orders", |id| {
-            (proposed_new_liquidity_for_brokers
+            (proposed_liquidity_changes_for_brokers
                 .remove(&id)
                 .expect("inconsistent state between brokers and liquidity"),)
         })
@@ -73,7 +74,7 @@ async fn do_run() -> Result<()> {
             .change_to_next(&aggregate_bid_ask)
     });
 
-    let committed_liquidity_by_broker = foreach_broker_map(
+    let changes_in_liquidity_by_broker = foreach_broker_map(
         "receive_completed_orders",
         |id| {
             (
@@ -82,11 +83,11 @@ async fn do_run() -> Result<()> {
                 broker_count,
             )
         },
-        |res: (HashMap<Principal, LiquidityAmount>,)| res.0,
+        |res: (ResponseAboutLiquidityChanges,)| res.0,
     )
     .await?;
 
-    update_committed_broker_liquidity(committed_liquidity_by_broker).await?;
+    update_committed_broker_liquidity(changes_in_liquidity_by_broker).await?;
 
     Ok(())
 }

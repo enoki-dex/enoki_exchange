@@ -25,7 +25,7 @@ impl From<(RejectionCode, String)> for TxError {
 
 pub type Result<T> = std::result::Result<T, TxError>;
 
-#[derive(CandidType, Debug, Clone, Default)]
+#[derive(CandidType, Debug, Clone, Default, Ord, PartialOrd, Eq, PartialEq)]
 pub struct StableNat(Nat);
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
