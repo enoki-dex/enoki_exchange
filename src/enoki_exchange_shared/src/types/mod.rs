@@ -1,10 +1,12 @@
+use std::collections::BTreeMap;
 use std::string::String;
 
+use bitflags::bitflags;
 use candid::{CandidType, Deserialize, Nat, Principal};
 use ic_cdk::api::call::RejectionCode;
 
+mod implementations;
 mod serialization;
-mod conversion;
 
 #[derive(CandidType, Debug, Deserialize)]
 pub enum TxError {
@@ -48,4 +50,80 @@ pub struct TokenAmount {
 pub struct LiquidityAmount {
     pub token_a: StableNat,
     pub token_b: StableNat,
+}
+
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum Side {
+    Buy,
+    Sell,
+}
+
+#[derive(CandidType, serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub enum MakerTaker {
+    OnlyMaker,
+    OnlyTaker,
+    MakerOrTaker,
+}
+
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct OrderInfo {
+    pub broker: Principal,
+    pub user: Principal,
+    pub id: u64, // only unique with respect to a broker
+    pub side: Side,
+    pub maker_taker: MakerTaker,
+    pub limit_price: u64,
+    pub quantity: u64,
+    pub expiration_time: u64,
+}
+
+impl Default for OrderInfo {
+    fn default() -> Self {
+        Self {
+            broker: Principal::anonymous(),
+            user: Principal::anonymous(),
+            id: 0,
+            side: Side::Buy,
+            maker_taker: MakerTaker::MakerOrTaker,
+            limit_price: Default::default(),
+            quantity: Default::default(),
+            expiration_time: 0,
+        }
+    }
+}
+
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum OrderStatus {
+    Pending,
+    Cancelled,
+    Completed,
+    Expired,
+    InsufficientLiquidity,
+    InvalidPrice,
+}
+
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct OrderState {
+    pub status: OrderStatus,
+    pub quantity_remaining: u64,
+    pub transactions: Vec<CounterpartyInfo>,
+}
+
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Order {
+    pub info: OrderInfo,
+    pub state: OrderState,
+}
+
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct CounterpartyInfo {
+    pub broker: Principal,
+    pub user: Principal,
+    pub quantity: u64,
+}
+
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AggregateBidAsk {
+    pub bids: BTreeMap<u64, Vec<CounterpartyInfo>>,
+    pub asks: BTreeMap<u64, Vec<CounterpartyInfo>>,
 }

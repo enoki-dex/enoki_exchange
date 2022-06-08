@@ -9,7 +9,7 @@ use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::flat_map_vecs;
 
 use crate::brokers::foreach_broker;
-use crate::orders::{match_orders, take_cancelled_orders, Order};
+use crate::orders::match_orders;
 
 thread_local! {
     static STATE: RefCell<RunningState> = RefCell::new(RunningState::default());
@@ -49,17 +49,11 @@ pub async fn run() {
 }
 
 async fn do_run() -> Result<()> {
-    let cancelled_orders = take_cancelled_orders();
-
     let (new_orders, orders_to_cancel) = flat_map_vecs(
-        foreach_broker::<(HashMap<Principal, Vec<Order>>,), (Vec<Order>, Vec<u64>)>(
-            "retrieve_orders",
-            (cancelled_orders,),
-        )
-        .await?,
+        foreach_broker::<(), (Vec<OrderInfo>, Vec<OrderInfo>)>("retrieve_orders", ()).await?,
     );
 
-    match_orders(new_orders, orders_to_cancel);
+    let (completed_orders, aggregate_bid_ask) = match_orders(new_orders, orders_to_cancel);
 
     Ok(())
 }

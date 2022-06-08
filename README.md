@@ -35,3 +35,7 @@ dfx deploy
 ```
 
 Once the job completes, your application will be available at `http://localhost:8000?canisterId={asset_canister_id}`.
+
+# Pending Features
+
+- move order_matcher state to a distributed big-map to allow more scaling

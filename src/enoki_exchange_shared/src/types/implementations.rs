@@ -1,5 +1,5 @@
 use std::iter::Sum;
-use std::ops::{AddAssign, Div, Mul, SubAssign};
+use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
 use lazy_static::lazy_static;
 
@@ -62,6 +62,22 @@ impl StableNat {
     }
 }
 
+impl Add for StableNat {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+
+impl Sub for StableNat {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0 - rhs.0)
+    }
+}
+
 impl AddAssign for StableNat {
     fn add_assign(&mut self, rhs: Self) {
         let lhs = std::mem::take(&mut self.0);
@@ -93,7 +109,7 @@ impl Div for StableNat {
 }
 
 impl Sum for StableNat {
-    fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Default::default(), |mut sum, next| {
             sum.add_assign(next);
             sum
@@ -105,5 +121,28 @@ impl AddAssign for LiquidityAmount {
     fn add_assign(&mut self, rhs: Self) {
         self.token_a.add_assign(rhs.token_a);
         self.token_b.add_assign(rhs.token_b);
+    }
+}
+
+impl From<OrderInfo> for Order {
+    fn from(info: OrderInfo) -> Self {
+        Self {
+            state: OrderState {
+                status: OrderStatus::Pending,
+                quantity_remaining: info.quantity,
+                transactions: vec![]
+            },
+            info,
+        }
+    }
+}
+
+impl From<&Order> for CounterpartyInfo {
+    fn from(order: &Order) -> Self {
+        Self {
+            broker: order.info.broker,
+            user: order.info.user,
+            quantity: order.state.quantity_remaining
+        }
     }
 }

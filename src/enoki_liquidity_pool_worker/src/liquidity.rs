@@ -1,7 +1,7 @@
 use std::borrow::BorrowMut;
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
-use std::ops::{AddAssign, Div, Mul, SubAssign};
+use std::ops::{AddAssign, Div, Mul, Sub, SubAssign};
 
 use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
 use ic_cdk_macros::*;
@@ -26,6 +26,7 @@ struct LiquidityState {
     locked: bool,
     pool: LiquidityPool,
     earnings_pending: Vec<(Principal, TokenAmount)>,
+    excess_rewards: LiquidityAmount, //TODO: send these to the accrued fees
 }
 
 #[query(name = "getLiquidity")]
@@ -96,7 +97,10 @@ fn award_users(rewards: LiquidityAmount, pool: &mut LiquidityPool) {
 
     let rewards_per_user =
         |balance_token: &EnokiToken, rewards_token: &EnokiToken| -> HashMap<Principal, StableNat> {
-            let total: StableNat = balances.values().map(|val| val.get(balance_token).clone()).sum();
+            let total: StableNat = balances
+                .values()
+                .map(|val| val.get(balance_token).clone())
+                .sum();
             if !total.is_nonzero() {
                 return Default::default();
             }
@@ -119,6 +123,21 @@ fn award_users(rewards: LiquidityAmount, pool: &mut LiquidityPool) {
     let rewards_b = rewards_per_user(&EnokiToken::TokenA, &EnokiToken::TokenB);
 
     pool.apply_rewards(&rewards_a, &rewards_b);
+
+    let excess_rewards_a = rewards
+        .token_a
+        .sub(rewards_a.into_iter().map(|(_, val)| val).sum());
+    let excess_rewards_b = rewards
+        .token_b
+        .sub(rewards_b.into_iter().map(|(_, val)| val).sum());
+    if excess_rewards_a.is_nonzero() || excess_rewards_b.is_nonzero() {
+        STATE.with(|s| {
+            s.borrow_mut().excess_rewards.add_assign(LiquidityAmount {
+                token_a: excess_rewards_a,
+                token_b: excess_rewards_b,
+            })
+        })
+    }
 }
 
 fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut LiquidityPool) {
