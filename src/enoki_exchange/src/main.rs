@@ -11,36 +11,28 @@ use crate::brokers::BrokerState;
 
 mod brokers;
 mod heartbeat;
+mod liquidity;
 mod orders;
 mod synchronize;
-mod liquidity;
 
 #[init]
 #[candid_method(init)]
 async fn init(
     owner: Principal,
     token_a: Principal,
-    token_a_units_per_lot: Nat,
-    token_a_min_price_interval_lots: u64,
     token_b: Principal,
-    token_b_units_per_lot: Nat,
-    token_b_min_price_interval_lots: u64,
+    price_number_of_decimals: u64,
+    smallest_trade_unit: u64,
 ) {
     is_owned::init_owner(OwnershipData {
         owner,
         deploy_time: ic_cdk::api::time(),
     });
     let token_info = TokenPairInfo {
-        token_a: TokenInfo {
-            principal: token_a,
-            units_per_lot: token_a_units_per_lot.into(),
-            min_price_interval_lots: token_a_min_price_interval_lots,
-        },
-        token_b: TokenInfo {
-            principal: token_b,
-            units_per_lot: token_b_units_per_lot.into(),
-            min_price_interval_lots: token_b_min_price_interval_lots,
-        },
+        token_a: TokenInfo { principal: token_a },
+        token_b: TokenInfo { principal: token_b },
+        price_number_of_decimals,
+        smallest_trade_unit,
     };
     has_token_info::init_token_info(token_info).await.unwrap();
 }

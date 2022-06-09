@@ -1,3 +1,4 @@
+use std::arch::aarch64::float32x2_t;
 use std::collections::BTreeMap;
 use std::string::String;
 
@@ -14,6 +15,7 @@ pub enum TxError {
     UserNotRegistered,
     IntOverflow,
     IntUnderflow,
+    ParsingError(String),
     CallbackError(String),
     Other(String),
 }
@@ -74,16 +76,7 @@ pub struct OrderInfo {
     pub side: Side,
     pub maker_taker: MakerTaker,
     pub limit_price: u64,
-    pub quantity: u64,
-    pub expiration_time: Option<u64>,
-}
-
-#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct OrderInput {
-    pub side: Side,
-    pub allow_taker: bool,
-    pub limit_price: String,
-    pub quantity: String,
+    pub quantity: StableNat,
     pub expiration_time: Option<u64>,
 }
 
@@ -103,6 +96,23 @@ impl Default for OrderInfo {
 }
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct OrderInput {
+    pub allow_taker: bool,
+    pub limit_price_in_b: f64,
+    pub expiration_time: Option<u64>,
+}
+
+#[derive(CandidType, Debug, Clone)]
+pub struct ProcessedOrderInput {
+    pub user: Principal,
+    pub side: Side,
+    pub quantity: Nat,
+    pub maker_taker: MakerTaker,
+    pub limit_price_in_b: f64,
+    pub expiration_time: Option<u64>,
+}
+
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum OrderStatus {
     Pending,
     Cancelled,
@@ -115,7 +125,7 @@ pub enum OrderStatus {
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct OrderState {
     pub status: OrderStatus,
-    pub quantity_remaining: u64,
+    pub quantity_remaining: StableNat,
     pub marker_makers: Vec<CounterpartyInfo>,
 }
 
@@ -129,7 +139,7 @@ pub struct Order {
 pub struct CounterpartyInfo {
     pub broker: Principal,
     pub user: Principal,
-    pub quantity: u64,
+    pub quantity: StableNat,
 }
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize, Default)]

@@ -31,14 +31,12 @@ async fn init(owner: Principal, exchange: Principal, token_a: Principal, token_b
     let token_info = TokenPairInfo {
         token_a: TokenInfo {
             principal: token_a,
-            units_per_lot: Default::default(),
-            min_price_interval_lots: 0,
         },
         token_b: TokenInfo {
             principal: token_b,
-            units_per_lot: Default::default(),
-            min_price_interval_lots: 0,
         },
+        price_number_of_decimals: 0, //TODO: are these necessary on the LP side?
+        smallest_trade_unit: 0
     };
     has_token_info::init_token_info(token_info).await.unwrap();
 }

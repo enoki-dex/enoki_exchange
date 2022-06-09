@@ -1,6 +1,7 @@
 use std::borrow::BorrowMut;
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::ops::{AddAssign, Div, Mul, Sub, SubAssign};
 
 use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
@@ -20,6 +21,8 @@ use enoki_exchange_shared::liquidity::{
     RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
 };
 use enoki_exchange_shared::types::*;
+use enoki_exchange_shared::utils::nat_x_float;
+
 use crate::orders::order_book::OrderBook;
 use crate::orders::order_history::OrderHistory;
 
@@ -55,14 +58,52 @@ fn submit_completed_orders(
     todo!()
 }
 
+fn validate_order_input(
+    notification: ShardedTransferNotification,
+    is_swap: bool,
+) -> Result<ProcessedOrderInput> {
+    let token = has_token_info::parse_from()?;
+    let user = notification.from;
+    let order: OrderInput = serde_json::from_str(&notification.data)
+        .map_err(|e| TxError::ParsingError(e.to_string()))?;
+    let (side, quantity) = match &token {
+        EnokiToken::TokenA => (
+            Side::Sell,
+            nat_x_float(notification.value, order.limit_price_in_b)?,
+        ),
+        EnokiToken::TokenB => (Side::Buy, notification.value),
+    };
+    register_user(
+        user,
+        has_token_info::get_token_address(&token),
+        notification.from_shard,
+    );
+
+    Ok(ProcessedOrderInput {
+        user,
+        side,
+        quantity,
+        maker_taker: match (is_swap, order.allow_taker) {
+            (true, _) => MakerTaker::OnlyTaker,
+            (false, true) => MakerTaker::MakerOrTaker,
+            (false, false) => MakerTaker::OnlyMaker,
+        },
+        limit_price_in_b: order.limit_price_in_b,
+        expiration_time: order.expiration_time,
+    })
+}
+
 #[update(name = "limitOrder")]
 #[candid_method(update, rename = "limitOrder")]
 fn submit_limit_order(notification: ShardedTransferNotification) {
-    let user = notification.from;
-    let token = has_token_info::parse_from().unwrap();
-    register_user(user, has_token_info::get_token_address(&token), notification.from_shard);
-    let order = OrderInfo::default();
-    // order.serialize()
+    let input = validate_order_input(notification, false).unwrap();
+    let order_id = STATE.with(|s| s.borrow_mut().order_book.create_limit_order(input).unwrap());
+    todo!()
+}
 
+#[update(name = "swap")]
+#[candid_method(update)]
+fn swap(notification: ShardedTransferNotification) {
+    let input = validate_order_input(notification, true).unwrap();
     todo!()
 }

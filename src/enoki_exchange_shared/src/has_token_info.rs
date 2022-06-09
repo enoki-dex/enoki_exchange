@@ -5,6 +5,7 @@ use std::ops::{Div, Mul, Rem};
 use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk_macros::*;
 use num_traits::cast::ToPrimitive;
+use num_traits::Pow;
 
 use crate::types::{EnokiToken, Result, StableNat, TxError};
 
@@ -12,21 +13,19 @@ use crate::types::{EnokiToken, Result, StableNat, TxError};
 pub struct TokenPairInfo {
     pub token_a: TokenInfo,
     pub token_b: TokenInfo,
+    pub price_number_of_decimals: u64,
+    pub smallest_trade_unit: u64,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
 pub struct TokenInfo {
     pub principal: Principal,
-    pub units_per_lot: StableNat,
-    pub min_price_interval_lots: u64,
 }
 
 impl Default for TokenInfo {
     fn default() -> Self {
         Self {
             principal: Principal::anonymous(),
-            units_per_lot: Default::default(),
-            min_price_interval_lots: 0,
         }
     }
 }
@@ -131,35 +130,38 @@ pub fn get_assigned_shard(for_token: &EnokiToken) -> Principal {
     })
 }
 
-pub fn nat_to_lots(token: &EnokiToken, value: Nat, is_price: bool) -> Result<u64> {
+pub fn quantity_token_b_nat_to_trade_units(value: Nat) -> Result<u64> {
     STATE.with(|s| {
         let s = s.borrow();
-        let info = s.token_info.get(token);
-        if value.clone().rem(info.units_per_lot.0.clone()) != 0 {
+        let unit = s.token_info.smallest_trade_unit;
+        if value.clone().rem(unit) != 0u32 {
             return Err(TxError::IntUnderflow);
         }
-        let value_lots = value.div(info.units_per_lot.0.clone());
-        let value64 = match value_lots.0.to_u64().ok_or(TxError::IntOverflow) {
-            Ok(val) => val,
-            Err(err) => return Err(err),
-        };
-        if is_price && value64 % info.min_price_interval_lots != 0 {
-            Err(TxError::IntUnderflow)
-        } else {
-            Ok(value64)
-        }
+        let value_units = value.div(unit);
+        value_units.0.to_u64().ok_or(TxError::IntOverflow)
     })
 }
 
-pub fn lots_to_nat(token: &EnokiToken, value: u64) -> Nat {
+pub fn quantity_token_b_trade_units_to_nat(value: u64) -> Nat {
+    STATE.with(|s| Nat::from(s.borrow().token_info.smallest_trade_unit * value))
+}
+
+pub fn price_in_b_float_to_u64(value: f64) -> Result<u64> {
     STATE.with(|s| {
-        s.borrow()
-            .token_info
-            .get(token)
-            .units_per_lot
-            .0
-            .clone()
-            .mul(value)
+        let s = s.borrow();
+        let num_decimals = s.token_info.price_number_of_decimals;
+        let value_int = (value * 10f64.pow(num_decimals as f64)) as u64;
+        if (value_int as f64) != value {
+            return Err(TxError::IntUnderflow);
+        }
+        Ok(value_int)
+    })
+}
+
+pub fn price_in_b_u64_to_float(value: u64) -> f64 {
+    STATE.with(|s| {
+        let num_decimals = s.borrow().token_info.price_number_of_decimals;
+        (value as f64) / 10f64.pow(num_decimals as f64)
     })
 }
 

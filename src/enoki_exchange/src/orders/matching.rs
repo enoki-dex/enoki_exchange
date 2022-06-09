@@ -16,13 +16,14 @@ impl OrderMatching for Order {
                 let quantity_traded = self
                     .state
                     .quantity_remaining
-                    .min(executor.state.quantity_remaining);
-                self.state.quantity_remaining -= quantity_traded;
+                    .clone()
+                    .min(executor.state.quantity_remaining.clone());
+                self.state.quantity_remaining -= quantity_traded.clone();
                 executor.state.quantity_remaining -= quantity_traded;
-                if self.state.quantity_remaining == 0 {
+                if !self.state.quantity_remaining.is_nonzero() {
                     self.state.status = OrderStatus::Completed;
                 }
-                if executor.state.quantity_remaining == 0 {
+                if !executor.state.quantity_remaining.is_nonzero() {
                     executor.state.status = OrderStatus::Completed;
                 }
                 self.state.marker_makers.push((&*executor).into());

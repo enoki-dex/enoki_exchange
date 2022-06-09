@@ -50,7 +50,7 @@ impl LiquidityAmount {
     pub fn div_int(self, val: usize) -> Self {
         Self {
             token_a: StableNat(self.token_a.0.div(val)),
-            token_b: StableNat(self.token_b.0.div(val))
+            token_b: StableNat(self.token_b.0.div(val)),
         }
     }
     pub fn sub_assign_or_zero(&mut self, other: Self) {
@@ -76,7 +76,7 @@ impl LiquidityAmount {
                 self.token_b.clone().sub(other.token_b.clone())
             } else {
                 StableNat::zero()
-            }
+            },
         }
     }
 }
@@ -182,7 +182,7 @@ impl From<OrderInfo> for Order {
         Self {
             state: OrderState {
                 status: OrderStatus::Pending,
-                quantity_remaining: info.quantity,
+                quantity_remaining: info.quantity.clone(),
                 marker_makers: vec![],
             },
             info,
@@ -195,7 +195,7 @@ impl From<&Order> for CounterpartyInfo {
         Self {
             broker: order.info.broker,
             user: order.info.user,
-            quantity: order.state.quantity_remaining,
+            quantity: order.state.quantity_remaining.clone(),
         }
     }
 }

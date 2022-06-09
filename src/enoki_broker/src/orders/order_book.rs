@@ -9,7 +9,8 @@ use ic_cdk_macros::*;
 use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
 use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::has_token_info::{
-    get_assigned_shard, get_assigned_shards, nat_to_lots, AssignedShards,
+    get_assigned_shard, get_assigned_shards, price_in_b_float_to_u64,
+    quantity_token_b_nat_to_trade_units, AssignedShards,
 };
 use enoki_exchange_shared::types::*;
 
@@ -23,62 +24,29 @@ pub struct OrderBook {
 }
 
 impl OrderBook {
-    pub fn create_limit_order(
-        &mut self,
-        caller: Principal,
-        side: Side,
-        amount: Nat,
-        limit_price: Nat,
-        allow_taker: bool,
-        expiration_time: Option<u64>,
-    ) -> Result<u64> {
-        self.create_order(
-            caller,
-            side,
-            amount,
-            limit_price,
-            if allow_taker {
-                MakerTaker::MakerOrTaker
-            } else {
-                MakerTaker::OnlyMaker
-            },
-            expiration_time,
-        )
+    pub fn create_limit_order(&mut self, input: ProcessedOrderInput) -> Result<u64> {
+        self.create_order(input)
     }
-    pub fn create_market_order(
-        &mut self,
-        caller: Principal,
-        side: Side,
-        amount: Nat,
-        limit_price: Nat,
-    ) -> Result<u64> {
-        self.create_order(caller, side, amount, limit_price, MakerTaker::OnlyTaker, None)
+    pub fn create_market_order(&mut self, input: ProcessedOrderInput) -> Result<u64> {
+        self.create_order(input)
     }
     fn get_next_id(&mut self) -> u64 {
         self.last_id += 1;
         self.last_id
     }
-    fn create_order(
-        &mut self,
-        caller: Principal,
-        side: Side,
-        amount: Nat,
-        limit_price: Nat,
-        maker_taker: MakerTaker,
-        expiration_time: Option<u64>,
-    ) -> Result<u64> {
+    fn create_order(&mut self, input: ProcessedOrderInput) -> Result<u64> {
         let id = self.get_next_id();
         let order = OrderInfo {
             broker: ic_cdk::id(),
-            user: caller,
+            user: input.user,
             id,
-            side,
-            maker_taker,
-            limit_price: nat_to_lots(&EnokiToken::TokenA, limit_price, true)?,
-            quantity: nat_to_lots(&EnokiToken::TokenB, amount, false)?,
-            expiration_time,
+            side: input.side,
+            maker_taker: input.maker_taker,
+            limit_price: price_in_b_float_to_u64(input.limit_price_in_b)?,
+            quantity: input.quantity.into(),
+            expiration_time: input.expiration_time,
         };
-        if order.quantity == 0 {
+        if !order.quantity.is_nonzero() {
             return Err(TxError::IntUnderflow);
         }
         self.new_orders.insert(id, order);

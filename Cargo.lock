@@ -260,6 +260,7 @@ dependencies = [
  "ic-cdk",
  "ic-cdk-macros",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -283,6 +284,7 @@ dependencies = [
  "ic-cdk",
  "ic-cdk-macros",
  "lazy_static",
+ "num-bigint",
  "num-traits",
  "serde",
 ]
