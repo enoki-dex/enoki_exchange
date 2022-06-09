@@ -8,6 +8,7 @@ use ic_cdk_macros::*;
 
 use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
 use enoki_exchange_shared::has_token_info;
+use enoki_exchange_shared::has_token_info::AssignedShards;
 use enoki_exchange_shared::is_owned;
 use enoki_exchange_shared::types::*;
 
@@ -93,25 +94,26 @@ pub fn get_broker_ids() -> Vec<Principal> {
 #[candid_method(update, rename = "addBroker")]
 async fn add_broker(broker: Principal) -> Result<()> {
     is_owned::assert_is_owner()?;
-    let response: Result<(Principal,)> = ic_cdk::call(
+    let token_info = has_token_info::get_token_info();
+    let token_a = token_info.token_a.principal;
+    let token_b = token_info.token_b.principal;
+    let response: Result<(AssignedShards,)> = ic_cdk::call(
         broker,
         "initBroker",
-        (has_token_info::get_token_info(), get_liquidity_location()),
+        (token_info, get_liquidity_location()),
     )
     .await
     .map_err(|e| e.into());
-    let shard = response?.0;
+    let assigned = response?.0;
     STATE.with(|s| s.borrow_mut().brokers.insert(broker, Broker { id: broker }));
-    register_user(ShardedPrincipal {
-        shard,
-        principal: broker,
-    });
+    register_user(broker, token_a, assigned.token_a);
+    register_user(broker, token_b, assigned.token_b);
     init_broker_lp(broker);
     Ok(())
 }
 
-pub fn get_broker_shard(broker: Principal) -> Result<Principal> {
-    get_user_shard(broker)
+pub fn get_broker_shard(broker: Principal, token: &EnokiToken) -> Result<Principal> {
+    get_user_shard(broker, has_token_info::get_token_address(token))
 }
 
 pub fn export_stable_storage() -> (BrokerState,) {

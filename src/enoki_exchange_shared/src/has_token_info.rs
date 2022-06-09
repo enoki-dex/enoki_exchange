@@ -116,6 +116,10 @@ pub fn get_token_info() -> TokenPairInfo {
     STATE.with(|s| s.borrow().token_info.clone())
 }
 
+pub fn get_token_address(token: &EnokiToken) -> Principal {
+    STATE.with(|s| s.borrow().token_info.get(token).principal)
+}
+
 pub fn get_assigned_shards() -> AssignedShards {
     STATE.with(|s| s.borrow().assigned_shards.clone())
 }

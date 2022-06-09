@@ -158,11 +158,13 @@ fn apply_traded(traded: LiquidityTrades, pool: &mut LiquidityPool) {
 
     pool.apply_traded(&changes_per_user);
 
-    let aggr_changes_for_users = changes_per_user.into_iter().map(|(_, val)| val)
-        .fold(LiquidityTrades::default(), |mut sum, next| {
+    let aggr_changes_for_users = changes_per_user.into_iter().map(|(_, val)| val).fold(
+        LiquidityTrades::default(),
+        |mut sum, next| {
             sum.add_assign(next);
             sum
-        });
+        },
+    );
 
     let mut rounding_error = traded;
     rounding_error.sub_assign(aggr_changes_for_users);
@@ -246,7 +248,7 @@ async fn withdraw_for_user(
     user: Principal,
     withdrawal: TokenAmount,
 ) -> Option<(Principal, TokenAmount)> {
-    let user_shard = get_user_shard(user);
+    let user_shard = get_user_shard(user, has_token_info::get_token_address(&withdrawal.token));
     let TokenAmount { token, amount } = withdrawal.clone();
     let amount: Nat = amount.into();
     let my_shard = get_assigned_shard(&token);
@@ -273,15 +275,16 @@ async fn get_shards_to_add_liquidity() -> AssignedShards {
 async fn add_liquidity(notification: ShardedTransferNotification) -> Result<()> {
     assert_eq!(notification.to, ic_cdk::id());
     let token = has_token_info::parse_from()?;
+    let from = notification.from;
+    register_user(
+        from,
+        has_token_info::get_token_address(&token),
+        notification.from_shard,
+    );
     let amount = TokenAmount {
         token,
         amount: notification.value.into(),
     };
-    let from = notification.from;
-    register_user(ShardedPrincipal {
-        shard: notification.from_shard,
-        principal: from,
-    });
     STATE.with(|s| s.borrow_mut().pool.user_add_liquidity(from, amount));
     Ok(())
 }

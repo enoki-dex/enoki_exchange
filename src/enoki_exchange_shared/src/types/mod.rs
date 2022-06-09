@@ -35,12 +35,6 @@ pub enum EnokiToken {
     TokenB,
 }
 
-#[derive(CandidType, Debug, Clone, Hash, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct ShardedPrincipal {
-    pub shard: Principal,
-    pub principal: Principal,
-}
-
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TokenAmount {
     pub token: EnokiToken,
@@ -81,6 +75,15 @@ pub struct OrderInfo {
     pub maker_taker: MakerTaker,
     pub limit_price: u64,
     pub quantity: u64,
+    pub expiration_time: Option<u64>,
+}
+
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct OrderInput {
+    pub side: Side,
+    pub allow_taker: bool,
+    pub limit_price: String,
+    pub quantity: String,
     pub expiration_time: Option<u64>,
 }
 

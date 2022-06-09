@@ -5,6 +5,7 @@ use std::ops::{AddAssign, Div, Mul, Sub, SubAssign};
 
 use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
 use ic_cdk_macros::*;
+use serde::Serialize;
 
 use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
 use enoki_exchange_shared::has_token_info;
@@ -20,6 +21,7 @@ use enoki_exchange_shared::liquidity::{
 };
 use enoki_exchange_shared::types::*;
 use crate::orders::order_book::OrderBook;
+use crate::orders::order_history::OrderHistory;
 
 mod order_book;
 mod order_history;
@@ -31,6 +33,7 @@ thread_local! {
 #[derive(Deserialize, CandidType, Clone, Debug, Default)]
 struct OrdersState {
     order_book: OrderBook,
+    order_history: OrderHistory,
 }
 
 #[update(name = "retrieveOrders")]
@@ -41,19 +44,25 @@ fn retrieve_orders() -> (Vec<OrderInfo>, Vec<OrderInfo>) {
     todo!()
 }
 
-#[update(name = "receiveCompletedOrders")]
-#[candid_method(update, rename = "receiveCompletedOrders")]
-fn receive_completed_orders(
+#[update(name = "submitCompletedOrders")]
+#[candid_method(update, rename = "submitCompletedOrders")]
+fn submit_completed_orders(
     completed: Vec<Order>,
     aggregate_bid_ask: AggregateBidAsk,
     request: RequestForNewLiquidityTarget,
 ) -> ResponseAboutLiquidityChanges {
+    assert_is_manager().unwrap();
     todo!()
 }
 
-#[update(name = "submitLimitOrder")]
-#[candid_method(update, rename = "submitLimitOrder")]
-fn submit_limit_order() {
+#[update(name = "limitOrder")]
+#[candid_method(update, rename = "limitOrder")]
+fn submit_limit_order(notification: ShardedTransferNotification) {
+    let user = notification.from;
+    let token = has_token_info::parse_from().unwrap();
+    register_user(user, has_token_info::get_token_address(&token), notification.from_shard);
+    let order = OrderInfo::default();
+    // order.serialize()
 
     todo!()
 }

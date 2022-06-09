@@ -25,6 +25,7 @@ pub struct OrderBook {
 impl OrderBook {
     pub fn create_limit_order(
         &mut self,
+        caller: Principal,
         side: Side,
         amount: Nat,
         limit_price: Nat,
@@ -32,6 +33,7 @@ impl OrderBook {
         expiration_time: Option<u64>,
     ) -> Result<u64> {
         self.create_order(
+            caller,
             side,
             amount,
             limit_price,
@@ -45,11 +47,12 @@ impl OrderBook {
     }
     pub fn create_market_order(
         &mut self,
+        caller: Principal,
         side: Side,
         amount: Nat,
         limit_price: Nat,
     ) -> Result<u64> {
-        self.create_order(side, amount, limit_price, MakerTaker::OnlyTaker, None)
+        self.create_order(caller, side, amount, limit_price, MakerTaker::OnlyTaker, None)
     }
     fn get_next_id(&mut self) -> u64 {
         self.last_id += 1;
@@ -57,6 +60,7 @@ impl OrderBook {
     }
     fn create_order(
         &mut self,
+        caller: Principal,
         side: Side,
         amount: Nat,
         limit_price: Nat,
@@ -66,7 +70,7 @@ impl OrderBook {
         let id = self.get_next_id();
         let order = OrderInfo {
             broker: ic_cdk::id(),
-            user: ic_cdk::caller(),
+            user: caller,
             id,
             side,
             maker_taker,

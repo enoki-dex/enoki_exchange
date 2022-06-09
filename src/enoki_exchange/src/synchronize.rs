@@ -68,7 +68,7 @@ async fn do_run() -> Result<()> {
     });
 
     let changes_in_liquidity_by_broker = foreach_broker_map(
-        "receiveCompletedOrders",
+        "submitCompletedOrders",
         |id| {
             (
                 completed_orders.remove(&id).unwrap_or_default(),

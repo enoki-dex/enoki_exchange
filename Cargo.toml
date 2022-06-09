@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "src/test_main",
     "src/enoki_exchange",
     "src/enoki_broker",
     "src/enoki_liquidity_pool",

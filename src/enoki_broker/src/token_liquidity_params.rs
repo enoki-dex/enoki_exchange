@@ -6,6 +6,7 @@ use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
 use enoki_exchange_shared::has_token_info;
+use enoki_exchange_shared::has_token_info::AssignedShards;
 use enoki_exchange_shared::is_managed;
 use enoki_exchange_shared::types::*;
 
@@ -26,16 +27,17 @@ thread_local! {
     static STATE: RefCell<TokenLiquidityData> = RefCell::new(TokenLiquidityData::default());
 }
 
-#[update(name = "initWorker")]
-#[candid_method(update, rename = "initWorker")]
-async fn init_worker(
+#[update(name = "initBroker")]
+#[candid_method(update, rename = "initBroker")]
+async fn init_broker(
     supply_token_info: has_token_info::TokenPairInfo,
     liquidity_location: Principal,
-) -> Result<()> {
+) -> Result<AssignedShards> {
     is_managed::assert_is_manager()?;
     has_token_info::init_token_info(supply_token_info).await?;
+    let assigned = has_token_info::get_assigned_shards();
     STATE.with(|s| s.borrow_mut().liquidity_location = liquidity_location);
-    Ok(())
+    Ok(assigned)
 }
 
 pub fn export_stable_storage() -> (TokenLiquidityData,) {

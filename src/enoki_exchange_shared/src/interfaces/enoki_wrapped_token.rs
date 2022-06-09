@@ -6,4 +6,5 @@ pub struct ShardedTransferNotification {
     pub from_shard: Principal,
     pub to: Principal,
     pub value: Nat,
+    pub data: String
 }

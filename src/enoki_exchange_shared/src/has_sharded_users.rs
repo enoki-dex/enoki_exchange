@@ -6,19 +6,25 @@ use ic_cdk_macros::*;
 
 use crate::types::*;
 
-pub fn register_user(user: ShardedPrincipal) {
-    STATE.with(|s| s.borrow_mut().users.insert(user.principal, user.shard));
+pub fn register_user(user: Principal, token: Principal, assigned_shard: Principal) {
+    STATE.with(|s| s.borrow_mut().users.insert(UserAndToken { user, token }, assigned_shard));
 }
 
-pub fn get_user_shard(user: Principal) -> Result<Principal> {
+pub fn get_user_shard(user: Principal, token: Principal) -> Result<Principal> {
     STATE
-        .with(|s| s.borrow().users.get(&user).copied())
+        .with(|s| s.borrow().users.get(&UserAndToken { user, token }).copied())
         .ok_or(TxError::UserNotRegistered)
 }
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct ShardedUserState {
-    users: HashMap<Principal, Principal>,
+    users: HashMap<UserAndToken, Principal>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Hash, Eq, PartialEq)]
+struct UserAndToken {
+    user: Principal,
+    token: Principal,
 }
 
 thread_local! {

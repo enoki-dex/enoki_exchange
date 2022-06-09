@@ -10,6 +10,8 @@ use enoki_exchange_shared::is_owned::{self, OwnershipData};
 use enoki_exchange_shared::types::*;
 #[allow(unused_imports)]
 use enoki_exchange_shared::liquidity::*;
+#[allow(unused_imports)]
+use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 
 mod token_liquidity_params;
 mod orders;
