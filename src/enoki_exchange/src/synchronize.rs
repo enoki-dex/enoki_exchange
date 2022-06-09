@@ -56,15 +56,10 @@ async fn do_run() -> Result<()> {
     let proposed_liquidity_target_for_brokers =
         liquidity::get_updated_liquidity_from_pool().await?;
 
-    let (new_orders, orders_to_cancel) = flat_map_vecs(
-        foreach_broker("retrieve_orders", |_| {
-            (proposed_liquidity_target_for_brokers.clone(),)
-        })
-        .await?,
-    );
+    let (new_orders, orders_to_cancel) =
+        flat_map_vecs(foreach_broker("retrieveOrders", |_| ()).await?);
 
     let (mut completed_orders, aggregate_bid_ask) = match_orders(new_orders, orders_to_cancel);
-    let broker_count = get_broker_ids().len();
 
     STATE.with(|s| {
         s.borrow_mut()
@@ -73,12 +68,12 @@ async fn do_run() -> Result<()> {
     });
 
     let changes_in_liquidity_by_broker = foreach_broker_map(
-        "receive_completed_orders",
+        "receiveCompletedOrders",
         |id| {
             (
                 completed_orders.remove(&id).unwrap_or_default(),
                 aggregate_bid_ask.clone(),
-                broker_count,
+                proposed_liquidity_target_for_brokers.clone(),
             )
         },
         |res: (ResponseAboutLiquidityChanges,)| res.0,

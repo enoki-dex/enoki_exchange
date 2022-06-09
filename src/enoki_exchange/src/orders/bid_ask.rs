@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, HashMap};
 use candid::{candid_method, CandidType, Nat, Principal};
 
 use enoki_exchange_shared::types::*;
+
 use crate::orders::matching::OrderMatching;
 
 #[derive(serde::Deserialize, serde::Serialize, CandidType, Clone, Debug, Default)]
@@ -13,10 +14,10 @@ impl BidAsk {
         self.0
             .iter()
             .map(|(&price, orders)| {
-                ((
+                (
                     price,
                     orders.into_iter().map(|order| order.into()).collect(),
-                ))
+                )
             })
             .collect()
     }
@@ -76,7 +77,13 @@ impl BidAsk {
             .0
             .iter_mut()
             .flat_map(|(_, orders)| orders)
-            .filter(|order| order.info.expiration_time <= now)
+            .filter(|order| {
+                if let Some(expiry) = order.info.expiration_time {
+                    expiry <= now
+                } else {
+                    false
+                }
+            })
         {
             order.state.status = OrderStatus::Expired;
         }

@@ -251,6 +251,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "enoki_broker"
+version = "0.1.0"
+dependencies = [
+ "candid",
+ "enoki_exchange_shared",
+ "futures",
+ "ic-cdk",
+ "ic-cdk-macros",
+ "serde",
+]
+
+[[package]]
 name = "enoki_exchange"
 version = "0.1.0"
 dependencies = [
@@ -266,12 +278,12 @@ dependencies = [
 name = "enoki_exchange_shared"
 version = "0.1.0"
 dependencies = [
- "bitflags",
  "candid",
  "futures",
  "ic-cdk",
  "ic-cdk-macros",
  "lazy_static",
+ "num-traits",
  "serde",
 ]
 

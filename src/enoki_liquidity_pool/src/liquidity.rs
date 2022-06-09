@@ -3,11 +3,11 @@ use std::ops::AddAssign;
 
 use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
+use enoki_exchange_shared::is_managed::assert_is_manager;
 
 use enoki_exchange_shared::liquidity::single_user_liquidity_pool::SingleUserLiquidityPool;
 use enoki_exchange_shared::types::*;
 
-use crate::exchange::assert_is_exchange;
 use crate::worker::assert_is_worker_contract;
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
@@ -51,7 +51,7 @@ fn get_updated_liquidity() -> (
     LiquidityAmount,
     LiquidityAmount,
 ) {
-    assert_is_exchange().unwrap();
+    assert_is_manager().unwrap();
     lock_liquidity()
 }
 
@@ -62,7 +62,7 @@ fn resolve_liquidity(
     removed: LiquidityAmount,
     traded: LiquidityTrades,
 ) {
-    assert_is_exchange().unwrap();
+    assert_is_manager().unwrap();
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         s.added.add_assign(added);

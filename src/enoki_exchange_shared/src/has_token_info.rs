@@ -1,8 +1,10 @@
 use std::borrow::Borrow;
 use std::cell::RefCell;
+use std::ops::{Div, Mul, Rem};
 
 use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk_macros::*;
+use num_traits::cast::ToPrimitive;
 
 use crate::types::{EnokiToken, Result, StableNat, TxError};
 
@@ -24,7 +26,16 @@ impl Default for TokenInfo {
         Self {
             principal: Principal::anonymous(),
             units_per_lot: Default::default(),
-            min_price_interval_lots: 0
+            min_price_interval_lots: 0,
+        }
+    }
+}
+
+impl TokenPairInfo {
+    pub fn get(&self, token: &EnokiToken) -> &TokenInfo {
+        match token {
+            EnokiToken::TokenA => &self.token_a,
+            EnokiToken::TokenB => &self.token_b,
         }
     }
 }
@@ -83,8 +94,11 @@ pub async fn init_token_info(token_info: TokenPairInfo) -> Result<()> {
 }
 
 async fn register_tokens(token_info: &TokenPairInfo) -> Result<(Principal, Principal)> {
-    let (assigned_a, assigned_b) =
-        futures::future::join(register(token_info.token_a.principal), register(token_info.token_b.principal)).await;
+    let (assigned_a, assigned_b) = futures::future::join(
+        register(token_info.token_a.principal),
+        register(token_info.token_b.principal),
+    )
+    .await;
     Ok((assigned_a?, assigned_b?))
 }
 
@@ -110,6 +124,38 @@ pub fn get_assigned_shard(for_token: &EnokiToken) -> Principal {
     STATE.with(|s| match for_token {
         EnokiToken::TokenA => s.borrow().assigned_shards.token_a,
         EnokiToken::TokenB => s.borrow().assigned_shards.token_a,
+    })
+}
+
+pub fn nat_to_lots(token: &EnokiToken, value: Nat, is_price: bool) -> Result<u64> {
+    STATE.with(|s| {
+        let s = s.borrow();
+        let info = s.token_info.get(token);
+        if value.clone().rem(info.units_per_lot.0.clone()) != 0 {
+            return Err(TxError::IntUnderflow);
+        }
+        let value_lots = value.div(info.units_per_lot.0.clone());
+        let value64 = match value_lots.0.to_u64().ok_or(TxError::IntOverflow) {
+            Ok(val) => val,
+            Err(err) => return Err(err),
+        };
+        if is_price && value64 % info.min_price_interval_lots != 0 {
+            Err(TxError::IntUnderflow)
+        } else {
+            Ok(value64)
+        }
+    })
+}
+
+pub fn lots_to_nat(token: &EnokiToken, value: u64) -> Nat {
+    STATE.with(|s| {
+        s.borrow()
+            .token_info
+            .get(token)
+            .units_per_lot
+            .0
+            .clone()
+            .mul(value)
     })
 }
 

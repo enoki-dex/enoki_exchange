@@ -5,15 +5,16 @@ use candid::{candid_method, Nat, Principal};
 use ic_cdk_macros::*;
 
 use enoki_exchange_shared::has_token_info::{AssignedShards, TokenPairInfo};
-use enoki_exchange_shared::is_owned;
+use enoki_exchange_shared::{is_managed, is_owned};
 #[allow(unused_imports)]
 use enoki_exchange_shared::is_owned::OwnershipData;
+#[allow(unused_imports)]
+use enoki_exchange_shared::is_managed::ManagementData;
 #[allow(unused_imports)]
 use enoki_exchange_shared::{has_token_info, has_token_info::TokenInfo, types::*};
 #[allow(unused_imports)]
 use worker::WorkerContractData;
 
-mod exchange;
 mod liquidity;
 mod worker;
 
@@ -24,7 +25,9 @@ async fn init(owner: Principal, exchange: Principal, token_a: Principal, token_b
         owner,
         deploy_time: ic_cdk::api::time(),
     });
-    exchange::init_exchange_information(exchange);
+    is_managed::init_manager(ManagementData {
+        manager: exchange
+    });
     let token_info = TokenPairInfo {
         token_a: TokenInfo {
             principal: token_a,

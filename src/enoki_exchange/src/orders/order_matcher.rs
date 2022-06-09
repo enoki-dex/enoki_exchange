@@ -3,8 +3,9 @@ use std::collections::{BTreeMap, HashMap};
 use candid::{candid_method, CandidType, Nat, Principal};
 
 use enoki_exchange_shared::types::*;
-use crate::orders::matching::{OrderMatching};
-use crate::orders::bid_ask::{BidAsk};
+
+use crate::orders::bid_ask::BidAsk;
+use crate::orders::matching::OrderMatching;
 
 #[derive(serde::Deserialize, serde::Serialize, CandidType, Clone, Debug, Default)]
 pub struct OrderMatcher {
@@ -48,12 +49,7 @@ impl OrderMatcher {
         orders_to_cancel: Vec<OrderInfo>,
     ) -> (HashMap<Principal, Vec<Order>>, AggregateBidAsk) {
         let mut completed_orders: CompletedOrders = Default::default();
-        // try to cancel existing orders
-        for to_cancel in orders_to_cancel {
-            if let Some(cancelled) = self.open_orders(&to_cancel.side).try_cancel(&to_cancel) {
-                completed_orders.insert(cancelled);
-            }
-        }
+
         let mut only_makers: Vec<Order> = Vec::new();
         let mut maker_taker: Vec<Order> = Vec::new();
         let mut only_takers: Vec<Order> = Vec::new();
@@ -114,6 +110,21 @@ impl OrderMatcher {
             }
         }
 
+        // try to cancel existing orders.
+        // Do this step last to help prevent a potential "arbitrage" attack where a market maker
+        // submits a large order with a price that crosses the bid/ask, waits (2 consensus rounds)
+        // for the LP bid/ask curve to change, swaps, and then cancels the original order.
+        // Other than this measure, further measures are probably not necessary because other market
+        // makers will probably intervene and profit (higher risk of loss for attacker).
+        // However, another measure could be to keep track of the swap trades and prices, and
+        // match those with trades to be cancelled.
+        for to_cancel in orders_to_cancel {
+            if let Some(cancelled) = self.open_orders(&to_cancel.side).try_cancel(&to_cancel) {
+                completed_orders.insert(cancelled);
+            }
+        }
+
+        // this means orders are actually cancelled a few seconds after they expire
         self.bids.cancel_expired();
         self.asks.cancel_expired();
 
@@ -146,4 +157,3 @@ impl CompletedOrders {
 }
 
 //TODO: make sure on the broker side there is a check on the min quantity delta
-

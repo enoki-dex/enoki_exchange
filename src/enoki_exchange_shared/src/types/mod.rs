@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::string::String;
 
-use bitflags::bitflags;
 use candid::{CandidType, Deserialize, Nat, Principal};
 use ic_cdk::api::call::RejectionCode;
 
@@ -13,6 +12,8 @@ pub enum TxError {
     InsufficientFunds,
     Unauthorized,
     UserNotRegistered,
+    IntOverflow,
+    IntUnderflow,
     CallbackError(String),
     Other(String),
 }
@@ -26,7 +27,7 @@ impl From<(RejectionCode, String)> for TxError {
 pub type Result<T> = std::result::Result<T, TxError>;
 
 #[derive(CandidType, Debug, Clone, Default, Ord, PartialOrd, Eq, PartialEq)]
-pub struct StableNat(Nat);
+pub struct StableNat(pub Nat);
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum EnokiToken {
@@ -80,7 +81,7 @@ pub struct OrderInfo {
     pub maker_taker: MakerTaker,
     pub limit_price: u64,
     pub quantity: u64,
-    pub expiration_time: u64,
+    pub expiration_time: Option<u64>,
 }
 
 impl Default for OrderInfo {
@@ -93,7 +94,7 @@ impl Default for OrderInfo {
             maker_taker: MakerTaker::MakerOrTaker,
             limit_price: Default::default(),
             quantity: Default::default(),
-            expiration_time: 0,
+            expiration_time: None,
         }
     }
 }
