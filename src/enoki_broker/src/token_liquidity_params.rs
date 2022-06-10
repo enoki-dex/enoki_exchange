@@ -27,6 +27,10 @@ thread_local! {
     static STATE: RefCell<TokenLiquidityData> = RefCell::new(TokenLiquidityData::default());
 }
 
+pub fn get_lp_worker_location() -> Principal {
+    STATE.with(|s| s.borrow().liquidity_location)
+}
+
 #[update(name = "initBroker")]
 #[candid_method(update, rename = "initBroker")]
 async fn init_broker(

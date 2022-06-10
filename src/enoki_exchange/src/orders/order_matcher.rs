@@ -155,5 +155,3 @@ impl CompletedOrders {
         self.0.entry(order.info.broker).or_default().push(order);
     }
 }
-
-//TODO: make sure on the broker side there is a check on the min quantity delta

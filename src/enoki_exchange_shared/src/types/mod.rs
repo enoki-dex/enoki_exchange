@@ -11,6 +11,8 @@ mod serialization;
 #[derive(CandidType, Debug, Deserialize)]
 pub enum TxError {
     InsufficientFunds,
+    InsufficientLiquidityAvailable,
+    SlippageExceeded,
     Unauthorized,
     UserNotRegistered,
     IntOverflow,
@@ -108,7 +110,7 @@ pub struct ProcessedOrderInput {
     pub side: Side,
     pub quantity: Nat,
     pub maker_taker: MakerTaker,
-    pub limit_price_in_b: f64,
+    pub limit_price_in_b: u64,
     pub expiration_time: Option<u64>,
 }
 
@@ -146,4 +148,17 @@ pub struct CounterpartyInfo {
 pub struct AggregateBidAsk {
     pub bids: BTreeMap<u64, Vec<CounterpartyInfo>>,
     pub asks: BTreeMap<u64, Vec<CounterpartyInfo>>,
+}
+
+#[derive(CandidType, Debug, Clone, Default)]
+pub struct BidAskCurve {
+    pub num_decimals: u64,
+    pub bids: BTreeMap<u64, Nat>,
+    pub asks: BTreeMap<u64, Nat>,
+}
+
+#[derive(CandidType)]
+pub struct OpenOrderStatus {
+    pub open_orders: Vec<OrderInfo>,
+    pub pending_cancel: Vec<u64>,
 }

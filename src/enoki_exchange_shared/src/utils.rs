@@ -35,3 +35,7 @@ pub fn nat_x_float(value: Nat, multiplier: f64) -> Result<Nat> {
         num_bigint::BigUint::from_f64(val).ok_or(TxError::IntOverflow)?,
     ))
 }
+
+pub fn nat_to_u64(value: Nat) -> Result<u64> {
+    value.0.to_u64().ok_or(TxError::IntOverflow)
+}
