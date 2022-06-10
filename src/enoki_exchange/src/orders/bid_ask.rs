@@ -16,7 +16,14 @@ impl BidAsk {
             .map(|(&price, orders)| {
                 (
                     price,
-                    orders.into_iter().map(|order| order.into()).collect(),
+                    orders
+                        .into_iter()
+                        .map(|order| CounterpartyInfo {
+                            broker: order.info.broker,
+                            user: order.info.user,
+                            quantity: order.state.quantity_remaining.clone(),
+                        })
+                        .collect(),
                 )
             })
             .collect()
@@ -57,7 +64,7 @@ impl BidAsk {
                 break;
             }
             for executor in market.iter_mut() {
-                order.try_execute(executor);
+                order.try_buy_from(executor);
             }
         }
     }
@@ -67,7 +74,7 @@ impl BidAsk {
                 break;
             }
             for executor in market.iter_mut() {
-                order.try_execute(executor);
+                order.try_sell_to(executor);
             }
         }
     }

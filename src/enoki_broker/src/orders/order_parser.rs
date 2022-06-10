@@ -13,12 +13,10 @@ pub fn validate_order_input(
     let user = notification.from;
     let order: OrderInput = serde_json::from_str(&notification.data)
         .map_err(|e| TxError::ParsingError(e.to_string()))?;
-    let (side, quantity) = match &token {
-        EnokiToken::TokenA => (
-            Side::Sell,
-            nat_x_float(notification.value, order.limit_price_in_b)?,
-        ),
-        EnokiToken::TokenB => (Side::Buy, notification.value),
+    let quantity = notification.value;
+    let side = match &token {
+        EnokiToken::TokenA => Side::Sell,
+        EnokiToken::TokenB => Side::Buy,
     };
     if quantity == 0u32 {
         return Err(TxError::IntUnderflow);

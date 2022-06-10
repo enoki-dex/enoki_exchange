@@ -190,16 +190,6 @@ impl From<OrderInfo> for Order {
     }
 }
 
-impl From<&Order> for CounterpartyInfo {
-    fn from(order: &Order) -> Self {
-        Self {
-            broker: order.info.broker,
-            user: order.info.user,
-            quantity: order.state.quantity_remaining.clone(),
-        }
-    }
-}
-
 impl AggregateBidAsk {
     pub fn change_to_next(&mut self, next: &Self) {
         let mut next = next.clone();

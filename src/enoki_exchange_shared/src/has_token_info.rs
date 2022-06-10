@@ -8,6 +8,7 @@ use num_traits::cast::ToPrimitive;
 use num_traits::Pow;
 
 use crate::types::{EnokiToken, Result, StableNat, TxError};
+use crate::utils::{nat_div_float, nat_x_float};
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct TokenPairInfo {
@@ -115,6 +116,18 @@ pub fn get_token_info() -> TokenPairInfo {
     STATE.with(|s| s.borrow().token_info.clone())
 }
 
+pub async fn add_token_spender(principal: Principal) -> Result<()> {
+    let shards = get_assigned_shards();
+    let result: Result<()> = ic_cdk::call(shards.token_a, "addSpender", (principal,))
+        .await
+        .map_err(|e| e.into());
+    result?;
+    let result: Result<()> = ic_cdk::call(shards.token_b, "addSpender", (principal,))
+        .await
+        .map_err(|e| e.into());
+    result
+}
+
 pub fn get_token_address(token: &EnokiToken) -> Principal {
     STATE.with(|s| s.borrow().token_info.get(token).principal)
 }
@@ -163,6 +176,35 @@ pub fn price_in_b_u64_to_float(value: u64) -> f64 {
         let num_decimals = s.borrow().token_info.price_number_of_decimals;
         (value as f64) / 10f64.pow(num_decimals as f64)
     })
+}
+
+pub fn quant_b_to_quant_a(quant_b: Nat, price: u64) -> Result<Nat> {
+    let price = price_in_b_u64_to_float(price);
+    nat_div_float(quant_b, price)
+}
+
+pub fn quant_a_to_quant_b(quant_a: Nat, price: u64) -> Result<Nat> {
+    let price = price_in_b_u64_to_float(price);
+    nat_x_float(quant_a, price)
+}
+
+pub struct QuantityTranslator<'a> {
+    quantity_a: &'a mut Nat,
+    price: u64,
+}
+
+impl<'a> QuantityTranslator<'a> {
+    pub fn new(price: u64, quantity_a: &'a mut Nat) -> Self {
+        Self { price, quantity_a }
+    }
+    pub fn get_quantity_b(&self) -> Result<Nat> {
+        quant_a_to_quant_b(self.quantity_a.clone(), self.price)
+    }
+    pub fn sub_assign(&mut self, quantity_b: Nat) -> Result<()> {
+        let current = self.get_quantity_b()?;
+        *self.quantity_a = quant_b_to_quant_a(current - quantity_b, self.price)?;
+        Ok(())
+    }
 }
 
 pub fn parse_from() -> Result<EnokiToken> {

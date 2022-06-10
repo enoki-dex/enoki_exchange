@@ -5,9 +5,9 @@ use std::collections::HashMap;
 use candid::{candid_method, CandidType, Deserialize, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::is_owned;
 use enoki_exchange_shared::types::*;
+use enoki_exchange_shared::{has_token_info, is_managed};
 
 pub fn assert_is_worker_contract() -> Result<()> {
     if STATE.with(|s| s.borrow().worker_id == ic_cdk::caller()) {
@@ -57,6 +57,17 @@ async fn init_worker(worker: Principal) -> Result<()> {
         s.worker_shard = worker_shard;
     });
     Ok(())
+}
+
+#[update(name = "addBroker")]
+#[candid_method(update, rename = "addBroker")]
+async fn add_broker(broker: Principal) -> Result<()> {
+    is_managed::assert_is_manager()?;
+
+    let result: Result<()> = ic_cdk::call(get_worker(), "addBroker", (broker,))
+        .await
+        .map_err(|e| e.into());
+    result
 }
 
 pub fn get_worker_shard() -> Principal {

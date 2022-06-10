@@ -12,7 +12,7 @@ use enoki_exchange_shared::has_token_info::AssignedShards;
 use enoki_exchange_shared::is_owned;
 use enoki_exchange_shared::types::*;
 
-use crate::liquidity::{get_liquidity_location, init_broker_lp};
+use crate::liquidity::{self, get_liquidity_location, init_broker_lp};
 
 pub fn assert_is_broker_contract() -> Result<()> {
     if STATE.with(|s| s.borrow().brokers.contains_key(&ic_cdk::caller())) {
@@ -97,18 +97,21 @@ async fn add_broker(broker: Principal) -> Result<()> {
     let token_info = has_token_info::get_token_info();
     let token_a = token_info.token_a.principal;
     let token_b = token_info.token_b.principal;
-    let response: Result<(AssignedShards,)> = ic_cdk::call(
-        broker,
-        "initBroker",
-        (token_info, get_liquidity_location()),
-    )
-    .await
-    .map_err(|e| e.into());
+    let response: Result<(AssignedShards,)> =
+        ic_cdk::call(broker, "initBroker", (token_info, get_liquidity_location()))
+            .await
+            .map_err(|e| e.into());
     let assigned = response?.0;
     STATE.with(|s| s.borrow_mut().brokers.insert(broker, Broker { id: broker }));
     register_user(broker, token_a, assigned.token_a);
     register_user(broker, token_b, assigned.token_b);
     init_broker_lp(broker);
+
+    let result: Result<()> = ic_cdk::call(liquidity::get_pool_contract(), "addBroker", (broker,))
+        .await
+        .map_err(|e| e.into());
+    result?;
+
     Ok(())
 }
 
