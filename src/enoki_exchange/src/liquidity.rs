@@ -166,9 +166,8 @@ fn apply_changes(changes: &HashMap<Principal, ResponseAboutLiquidityChanges>) {
     })
 }
 
-pub fn export_stable_storage() -> (LiquidityState,) {
-    let data = STATE.with(|s| s.take());
-    (data,)
+pub fn export_stable_storage() -> LiquidityState {
+    STATE.with(|s| s.take())
 }
 
 pub fn import_stable_storage(data: LiquidityState) {

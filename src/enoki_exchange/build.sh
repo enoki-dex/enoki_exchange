@@ -1,0 +1,1 @@
+cargo run --bin "enoki_exchange" > "$(dirname "$0")"/enoki_exchange.did

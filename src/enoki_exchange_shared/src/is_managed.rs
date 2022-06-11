@@ -5,7 +5,7 @@ use ic_cdk_macros::*;
 
 use crate::types::*;
 
-#[derive(Deserialize, CandidType, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
 pub struct ManagementData {
     pub manager: Principal,
 }
@@ -60,9 +60,8 @@ fn set_owner(new_owner: Principal) -> Result<()> {
     })
 }
 
-pub fn export_stable_storage() -> (ManagementData,) {
-    let data: ManagementData = STATE.with(|b| b.take());
-    (data,)
+pub fn export_stable_storage() -> ManagementData {
+    STATE.with(|b| b.take())
 }
 
 pub fn import_stable_storage(data: ManagementData) {

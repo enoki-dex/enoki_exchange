@@ -36,21 +36,22 @@ pub use exchange_tokens::exchange_tokens;
 pub use swap_tokens::send_swap_tokens;
 pub use fees::charge_deposit_fee;
 pub use market_maker_extra_rewards::{add_reward, distribute_market_maker_rewards};
+pub use fees::{AccruedFees, import_stable_storage as import_stable_storage_fees, export_stable_storage as export_stable_storage_fees};
 use crate::payoffs::market_maker_extra_rewards::MarketMakerAccruedExtraRewards;
 
 thread_local! {
     static STATE: RefCell<PayoffsState> = RefCell::new(PayoffsState::default());
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
-struct PayoffsState {
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
+pub struct PayoffsState {
     pending_transfers: PendingTransfers,
     failed_exchanges: Vec<TokenExchangeInfo>,
     broker_assigned_shards: HashMap<(Principal, EnokiToken), Principal>,
     market_maker_pending_rewards: MarketMakerAccruedExtraRewards,
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct PendingTransfers {
     last_id: u64,
     pending: HashMap<u64, TransferPair>,
@@ -75,21 +76,21 @@ pub struct PendingTransfer {
     amount: Nat,
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
 struct TransferPair {
     waiting_on: TransferInfo,
     next_transfer: TransferInfo,
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
 struct TransferInfo {
     broker: Principal,
     token: EnokiToken,
     to: Principal,
-    amount: Nat,
+    amount: StableNat,
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
 struct TokenExchangeInfo {
     local_user: TransferInfo,
     other_user: TransferInfo,
@@ -172,7 +173,7 @@ async fn funds_sent(notification: ShardedTransferNotification) {
         "recipient not the same as expected"
     );
     assert_eq!(
-        waiting_on.amount,
+        waiting_on.amount.0,
         notification.value + notification.fee_charged,
         "amount received not the same as expected"
     );
@@ -191,4 +192,11 @@ async fn funds_sent(notification: ShardedTransferNotification) {
 }
 
 
+pub fn export_stable_storage() -> PayoffsState {
+    let data = STATE.with(|s| s.take());
+    data
+}
 
+pub fn import_stable_storage(data: PayoffsState) {
+    STATE.with(|s| s.replace(data));
+}

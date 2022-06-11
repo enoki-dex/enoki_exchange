@@ -10,7 +10,6 @@ use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
 use enoki_exchange_shared::has_token_info::AssignedShards;
 use enoki_exchange_shared::has_trading_fees::TradingFees;
 use enoki_exchange_shared::is_owned;
-use enoki_exchange_shared::is_owned::assert_is_owner;
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::{has_token_info, has_trading_fees};
 
@@ -24,12 +23,12 @@ pub fn assert_is_broker_contract() -> Result<()> {
     }
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
 pub struct Broker {
     pub id: Principal,
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct BrokerState {
     pub brokers: HashMap<Principal, Broker>,
 }
@@ -103,6 +102,7 @@ async fn add_broker(broker: Principal) -> Result<()> {
         broker,
         "initBroker",
         (
+            get_broker_ids(),
             token_info,
             get_liquidity_location(),
             has_trading_fees::get_trading_fees(),
@@ -111,6 +111,7 @@ async fn add_broker(broker: Principal) -> Result<()> {
     .await
     .map_err(|e| e.into());
     let assigned = response?.0;
+    let _result: Vec<()> = foreach_broker("addBroker", |_| (broker,)).await?;
     STATE.with(|s| s.borrow_mut().brokers.insert(broker, Broker { id: broker }));
     register_user(broker, token_a, assigned.token_a);
     register_user(broker, token_b, assigned.token_b);
@@ -128,9 +129,8 @@ pub fn get_broker_shard(broker: Principal, token: &EnokiToken) -> Result<Princip
     get_user_shard(broker, has_token_info::get_token_address(token))
 }
 
-pub fn export_stable_storage() -> (BrokerState,) {
-    let data: BrokerState = STATE.with(|b| b.take());
-    (data,)
+pub fn export_stable_storage() -> BrokerState {
+    STATE.with(|b| b.take())
 }
 
 pub fn import_stable_storage(data: BrokerState) {
@@ -146,7 +146,7 @@ async fn set_fees(
     swap_fee: f64,
     swap_market_maker_reward: f64,
 ) {
-    assert_is_owner().unwrap();
+    is_owned::assert_is_owner().unwrap();
     has_trading_fees::init_fee_info(TradingFees {
         token_a_deposit_fee: token_a_deposit_fee.into(),
         token_b_deposit_fee: token_b_deposit_fee.into(),

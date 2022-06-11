@@ -30,8 +30,8 @@ thread_local! {
     static STATE: RefCell<AccruedFees> = RefCell::new(AccruedFees::default());
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
-struct AccruedFees {
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
+pub struct AccruedFees {
     deposit_fees: LiquidityAmount,
     token_a_transfer_fee: Option<StableNat>,
     token_b_transfer_fee: Option<StableNat>,
@@ -118,4 +118,13 @@ async fn update_upstream_token_fee(token: &EnokiToken) -> Result<()> {
 #[candid_method(query, rename = "getAccruedFees")]
 fn get_accrued_fees() -> LiquidityAmount {
     STATE.with(|s| s.borrow().deposit_fees.clone())
+}
+
+pub fn export_stable_storage() -> AccruedFees {
+    let data = STATE.with(|s| s.take());
+    data
+}
+
+pub fn import_stable_storage(data: AccruedFees) {
+    STATE.with(|s| s.replace(data));
 }

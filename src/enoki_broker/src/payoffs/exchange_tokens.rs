@@ -83,7 +83,7 @@ pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {
                             broker: ic_cdk::id(),
                             token: EnokiToken::TokenA,
                             to: order_info.user,
-                            amount: market_maker.quantity.0.clone(),
+                            amount: market_maker.quantity.clone(),
                         },
                         other_user: TransferInfo {
                             broker: market_maker.broker,
@@ -92,7 +92,7 @@ pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {
                             amount: plus_fees(has_token_info::quant_a_to_quant_b(
                                 market_maker.quantity.0.clone(),
                                 market_maker.price,
-                            )?)?,
+                            )?)?.into(),
                         },
                     }),
                     Side::Sell => Ok(TokenExchangeInfo {
@@ -103,13 +103,13 @@ pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {
                             amount: plus_fees(has_token_info::quant_b_to_quant_a(
                                 market_maker.quantity.0.clone(),
                                 market_maker.price,
-                            )?)?,
+                            )?)?.into(),
                         },
                         local_user: TransferInfo {
                             broker: ic_cdk::id(),
                             token: EnokiToken::TokenB,
                             to: order_info.user,
-                            amount: market_maker.quantity.0.clone(),
+                            amount: market_maker.quantity.clone(),
                         },
                     }),
                 })
@@ -165,7 +165,7 @@ async fn execute_exchange(exchange: TokenExchangeInfo) -> Result<()> {
         PendingTransfer {
             to: other_user.to,
             token: other_user.token,
-            amount: other_user.amount,
+            amount: other_user.amount.into(),
         },
     )
     .await

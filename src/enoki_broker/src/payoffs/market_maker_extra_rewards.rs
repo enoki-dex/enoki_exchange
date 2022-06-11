@@ -31,7 +31,7 @@ use crate::payoffs::{
     get_assigned_shard_for_broker, get_broker_assigned_shard, with_pending_market_maker_rewards,
 };
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct MarketMakerAccruedExtraRewards {
     local_rewards: HashMap<Principal, LiquidityAmount>,
     other_broker_rewards: HashMap<Principal, HashMap<Principal, LiquidityAmount>>,

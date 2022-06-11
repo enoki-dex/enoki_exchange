@@ -13,6 +13,7 @@ use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::has_token_info::{
     get_assigned_shard, get_assigned_shards, price_in_b_float_to_u64, AssignedShards,
 };
+use enoki_exchange_shared::is_managed::assert_is_manager;
 use enoki_exchange_shared::types::*;
 
 thread_local! {
@@ -27,11 +28,26 @@ pub fn assert_is_broker(principal: Principal) -> Result<()> {
     }
 }
 
-pub fn add_broker(principal: Principal) {
+#[update(name = "addBroker")]
+#[candid_method(update, rename = "addBroker")]
+fn add_broker(principal: Principal) {
+    assert_is_manager().unwrap();
     STATE.with(|s| s.borrow_mut().other_brokers.insert(principal));
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
-struct BrokersState {
+pub fn init_brokers(brokers: Vec<Principal>) {
+    STATE.with(|s| s.borrow_mut().other_brokers.extend(brokers));
+}
+
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
+pub struct BrokersState {
     other_brokers: HashSet<Principal>,
+}
+
+pub fn export_stable_storage() -> BrokersState {
+    STATE.with(|s| s.take())
+}
+
+pub fn import_stable_storage(data: BrokersState) {
+    STATE.with(|s| s.replace(data));
 }

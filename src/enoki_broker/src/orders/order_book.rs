@@ -13,7 +13,7 @@ use enoki_exchange_shared::has_token_info::{
 };
 use enoki_exchange_shared::types::*;
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct OrderBook {
     last_id: u64,
     orders: HashMap<u64, OrderInfo>,

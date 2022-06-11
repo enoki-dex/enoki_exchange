@@ -32,12 +32,11 @@ thread_local! {
     static STATE: RefCell<LiquidityState> = RefCell::new(LiquidityState::default());
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct LiquidityState {
     bid_ask: AggregateBidAsk,
     available_liquidity: LiquidityAmount,
     liquidity_traded: LiquidityTrades,
-    id: Nat,
 }
 
 pub fn update_liquidity_target(

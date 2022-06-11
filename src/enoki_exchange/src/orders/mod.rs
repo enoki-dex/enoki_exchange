@@ -32,3 +32,11 @@ pub fn match_orders(
             .match_orders(new_orders, orders_to_cancel)
     })
 }
+
+pub fn export_stable_storage() -> OrdersState {
+    STATE.with(|s| s.take())
+}
+
+pub fn import_stable_storage(data: OrdersState) {
+    STATE.with(|s| s.replace(data));
+}

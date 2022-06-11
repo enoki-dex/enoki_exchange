@@ -4,6 +4,7 @@ use ic_cdk_macros::*;
 mod main_pool;
 mod liquidity;
 mod heartbeat;
+mod upgrade;
 
 use enoki_exchange_shared::is_managed;
 #[allow(unused_imports)]

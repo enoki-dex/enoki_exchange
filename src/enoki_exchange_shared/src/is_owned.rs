@@ -5,7 +5,7 @@ use ic_cdk_macros::*;
 
 use crate::types::*;
 
-#[derive(Deserialize, CandidType, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
 pub struct OwnershipData {
     pub owner: Principal,
     pub deploy_time: u64,
@@ -58,9 +58,8 @@ fn set_owner(new_owner: Principal) -> Result<()> {
     })
 }
 
-pub fn export_stable_storage() -> (OwnershipData,) {
-    let data: OwnershipData = STATE.with(|b| b.take());
-    (data,)
+pub fn export_stable_storage() -> OwnershipData {
+    STATE.with(|b| b.take())
 }
 
 pub fn import_stable_storage(data: OwnershipData) {

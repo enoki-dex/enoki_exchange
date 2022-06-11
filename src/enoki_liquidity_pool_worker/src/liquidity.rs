@@ -21,8 +21,8 @@ thread_local! {
     static STATE: RefCell<LiquidityState> = RefCell::new(LiquidityState::default());
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
-struct LiquidityState {
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
+pub struct LiquidityState {
     locked: bool,
     pool: LiquidityPool,
     earnings_pending: Vec<(Principal, TokenAmount)>,
@@ -295,4 +295,12 @@ async fn remove_liquidity(amount: LiquidityAmount) -> Result<()> {
     let from = ic_cdk::caller();
 
     STATE.with(|s| s.borrow_mut().pool.user_remove_liquidity(from, amount))
+}
+
+pub fn export_stable_storage() -> LiquidityState {
+    STATE.with(|s| s.take())
+}
+
+pub fn import_stable_storage(data: LiquidityState) {
+    STATE.with(|s| s.replace(data));
 }

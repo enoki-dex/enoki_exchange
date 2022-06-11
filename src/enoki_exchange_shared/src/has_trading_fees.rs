@@ -18,9 +18,8 @@ thread_local! {
     static STATE: RefCell<TradingFees> = RefCell::new(TradingFees::default());
 }
 
-pub fn export_stable_storage() -> (TradingFees,) {
-    let data = STATE.with(|s| s.take());
-    (data,)
+pub fn export_stable_storage() -> TradingFees {
+    STATE.with(|s| s.take())
 }
 
 pub fn import_stable_storage(data: TradingFees) {

@@ -54,37 +54,29 @@ impl Default for AssignedShards {
     }
 }
 
-#[derive(Default)]
-struct State {
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Default)]
+pub struct TokenInfoState {
     token_info: TokenPairInfo,
     assigned_shards: AssignedShards,
 }
 
 thread_local! {
-    static STATE: RefCell<State> = RefCell::new(State::default());
+    static STATE: RefCell<TokenInfoState> = RefCell::new(TokenInfoState::default());
 }
 
-pub fn export_stable_storage() -> (TokenPairInfo, AssignedShards) {
-    let State {
-        token_info,
-        assigned_shards,
-    } = STATE.with(|s| s.take());
-    (token_info, assigned_shards)
+pub fn export_stable_storage() -> TokenInfoState {
+    let data = STATE.with(|s| s.take());
+    data
 }
 
-pub fn import_stable_storage(token_info: TokenPairInfo, assigned_shards: AssignedShards) {
-    STATE.with(|s| {
-        s.replace(State {
-            token_info,
-            assigned_shards,
-        })
-    });
+pub fn import_stable_storage(data: TokenInfoState) {
+    STATE.with(|s| s.replace(data));
 }
 
 pub async fn init_token_info(token_info: TokenPairInfo) -> Result<()> {
     let (token_a, token_b) = register_tokens(&token_info).await?;
     STATE.with(|s| {
-        s.replace(State {
+        s.replace(TokenInfoState {
             token_info,
             assigned_shards: AssignedShards { token_a, token_b },
         })
@@ -131,6 +123,8 @@ pub fn get_token_address(token: &EnokiToken) -> Principal {
     STATE.with(|s| s.borrow().token_info.get(token).principal)
 }
 
+#[query(name = "getAssignedShards")]
+#[candid_method(query, rename = "getAssignedShards")]
 pub fn get_assigned_shards() -> AssignedShards {
     STATE.with(|s| s.borrow().assigned_shards.clone())
 }
@@ -147,9 +141,9 @@ pub fn price_in_b_float_to_u64(value: f64) -> Result<u64> {
         let s = s.borrow();
         let num_decimals = s.token_info.price_number_of_decimals;
         let value_int = (value * 10f64.pow(num_decimals as f64)) as u64;
-        if (value_int as f64) != value {
-            return Err(TxError::IntUnderflow);
-        }
+        // if (value_int as f64) / 10f64.pow(num_decimals as f64) != value {
+        //     return Err(TxError::IntUnderflow);
+        // }
         Ok(value_int)
     })
 }

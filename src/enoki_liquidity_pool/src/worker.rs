@@ -8,6 +8,7 @@ use ic_cdk_macros::*;
 use enoki_exchange_shared::is_owned;
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::{has_token_info, is_managed};
+use enoki_exchange_shared::has_token_info::AssignedShards;
 
 pub fn assert_is_worker_contract() -> Result<()> {
     if STATE.with(|s| s.borrow().worker_id == ic_cdk::caller()) {
@@ -17,7 +18,7 @@ pub fn assert_is_worker_contract() -> Result<()> {
     }
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
 pub struct WorkerContractData {
     pub worker_id: Principal,
     pub worker_shard: Principal,
@@ -74,9 +75,8 @@ pub fn get_worker_shard() -> Principal {
     STATE.with(|s| s.borrow().worker_shard)
 }
 
-pub fn export_stable_storage() -> (WorkerContractData,) {
-    let data: WorkerContractData = STATE.with(|b| b.take());
-    (data,)
+pub fn export_stable_storage() -> WorkerContractData {
+    STATE.with(|b| b.take())
 }
 
 pub fn import_stable_storage(data: WorkerContractData) {

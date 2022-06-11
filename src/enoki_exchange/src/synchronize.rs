@@ -85,9 +85,8 @@ async fn do_run() -> Result<()> {
     Ok(())
 }
 
-pub fn export_stable_storage() -> (RunningState,) {
-    let data = STATE.with(|s| s.take());
-    (data,)
+pub fn export_stable_storage() -> RunningState {
+    STATE.with(|s| s.take())
 }
 
 pub fn import_stable_storage(data: RunningState) {

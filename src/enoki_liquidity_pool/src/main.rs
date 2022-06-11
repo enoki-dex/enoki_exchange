@@ -17,6 +17,7 @@ use worker::WorkerContractData;
 
 mod liquidity;
 mod worker;
+mod upgrade;
 
 #[init]
 #[candid_method(init)]

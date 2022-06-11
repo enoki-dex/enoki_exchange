@@ -35,8 +35,8 @@ thread_local! {
     static STATE: RefCell<OrdersState> = RefCell::new(OrdersState::default());
 }
 
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
-struct OrdersState {
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
+pub struct OrdersState {
     order_book: OrderBook,
     order_history: OrderHistory,
     failed_orders: Vec<Order>,
@@ -115,4 +115,12 @@ fn get_open_orders(user: Principal) -> OpenOrderStatus {
 #[candid_method(query, rename = "getPastOrders")]
 fn get_past_orders(user: Principal) -> Vec<Order> {
     STATE.with(|s| s.borrow().order_history.get_past_orders(user))
+}
+
+pub fn export_stable_storage() -> OrdersState {
+    STATE.with(|s| s.take())
+}
+
+pub fn import_stable_storage(data: OrdersState) {
+    STATE.with(|s| s.replace(data));
 }

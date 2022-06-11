@@ -31,9 +31,8 @@ thread_local! {
     static STATE: RefCell<ShardedUserState> = RefCell::new(Default::default());
 }
 
-pub fn export_stable_storage() -> (ShardedUserState,) {
-    let data: ShardedUserState = STATE.with(|b| b.take());
-    (data,)
+pub fn export_stable_storage() -> ShardedUserState {
+    STATE.with(|b| b.take())
 }
 
 pub fn import_stable_storage(data: ShardedUserState) {

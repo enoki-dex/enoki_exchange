@@ -14,6 +14,7 @@ mod heartbeat;
 mod liquidity;
 mod orders;
 mod synchronize;
+mod upgrade;
 
 #[init]
 #[candid_method(init)]

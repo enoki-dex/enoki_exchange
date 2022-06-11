@@ -22,9 +22,8 @@ thread_local! {
     static STATE: RefCell<PooledAmounts> = RefCell::new(PooledAmounts::default());
 }
 
-pub fn export_stable_storage() -> (PooledAmounts,) {
-    let data: PooledAmounts = STATE.with(|b| b.take());
-    (data,)
+pub fn export_stable_storage() -> PooledAmounts {
+    STATE.with(|b| b.take())
 }
 
 pub fn import_stable_storage(data: PooledAmounts) {
