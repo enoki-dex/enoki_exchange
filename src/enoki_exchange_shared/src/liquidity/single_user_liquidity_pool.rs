@@ -97,7 +97,7 @@ impl SingleUserLiquidityPool {
     }
     pub fn apply_traded(
         &mut self,
-        traded: &LiquidityTrades
+        traded: &LiquidityTrades,
     ) {
         self.liquidity.add_assign(traded.increased.clone());
         self.liquidity.sub_assign(traded.decreased.clone());

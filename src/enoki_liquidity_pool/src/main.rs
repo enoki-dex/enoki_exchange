@@ -6,7 +6,7 @@ use ic_cdk_macros::*;
 
 use enoki_exchange_shared::{is_managed, is_owned};
 #[allow(unused_imports)]
-use enoki_exchange_shared::{has_token_info, has_token_info::TokenInfo, types::*};
+use enoki_exchange_shared::{has_token_info, has_token_info::{AssignedShards, TokenPairInfo}, has_trading_fees::TradingFees, types::*};
 #[allow(unused_imports)]
 use enoki_exchange_shared::is_managed::ManagementData;
 #[allow(unused_imports)]
@@ -17,10 +17,11 @@ use worker::WorkerContractData;
 mod liquidity;
 mod worker;
 mod upgrade;
+mod shared_candid_methods;
 
 #[init]
 #[candid_method(init)]
-async fn init(owner: Principal, exchange: Principal) {
+fn init(owner: Principal, exchange: Principal) {
     is_owned::init_owner(OwnershipData {
         owner,
         deploy_time: ic_cdk::api::time(),

@@ -1,8 +1,11 @@
 # enoki_exchange
 
-Welcome to your new enoki_exchange project and to the internet computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
+Welcome to your new enoki_exchange project and to the internet computer development community. By default, creating a
+new project adds this README and some template files to your project directory. You can edit these template files to
+customize your project and to include your own code to speed up the development cycle.
 
-To get started, you might want to explore the project directory structure and the default configuration file. Working with this project in your development environment will not affect any production deployment or identity tokens.
+To get started, you might want to explore the project directory structure and the default configuration file. Working
+with this project in your development environment will not affect any production deployment or identity tokens.
 
 To learn more before you start working with enoki_exchange, see the following documentation available online:
 
@@ -42,4 +45,5 @@ Once the job completes, your application will be available at `http://localhost:
 - keep history of swaps
 - make the token balances states easier to follow
 - bulk transfer liquidity from LP worker to broker canisters to decentralize liquidity location among subnets
-- upgrade `swap` calls with insufficient liquidity to market orders on the main exchange? Or just keep it as it is, returning an error telling the user to use the "Trade" tab.
+- upgrade `swap` calls with insufficient liquidity to market orders on the main exchange? Or just keep it as it is,
+  returning an error telling the user to use the "Trade" tab.

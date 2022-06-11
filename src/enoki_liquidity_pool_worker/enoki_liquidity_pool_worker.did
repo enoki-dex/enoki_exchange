@@ -30,10 +30,19 @@ type TxError = variant {
 };
 service : (principal, principal) -> {
   addBroker : (principal) -> (Result);
-  addLiquidity : (ShardedTransferNotification) -> (Result);
+  addLiquidity : (ShardedTransferNotification) -> ();
+  getAssignedShardA : () -> (principal) query;
+  getAssignedShardB : () -> (principal) query;
+  getAssignedShards : () -> (AssignedShards) query;
   getLiquidity : (principal) -> (LiquidityAmount) query;
+  getManager : () -> (principal) query;
+  getOwner : () -> (principal) query;
   getShardsToAddLiquidity : () -> (AssignedShards) query;
+  getTokenInfo : () -> (TokenPairInfo) query;
   initWorker : (TokenPairInfo) -> (Result_1);
-  removeLiquidity : (LiquidityAmount) -> (Result);
+  removeAllLiquidity : () -> ();
+  removeLiquidity : (LiquidityAmount) -> ();
+  setManager : (principal) -> (Result);
+  setOwner : (principal) -> (Result);
   triggerHeartbeat : () -> (opt nat64);
 }

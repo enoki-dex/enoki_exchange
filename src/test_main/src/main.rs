@@ -1,10 +1,10 @@
-use enoki_exchange_shared::types::{OrderInput};
+use enoki_exchange_shared::types::OrderInput;
 
 fn main() {
     let order = OrderInput {
         allow_taker: true,
         limit_price_in_b: 1.32,
-        expiration_time: Some(3_000_000)
+        expiration_time: Some(3_000_000),
     };
 
     let json = serde_json::to_string(&order).unwrap();

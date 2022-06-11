@@ -1,11 +1,9 @@
 use candid::{Nat, Principal};
 use futures::FutureExt;
 
-use enoki_exchange_shared::has_sharded_users::{get_user_shard};
+use enoki_exchange_shared::has_sharded_users::get_user_shard;
 use enoki_exchange_shared::has_token_info;
-use enoki_exchange_shared::has_token_info::{
-    get_token_address,
-};
+use enoki_exchange_shared::has_token_info::get_token_address;
 use enoki_exchange_shared::has_trading_fees::get_limit_order_taker_fee;
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::nat_div_float;
@@ -41,9 +39,10 @@ pub async fn send_funds_internal(id: String, info: PendingTransfer) -> Result<()
             id,
         ),
     )
-    .await
-    .map_err(|e| e.into())
+        .await
+        .map_err(|e| e.into())
 }
+
 pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {
     let mut failed_orders: Vec<Order> = Vec::new();
     let plus_fees = |val: Nat| -> Result<Nat> {
@@ -120,7 +119,7 @@ async fn execute_exchanges(mut exchanges: Vec<TokenExchangeInfo>) {
                 }
             })
         }))
-        .await;
+            .await;
     let mut failed: Vec<_> = results.into_iter().filter_map(|r| r).collect();
     if !failed.is_empty() {
         with_failed_exchanges_mut(|f| f.append(&mut failed));
@@ -150,5 +149,5 @@ async fn execute_exchange(exchange: TokenExchangeInfo) -> Result<()> {
             amount: other_user.amount.into(),
         },
     )
-    .await
+        .await
 }

@@ -1,12 +1,12 @@
 use std::cell::RefCell;
 
-use candid::{CandidType};
+use candid::CandidType;
 
 use enoki_exchange_shared::liquidity::ResponseAboutLiquidityChanges;
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::flat_map_vecs;
 
-use crate::brokers::{foreach_broker, foreach_broker_map};
+use crate::brokers::{foreach_broker, foreach_broker_map, get_broker_ids};
 use crate::liquidity;
 use crate::liquidity::update_committed_broker_liquidity;
 use crate::orders::match_orders;
@@ -40,16 +40,26 @@ pub async fn run() {
         return;
     }
 
+    ic_cdk::api::print("start exchange run");
     let result = do_run().await;
-
-    if let Err(error) = result {
-        ic_cdk::api::print(format!("error with run: {:?}", error));
-    }
+    ic_cdk::api::print(format!(
+        "end exchange run {}",
+        match result {
+            Ok(_) => "OK".to_string(),
+            Err(err) => format!("with ERR: {:?}", err),
+        }
+    ));
+    // if let Err(error) = result {
+    //     ic_cdk::api::print(format!("error with run: {:?}", error));
+    // }
 
     STATE.with(|s| s.borrow_mut().unlock());
 }
 
 async fn do_run() -> Result<()> {
+    if get_broker_ids().is_empty() {
+        return Ok(());
+    }
     let proposed_liquidity_target_for_brokers =
         liquidity::get_updated_liquidity_from_pool().await?;
 
@@ -73,9 +83,9 @@ async fn do_run() -> Result<()> {
                 proposed_liquidity_target_for_brokers.clone(),
             )
         },
-        |res: (ResponseAboutLiquidityChanges,)| res.0,
+        |res: (ResponseAboutLiquidityChanges, )| res.0,
     )
-    .await?;
+        .await?;
 
     update_committed_broker_liquidity(changes_in_liquidity_by_broker).await?;
 

@@ -18,7 +18,7 @@ impl From<StableNat> for Nat {
 }
 
 impl FromIterator<TokenAmount> for LiquidityAmount {
-    fn from_iter<T: IntoIterator<Item = TokenAmount>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item=TokenAmount>>(iter: T) -> Self {
         let mut result = Self::default();
         for item in iter {
             match item.token {
@@ -141,7 +141,7 @@ impl Div for StableNat {
 }
 
 impl Sum for StableNat {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+    fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
         iter.fold(Default::default(), |mut sum, next| {
             sum.add_assign(next);
             sum

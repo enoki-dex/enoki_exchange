@@ -1,7 +1,6 @@
-
 use candid::{Nat, Principal};
 
-use enoki_exchange_shared::has_sharded_users::{get_user_shard};
+use enoki_exchange_shared::has_sharded_users::get_user_shard;
 use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::types::*;
 
@@ -20,7 +19,7 @@ pub async fn send_swap_tokens(
         "shardSpend",
         (lp_location, user_shard, user, amount_to_send),
     )
-    .await
-    .map_err(|e| e.into());
+        .await
+        .map_err(|e| e.into());
     result
 }

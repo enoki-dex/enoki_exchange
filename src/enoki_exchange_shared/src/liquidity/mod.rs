@@ -1,5 +1,4 @@
-
-use candid::{CandidType};
+use candid::CandidType;
 
 use crate::types::*;
 

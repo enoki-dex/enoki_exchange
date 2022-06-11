@@ -99,9 +99,16 @@ service : (principal, principal) -> {
   fundsSent : (ShardedTransferNotification) -> ();
   getAccruedFees : () -> (LiquidityAmount) query;
   getAssignedShard : (EnokiToken) -> (principal) query;
+  getAssignedShardA : () -> (principal) query;
+  getAssignedShardB : () -> (principal) query;
+  getAssignedShards : () -> (AssignedShards) query;
   getFailedOrders : () -> (vec Order) query;
+  getManager : () -> (principal) query;
   getOpenOrders : (principal) -> (OpenOrderStatus) query;
+  getOwner : () -> (principal) query;
   getPastOrders : (principal) -> (vec Order) query;
+  getTokenInfo : () -> (TokenPairInfo) query;
+  getTradingFees : () -> (TradingFees) query;
   initBroker : (vec principal, TokenPairInfo, principal, TradingFees) -> (
       Result,
     );
@@ -110,6 +117,8 @@ service : (principal, principal) -> {
   retrieveOrders : () -> (vec OrderInfo, vec OrderInfo);
   sendFunds : (text, PendingTransfer) -> (Result_1);
   setFees : (TradingFees) -> ();
+  setManager : (principal) -> (Result_1);
+  setOwner : (principal) -> (Result_1);
   submitCompletedOrders : (
       vec Order,
       AggregateBidAsk,

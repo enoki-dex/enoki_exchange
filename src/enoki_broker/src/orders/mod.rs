@@ -1,10 +1,10 @@
-use std::cell::{RefCell};
+use std::cell::RefCell;
 
 use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
-use enoki_exchange_shared::is_managed::{assert_is_manager};
+use enoki_exchange_shared::is_managed::assert_is_manager;
 use enoki_exchange_shared::liquidity::{
     RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
 };

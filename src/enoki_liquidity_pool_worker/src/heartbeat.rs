@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use candid::{candid_method};
+use candid::candid_method;
 use ic_cdk_macros::*;
 
 use crate::liquidity::update_liquidity_with_manager;
@@ -21,7 +21,8 @@ struct AntiSpam {
 }
 
 impl AntiSpam {
-    const UPDATE_INTERVAL: u64 = 3 * 1_000_000_000; // 3 seconds
+    const UPDATE_INTERVAL: u64 = 3 * 1_000_000_000;
+    // 3 seconds
     pub fn try_lock(&mut self) -> bool {
         let now = ic_cdk::api::time();
         if self.last_update < now - Self::UPDATE_INTERVAL {

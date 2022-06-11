@@ -50,7 +50,7 @@ pub async fn foreach_broker<
         ids.into_iter()
             .map(|id| ic_cdk::call(id, method, args_getter(id))),
     )
-    .await;
+        .await;
     responses
         .into_iter()
         .collect::<std::result::Result<Vec<R>, _>>()
@@ -98,7 +98,7 @@ async fn add_broker(broker: Principal) -> Result<()> {
     let token_info = has_token_info::get_token_info();
     let token_a = token_info.token_a.principal;
     let token_b = token_info.token_b.principal;
-    let response: Result<(AssignedShards,)> = ic_cdk::call(
+    let response: Result<(AssignedShards, )> = ic_cdk::call(
         broker,
         "initBroker",
         (
@@ -108,16 +108,16 @@ async fn add_broker(broker: Principal) -> Result<()> {
             has_trading_fees::get_trading_fees(),
         ),
     )
-    .await
-    .map_err(|e| e.into());
+        .await
+        .map_err(|e| e.into());
     let assigned = response?.0;
-    let _result: Vec<()> = foreach_broker("addBroker", |_| (broker,)).await?;
+    let _result: Vec<()> = foreach_broker("addBroker", |_| (broker, )).await?;
     STATE.with(|s| s.borrow_mut().brokers.insert(broker, Broker { id: broker }));
     register_user(broker, token_a, assigned.token_a);
     register_user(broker, token_b, assigned.token_b);
     init_broker_lp(broker);
 
-    let result: Result<()> = ic_cdk::call(liquidity::get_pool_contract(), "addBroker", (broker,))
+    let result: Result<()> = ic_cdk::call(liquidity::get_pool_contract(), "addBroker", (broker, ))
         .await
         .map_err(|e| e.into());
     result?;
@@ -156,7 +156,7 @@ async fn set_fees(
         swap_market_maker_reward,
     });
     let data = has_trading_fees::get_trading_fees();
-    let _result: Vec<()> = foreach_broker("setFees", |_| (data.clone(),))
+    let _result: Vec<()> = foreach_broker("setFees", |_| (data.clone(), ))
         .await
         .unwrap();
 }

@@ -1,4 +1,4 @@
-use std::cell::{RefCell};
+use std::cell::RefCell;
 use std::ops::{AddAssign, Div, Mul, SubAssign};
 
 use candid::{candid_method, CandidType, Nat, Principal};
@@ -26,14 +26,6 @@ pub struct LiquidityState {
     rounding_error: LiquidityTrades, //TODO: send these to the accrued fees / use fees to pay for these
 }
 
-#[query(name = "getLiquidity")]
-#[candid_method(query, rename = "getLiquidity")]
-fn get_liquidity(user: Principal) -> LiquidityAmount {
-    STATE
-        .with(|s| s.borrow().pool.get_user_liquidity(user))
-        .unwrap_or_default()
-}
-
 pub async fn update_liquidity_with_manager() {
     if STATE.with(|s| {
         let s = s.borrow();
@@ -50,16 +42,16 @@ pub async fn update_liquidity_with_manager() {
             s.pool.count_locked_remove_liquidity(),
         )
     });
-    let response: Result<(Result<(LiquidityAmount, LiquidityAmount, LiquidityTrades)>,)> =
+    let response: Result<(Result<(LiquidityAmount, LiquidityAmount, LiquidityTrades)>, )> =
         ic_cdk::call(
             get_manager(),
             "updateLiquidity",
             (pending_add, pending_remove),
         )
-        .await
-        .map_err(|e| e.into());
+            .await
+            .map_err(|e| e.into());
     let final_result: Result<Vec<(Principal, TokenAmount)>> = match response {
-        Ok((Ok((added, removed, traded)),)) => STATE.with(|s| {
+        Ok((Ok((added, removed, traded)), )) => STATE.with(|s| {
             let mut s = s.borrow_mut();
             s.locked = false;
             apply_traded(traded, &mut s.pool);
@@ -68,7 +60,7 @@ pub async fn update_liquidity_with_manager() {
             s.pool.remove_zeros();
             Ok(withdrawals)
         }),
-        Ok((Err(err),)) | Err(err) => {
+        Ok((Err(err), )) | Err(err) => {
             STATE.with(|s| {
                 let mut s = s.borrow_mut();
                 s.locked = false;
@@ -233,7 +225,7 @@ async fn distribute_withdrawals(mut withdrawals: Vec<(Principal, TokenAmount)>) 
             .into_iter()
             .map(|(user, withdrawal)| withdraw_for_user(user, withdrawal)),
     )
-    .await;
+        .await;
     STATE.with(|s| {
         s.borrow_mut()
             .earnings_pending
@@ -261,6 +253,14 @@ async fn withdraw_for_user(
     }
 }
 
+#[query(name = "getLiquidity")]
+#[candid_method(query, rename = "getLiquidity")]
+fn get_liquidity(user: Principal) -> LiquidityAmount {
+    STATE
+        .with(|s| s.borrow().pool.get_user_liquidity(user))
+        .unwrap_or_default()
+}
+
 #[query(name = "getShardsToAddLiquidity")]
 #[candid_method(query, rename = "getShardsToAddLiquidity")]
 async fn get_shards_to_add_liquidity() -> AssignedShards {
@@ -269,9 +269,9 @@ async fn get_shards_to_add_liquidity() -> AssignedShards {
 
 #[update(name = "addLiquidity")]
 #[candid_method(update, rename = "addLiquidity")]
-async fn add_liquidity(notification: ShardedTransferNotification) -> Result<()> {
+async fn add_liquidity(notification: ShardedTransferNotification) {
     assert_eq!(notification.to, ic_cdk::id());
-    let token = has_token_info::parse_from()?;
+    let token = has_token_info::parse_from().unwrap();
     let from = notification.from;
     register_user(
         from,
@@ -283,15 +283,20 @@ async fn add_liquidity(notification: ShardedTransferNotification) -> Result<()> 
         amount: notification.value.into(),
     };
     STATE.with(|s| s.borrow_mut().pool.user_add_liquidity(from, amount));
-    Ok(())
 }
 
 #[update(name = "removeLiquidity")]
 #[candid_method(update, rename = "removeLiquidity")]
-async fn remove_liquidity(amount: LiquidityAmount) -> Result<()> {
+async fn remove_liquidity(amount: LiquidityAmount) {
     let from = ic_cdk::caller();
 
-    STATE.with(|s| s.borrow_mut().pool.user_remove_liquidity(from, amount))
+    STATE.with(|s| s.borrow_mut().pool.user_remove_liquidity(from, amount)).unwrap();
+}
+
+#[update(name = "removeAllLiquidity")]
+#[candid_method(update, rename = "removeAllLiquidity")]
+async fn remove_all_liquidity() {
+    remove_liquidity(get_liquidity(ic_cdk::caller())).await;
 }
 
 pub fn export_stable_storage() -> LiquidityState {

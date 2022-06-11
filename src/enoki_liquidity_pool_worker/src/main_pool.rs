@@ -10,7 +10,8 @@ use enoki_exchange_shared::types::*;
 #[candid_method(update, rename = "initWorker")]
 async fn init_worker(supply_token_info: has_token_info::TokenPairInfo) -> Result<AssignedShards> {
     is_managed::assert_is_manager()?;
-    has_token_info::init_token_info(supply_token_info).await?;
+    has_token_info::start_init_token_info(supply_token_info);
+    has_token_info::finish_init_token_info().await?;
     Ok(has_token_info::get_assigned_shards())
 }
 

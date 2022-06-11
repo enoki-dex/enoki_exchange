@@ -7,3 +7,4 @@ OWNER="principal \"$(
 )\""
 
 yes yes | dfx canister install enoki_exchange --argument "($OWNER, principal \"$APP_TOKEN_A\", principal \"$APP_TOKEN_B\", $PRICE_NUMBER_OF_DECIMALS)" -m=reinstall
+dfx canister call enoki_exchange finishInit

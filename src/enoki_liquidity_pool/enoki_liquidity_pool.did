@@ -1,3 +1,4 @@
+type AssignedShards = record { token_a : principal; token_b : principal };
 type LiquidityAmount = record { token_a : nat; token_b : nat };
 type LiquidityTrades = record {
   decreased : LiquidityAmount;
@@ -14,6 +15,13 @@ type TokenPairInfo = record {
   token_b : TokenInfo;
   price_number_of_decimals : nat64;
 };
+type TradingFees = record {
+  limit_order_taker_fee : float64;
+  swap_market_maker_reward : float64;
+  swap_fee : float64;
+  token_a_deposit_fee : nat;
+  token_b_deposit_fee : nat;
+};
 type TxError = variant {
   IntOverflow;
   ParsingError : text;
@@ -28,10 +36,19 @@ type TxError = variant {
 };
 service : (principal, principal) -> {
   addBroker : (principal) -> (Result);
+  getAssignedShardA : () -> (principal) query;
+  getAssignedShardB : () -> (principal) query;
+  getAssignedShards : () -> (AssignedShards) query;
+  getManager : () -> (principal) query;
+  getOwner : () -> (principal) query;
+  getTokenInfo : () -> (TokenPairInfo) query;
+  getTradingFees : () -> (TradingFees) query;
   getUpdatedLiquidity : () -> (LiquidityAmount, LiquidityAmount);
   getWorker : () -> (principal) query;
   initLiquidityPool : (TokenPairInfo) -> (principal);
   initWorker : (principal) -> (Result);
   resolveLiquidity : (LiquidityAmount, LiquidityAmount, LiquidityTrades) -> ();
+  setManager : (principal) -> (Result);
+  setOwner : (principal) -> (Result);
   updateLiquidity : (LiquidityAmount, LiquidityAmount) -> (Result_1);
 }

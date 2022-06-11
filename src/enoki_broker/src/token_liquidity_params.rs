@@ -51,10 +51,11 @@ async fn init_broker(
 ) -> Result<AssignedShards> {
     is_managed::assert_is_manager()?;
     init_brokers(other_brokers);
-    has_token_info::init_token_info(supply_token_info).await?;
+    has_token_info::start_init_token_info(supply_token_info);
+    has_token_info::finish_init_token_info().await?;
     let assigned = has_token_info::get_assigned_shards();
 
-    let worker_assigned_shards: Result<(AssignedShards,)> =
+    let worker_assigned_shards: Result<(AssignedShards, )> =
         ic_cdk::call(liquidity_location, "getAssignedShards", ())
             .await
             .map_err(|e| e.into());

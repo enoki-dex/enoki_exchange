@@ -4,7 +4,7 @@ use ic_cdk_macros::*;
 #[allow(unused_imports)]
 use enoki_exchange_shared::{has_token_info, types::*};
 #[allow(unused_imports)]
-use enoki_exchange_shared::has_token_info::AssignedShards;
+use enoki_exchange_shared::has_token_info::{AssignedShards, TokenPairInfo};
 #[allow(unused_imports)]
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 use enoki_exchange_shared::is_managed;
@@ -18,6 +18,7 @@ mod main_pool;
 mod liquidity;
 mod heartbeat;
 mod upgrade;
+mod shared_candid_methods;
 
 #[init]
 #[candid_method(init)]

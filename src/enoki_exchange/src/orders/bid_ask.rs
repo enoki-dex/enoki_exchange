@@ -1,6 +1,6 @@
-use std::collections::{BTreeMap};
+use std::collections::BTreeMap;
 
-use candid::{CandidType};
+use candid::CandidType;
 
 use enoki_exchange_shared::types::*;
 

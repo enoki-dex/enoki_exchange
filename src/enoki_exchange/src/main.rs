@@ -1,10 +1,14 @@
 use candid::{candid_method, Principal};
+#[allow(unused_imports)]
+use candid::Nat;
 use ic_cdk_macros::*;
 
-#[allow(unused_imports)]
-use candid::{Nat};
 use enoki_exchange_shared::has_token_info::{self, TokenInfo, TokenPairInfo};
-use enoki_exchange_shared::is_owned::{self, OwnershipData};
+#[allow(unused_imports)]
+use enoki_exchange_shared::has_token_info::AssignedShards;
+#[allow(unused_imports)]
+use enoki_exchange_shared::has_trading_fees::TradingFees;
+use enoki_exchange_shared::is_owned::{self, assert_is_owner, OwnershipData};
 #[allow(unused_imports)]
 use enoki_exchange_shared::types::Result;
 
@@ -17,15 +21,11 @@ mod liquidity;
 mod orders;
 mod synchronize;
 mod upgrade;
+mod shared_candid_methods;
 
 #[init]
 #[candid_method(init)]
-async fn init(
-    owner: Principal,
-    token_a: Principal,
-    token_b: Principal,
-    price_number_of_decimals: u64,
-) {
+fn init(owner: Principal, token_a: Principal, token_b: Principal, price_number_of_decimals: u64) {
     is_owned::init_owner(OwnershipData {
         owner,
         deploy_time: ic_cdk::api::time(),
@@ -35,7 +35,14 @@ async fn init(
         token_b: TokenInfo { principal: token_b },
         price_number_of_decimals,
     };
-    has_token_info::init_token_info(token_info).await.unwrap();
+    has_token_info::start_init_token_info(token_info);
+}
+
+#[update(name = "finishInit")]
+#[candid_method(update, rename = "finishInit")]
+async fn finish_init() {
+    assert_is_owner().unwrap();
+    has_token_info::finish_init_token_info().await.unwrap();
 }
 
 #[cfg(any(target_arch = "wasm32", test))]

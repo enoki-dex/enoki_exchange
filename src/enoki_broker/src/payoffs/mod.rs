@@ -1,12 +1,12 @@
-use std::cell::{RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
 
 use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_sharded_users::{get_user_shard};
+use enoki_exchange_shared::has_sharded_users::get_user_shard;
+use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
-use enoki_exchange_shared::{has_token_info};
 use enoki_exchange_shared::types::*;
 pub use exchange_tokens::exchange_tokens;
 pub use fees::{AccruedFees, export_stable_storage as export_stable_storage_fees, import_stable_storage as import_stable_storage_fees};
@@ -87,7 +87,7 @@ async fn get_broker_assigned_shard(broker: Principal, token: EnokiToken) -> Resu
     let shard = if broker == ic_cdk::id() {
         has_token_info::get_assigned_shard(&token)
     } else {
-        let result: Result<(Principal,)> = ic_cdk::call(broker, "getAssignedShard", ())
+        let result: Result<(Principal, )> = ic_cdk::call(broker, "getAssignedShard", ())
             .await
             .map_err(|e| e.into());
         result?.0

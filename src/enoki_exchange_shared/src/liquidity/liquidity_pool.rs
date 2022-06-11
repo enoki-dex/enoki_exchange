@@ -130,7 +130,7 @@ impl LiquidityPool {
     }
     pub fn apply_traded(
         &mut self,
-        traded: &HashMap<Principal, LiquidityTrades>
+        traded: &HashMap<Principal, LiquidityTrades>,
     ) {
         for (user, liquidity) in self.liquidity.iter_mut() {
             if let Some(traded) = traded.get(user) {

@@ -47,8 +47,8 @@ pub struct ProposedLiquidityChanges {
 #[candid_method(update, rename = "initPool")]
 async fn init_pool(pool: Principal) {
     assert_is_owner().unwrap();
-    let response: Result<(Principal,)> =
-        ic_cdk::call(pool, "initLiquidityPool", (get_token_info(),))
+    let response: Result<(Principal, )> =
+        ic_cdk::call(pool, "initLiquidityPool", (get_token_info(), ))
             .await
             .map_err(|e| e.into());
     let worker = response.unwrap().0;
@@ -155,8 +155,8 @@ pub async fn update_committed_broker_liquidity(
         "resolveLiquidity",
         (added, removed, traded),
     )
-    .await
-    .map_err(|e| e.into());
+        .await
+        .map_err(|e| e.into());
     result
 }
 

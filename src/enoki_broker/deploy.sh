@@ -13,6 +13,6 @@ num_brokers=${NUMBER_OF_BROKERS:-2}
 while [ $i -le "$num_brokers" ]; do
   dfx build "${CANISTER_NAME}_$i"
   yes yes | dfx canister install "${CANISTER_NAME}_$i" --argument "($OWNER, $MANAGER_ID)" -m=reinstall
-  dfx canister call "$MANAGER_ID" "addBroker" "(principal \"$(dfx canister id "${CANISTER_NAME}_$i")\")"
+  dfx canister call enoki_exchange "addBroker" "(principal \"$(dfx canister id "${CANISTER_NAME}_$i")\")"
   true $((i++))
 done

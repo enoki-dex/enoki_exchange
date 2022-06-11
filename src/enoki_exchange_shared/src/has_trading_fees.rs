@@ -1,16 +1,19 @@
 use std::cell::RefCell;
 
-use candid::{candid_method, CandidType, Nat};
-use ic_cdk_macros::*;
+use candid::{CandidType, Nat};
 
 use crate::types::{EnokiToken, StableNat};
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct TradingFees {
-    pub token_a_deposit_fee: StableNat, // constant fee charged when swapping or submitting a limit order
-    pub token_b_deposit_fee: StableNat, // constant fee charged when swapping or submitting a limit order
-    pub limit_order_taker_fee: f64,     // as percentage of trade quantity (ex: 0.002)
-    pub swap_fee: f64,                  // as percentage of trade quantity (ex: 0.002)
+    pub token_a_deposit_fee: StableNat,
+    // constant fee charged when swapping or submitting a limit order
+    pub token_b_deposit_fee: StableNat,
+    // constant fee charged when swapping or submitting a limit order
+    pub limit_order_taker_fee: f64,
+    // as percentage of trade quantity (ex: 0.002)
+    pub swap_fee: f64,
+    // as percentage of trade quantity (ex: 0.002)
     pub swap_market_maker_reward: f64,  // as percentage of the swap fee (ex: 0.3)
 }
 
@@ -41,8 +44,6 @@ pub fn init_fee_info(data: TradingFees) {
     STATE.with(|s| s.replace(data));
 }
 
-#[query(name = "getTradingFees")]
-#[candid_method(query, rename = "getTradingFees")]
 pub fn get_trading_fees() -> TradingFees {
     STATE.with(|s| s.borrow().clone())
 }

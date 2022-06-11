@@ -1,8 +1,8 @@
 use std::cell::RefCell;
 
-use candid::{candid_method, CandidType, Principal};
-use ic_cdk_macros::*;
+use candid::{CandidType, Principal};
 
+use crate::is_owned::assert_is_owner;
 use crate::types::*;
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
@@ -24,10 +24,6 @@ pub fn init_manager(data: ManagementData) {
     });
 }
 
-pub fn get_manager() -> Principal {
-    STATE.with(|d| d.borrow().manager)
-}
-
 pub fn assert_is_manager() -> Result<()> {
     if STATE.with(|s| s.borrow().manager) == ic_cdk::caller() {
         Ok(())
@@ -40,24 +36,14 @@ thread_local! {
     static STATE: RefCell<ManagementData> = RefCell::new(ManagementData::default());
 }
 
-#[query(name = "getManagerContract")]
-#[candid_method(query, rename = "getManagerContract")]
-fn get_owner() -> Principal {
+pub fn get_manager() -> Principal {
     STATE.with(|d| d.borrow().manager)
 }
 
-#[update(name = "setManagerContract")]
-#[candid_method(update, rename = "setManagerContract")]
-fn set_owner(new_owner: Principal) -> Result<()> {
-    STATE.with(|d| {
-        let owner = &mut d.borrow_mut().manager;
-        if ic_cdk::caller() == *owner {
-            *owner = new_owner;
-            Ok(())
-        } else {
-            Err(TxError::Unauthorized)
-        }
-    })
+pub fn set_manager(new_manager: Principal) -> Result<()> {
+    assert_is_owner()?;
+    STATE.with(|d| d.borrow_mut().manager = new_manager);
+    Ok(())
 }
 
 pub fn export_stable_storage() -> ManagementData {

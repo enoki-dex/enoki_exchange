@@ -7,5 +7,5 @@ pub struct ShardedTransferNotification {
     pub to: Principal,
     pub fee_charged: Nat,
     pub value: Nat,
-    pub data: String
+    pub data: String,
 }

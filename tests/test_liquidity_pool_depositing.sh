@@ -7,20 +7,32 @@ pooler1=$(dfx --identity pooler1 identity get-principal)
 info "pooler1: $pooler1"
 pooler2=$(dfx --identity pooler2 identity get-principal)
 info "pooler2: $pooler2"
+end
 
+start "fund users"
 dfx identity use default
 mint_amount="1_000_000_000"
 assigned_shard_1=$(dfx canister call "$APP_TOKEN_A" register "(principal \"$pooler1\")" | grep -oE "$REGEX_PRINCIPAL")
-info "pooler1 assigned shard: $assigned_shard_1"
+assigned_shard_b_1=$(dfx canister call "$APP_TOKEN_B" register "(principal \"$pooler1\")" | grep -oE "$REGEX_PRINCIPAL")
+info "pooler1 assigned shards: $assigned_shard_1 / $assigned_shard_b_1"
 assigned_shard_2=$(dfx canister call "$APP_TOKEN_A" register "(principal \"$pooler2\")" | grep -oE "$REGEX_PRINCIPAL")
-info "pooler2 assigned shard: $assigned_shard_2"
+assigned_shard_b_2=$(dfx canister call "$APP_TOKEN_B" register "(principal \"$pooler2\")" | grep -oE "$REGEX_PRINCIPAL")
+info "pooler2 assigned shards: $assigned_shard_2 / $assigned_shard_b_2"
 if [ "0 : nat" == "$(dfx canister call "$assigned_shard_1" shardBalanceOf "(principal \"$pooler1\")" | grep -oE "$REGEX_NAT")" ]; then
   dfx --identity pooler1 canister call "$assigned_shard_1" mint "($mint_amount : nat)"
+  dfx --identity pooler1 canister call "$assigned_shard_b_1" mint "($mint_amount : nat)"
   dfx --identity pooler2 canister call "$assigned_shard_2" mint "($mint_amount : nat)"
+  dfx --identity pooler2 canister call "$assigned_shard_b_2" mint "($mint_amount : nat)"
   assert_eq "$(dfx canister call --query "$assigned_shard_1" shardBalanceOf "(principal \"$pooler1\")" | grep -oE "$REGEX_NAT")" "$mint_amount : nat"
+  assert_eq "$(dfx canister call --query "$assigned_shard_b_1" shardBalanceOf "(principal \"$pooler1\")" | grep -oE "$REGEX_NAT")" "$mint_amount : nat"
   assert_eq "$(dfx canister call --query "$assigned_shard_2" shardBalanceOf "(principal \"$pooler2\")" | grep -oE "$REGEX_NAT")" "$mint_amount : nat"
+  assert_eq "$(dfx canister call --query "$assigned_shard_b_2" shardBalanceOf "(principal \"$pooler2\")" | grep -oE "$REGEX_NAT")" "$mint_amount : nat"
 fi
 end
+
+#start "deposit funds on LP"
+#dfx --identity pooler1 canister call
+#end
 
 #start "setting up user1 on enoki_wrapped_token"
 #dfx identity use user1

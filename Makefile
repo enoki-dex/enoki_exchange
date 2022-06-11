@@ -22,7 +22,9 @@ build:
 .PHONY: test
 .SILENT: test
 test:
-	./tests/test_liquidity_pool.sh
+	./tests/test_liquidity_pool_depositing.sh
+	./tests/test_exchange.sh
+	./tests/test_liquidity_pool_withdrawing.sh
 
 .PHONY: clean
 .SILENT: clean

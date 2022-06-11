@@ -5,7 +5,7 @@ use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
 use enoki_exchange_shared::has_token_info;
-use enoki_exchange_shared::has_token_info::init_token_info;
+use enoki_exchange_shared::has_token_info::{finish_init_token_info, start_init_token_info};
 use enoki_exchange_shared::is_managed::assert_is_manager;
 use enoki_exchange_shared::liquidity::single_user_liquidity_pool::SingleUserLiquidityPool;
 use enoki_exchange_shared::types::*;
@@ -52,7 +52,8 @@ async fn init_liquidity_pool(supply_token_info: has_token_info::TokenPairInfo) -
     assert_is_manager().unwrap();
     let worker = get_worker();
     assert_ne!(worker, Principal::anonymous(), "worker not initialized");
-    init_token_info(supply_token_info).await.unwrap();
+    start_init_token_info(supply_token_info);
+    finish_init_token_info().await.unwrap();
     init_worker_token_data().await.unwrap();
     worker
 }

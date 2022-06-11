@@ -52,8 +52,8 @@ async fn init_worker(worker: Principal) -> Result<()> {
 
 pub async fn init_worker_token_data() -> Result<()> {
     let worker = STATE.with(|s| s.borrow().worker_id);
-    let response: Result<(AssignedShards,)> =
-        ic_cdk::call(worker, "initWorker", (has_token_info::get_token_info(),))
+    let response: Result<(AssignedShards, )> =
+        ic_cdk::call(worker, "initWorker", (has_token_info::get_token_info(), ))
             .await
             .map_err(|e| e.into());
     let worker_shards = response?.0;
@@ -75,7 +75,7 @@ pub async fn init_worker_token_data() -> Result<()> {
 async fn add_broker(broker: Principal) -> Result<()> {
     is_managed::assert_is_manager()?;
 
-    let result: Result<()> = ic_cdk::call(get_worker(), "addBroker", (broker,))
+    let result: Result<()> = ic_cdk::call(get_worker(), "addBroker", (broker, ))
         .await
         .map_err(|e| e.into());
     result

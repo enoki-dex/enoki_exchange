@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::ops::{AddAssign};
+use std::ops::AddAssign;
 
 use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_sharded_users::{get_user_shard};
+use enoki_exchange_shared::has_sharded_users::get_user_shard;
 use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 use enoki_exchange_shared::types::*;
@@ -113,8 +113,8 @@ async fn distribute_other_broker_rewards() {
                         user_rewards_str,
                     ),
                 )
-                .await
-                .map_err(|e| e.into());
+                    .await
+                    .map_err(|e| e.into());
 
                 result
             }
@@ -162,8 +162,8 @@ async fn distribute_local_rewards() {
                         "shardTransfer",
                         (user_shard, user, token_reward.clone()),
                     )
-                    .await
-                    .map_err(|e| e.into());
+                        .await
+                        .map_err(|e| e.into());
                     if let Err(err) = result {
                         ic_cdk::api::print(format!("error distributing extra reward: {:?}", err));
                         failed

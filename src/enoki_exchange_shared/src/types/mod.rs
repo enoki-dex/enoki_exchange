@@ -73,7 +73,8 @@ pub enum MakerTaker {
 pub struct OrderInfo {
     pub broker: Principal,
     pub user: Principal,
-    pub id: u64, // only unique with respect to a broker
+    pub id: u64,
+    // only unique with respect to a broker
     pub side: Side,
     pub maker_taker: MakerTaker,
     pub limit_price: u64,

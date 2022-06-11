@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 
-use candid::{candid_method, CandidType, Nat, Principal};
-use ic_cdk_macros::*;
+use candid::{CandidType, Nat, Principal};
 use num_traits::Pow;
 
 use crate::types::{EnokiToken, Result, TxError};
@@ -70,14 +69,14 @@ pub fn import_stable_storage(data: TokenInfoState) {
     STATE.with(|s| s.replace(data));
 }
 
-pub async fn init_token_info(token_info: TokenPairInfo) -> Result<()> {
+pub fn start_init_token_info(token_info: TokenPairInfo) {
+    STATE.with(|s| s.borrow_mut().token_info = token_info);
+}
+
+pub async fn finish_init_token_info() -> Result<()> {
+    let token_info = STATE.with(|s| s.borrow().token_info.clone());
     let (token_a, token_b) = register_tokens(&token_info).await?;
-    STATE.with(|s| {
-        s.replace(TokenInfoState {
-            token_info,
-            assigned_shards: AssignedShards { token_a, token_b },
-        })
-    });
+    STATE.with(|s| s.borrow_mut().assigned_shards = AssignedShards { token_a, token_b });
     Ok(())
 }
 
@@ -86,31 +85,24 @@ async fn register_tokens(token_info: &TokenPairInfo) -> Result<(Principal, Princ
         register(token_info.token_a.principal),
         register(token_info.token_b.principal),
     )
-    .await;
+        .await;
     Ok((assigned_a?, assigned_b?))
 }
 
 async fn register(with_token: Principal) -> Result<Principal> {
-    let result: Result<(Result<Principal>,)> =
-        ic_cdk::call(with_token, "register", (ic_cdk::id(),))
-            .await
-            .map_err(|e| e.into());
-    result?.0
-}
-
-#[query(name = "getTokenInfo")]
-#[candid_method(query, rename = "getTokenInfo")]
-pub fn get_token_info() -> TokenPairInfo {
-    STATE.with(|s| s.borrow().token_info.clone())
+    let result: Result<(Principal, )> = ic_cdk::call(with_token, "register", (ic_cdk::id(), ))
+        .await
+        .map_err(|e| e.into());
+    result.map(|r| r.0)
 }
 
 pub async fn add_token_spender(principal: Principal) -> Result<()> {
     let shards = get_assigned_shards();
-    let result: Result<()> = ic_cdk::call(shards.token_a, "addSpender", (principal,))
+    let result: Result<()> = ic_cdk::call(shards.token_a, "addSpender", (principal, ))
         .await
         .map_err(|e| e.into());
     result?;
-    let result: Result<()> = ic_cdk::call(shards.token_b, "addSpender", (principal,))
+    let result: Result<()> = ic_cdk::call(shards.token_b, "addSpender", (principal, ))
         .await
         .map_err(|e| e.into());
     result
@@ -120,10 +112,20 @@ pub fn get_token_address(token: &EnokiToken) -> Principal {
     STATE.with(|s| s.borrow().token_info.get(token).principal)
 }
 
-#[query(name = "getAssignedShards")]
-#[candid_method(query, rename = "getAssignedShards")]
+pub fn get_token_info() -> TokenPairInfo {
+    STATE.with(|s| s.borrow().token_info.clone())
+}
+
 pub fn get_assigned_shards() -> AssignedShards {
     STATE.with(|s| s.borrow().assigned_shards.clone())
+}
+
+pub fn get_assigned_shard_a() -> Principal {
+    STATE.with(|s| s.borrow().assigned_shards.token_a)
+}
+
+pub fn get_assigned_shard_b() -> Principal {
+    STATE.with(|s| s.borrow().assigned_shards.token_b)
 }
 
 pub fn get_assigned_shard(for_token: &EnokiToken) -> Principal {

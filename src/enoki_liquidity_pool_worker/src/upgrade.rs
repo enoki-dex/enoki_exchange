@@ -5,7 +5,7 @@ use enoki_exchange_shared::{
     has_sharded_users, has_token_info, is_managed, is_owned,
 };
 use enoki_exchange_shared::has_sharded_users::ShardedUserState;
-use enoki_exchange_shared::has_token_info::{TokenInfoState};
+use enoki_exchange_shared::has_token_info::TokenInfoState;
 use enoki_exchange_shared::is_managed::ManagementData;
 use enoki_exchange_shared::is_owned::OwnershipData;
 
@@ -33,14 +33,14 @@ fn pre_upgrade() {
         token_info,
         manager,
         owner,
-        liquidity
+        liquidity,
     };
-    ic_cdk::storage::stable_save((payload,)).expect("failed to save to stable storage");
+    ic_cdk::storage::stable_save((payload, )).expect("failed to save to stable storage");
 }
 
 #[post_upgrade]
 fn post_upgrade() {
-    let (payload,): (UpgradePayload,) =
+    let (payload, ): (UpgradePayload, ) =
         ic_cdk::storage::stable_restore().expect("failed to restore from stable storage");
 
     let UpgradePayload {

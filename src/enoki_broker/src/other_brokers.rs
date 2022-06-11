@@ -1,5 +1,5 @@
-use std::cell::{RefCell};
-use std::collections::{HashSet};
+use std::cell::RefCell;
+use std::collections::HashSet;
 
 use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;

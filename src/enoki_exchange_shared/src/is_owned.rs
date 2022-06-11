@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 
-use candid::{candid_method, CandidType, Principal};
-use ic_cdk_macros::*;
+use candid::{CandidType, Principal};
 
 use crate::types::*;
 
@@ -38,15 +37,11 @@ thread_local! {
     static STATE: RefCell<OwnershipData> = RefCell::new(OwnershipData::default());
 }
 
-#[query(name = "getOwner")]
-#[candid_method(query, rename = "getOwner")]
-fn get_owner() -> Principal {
+pub fn get_owner() -> Principal {
     STATE.with(|d| d.borrow().owner)
 }
 
-#[update(name = "setOwner")]
-#[candid_method(update, rename = "setOwner")]
-fn set_owner(new_owner: Principal) -> Result<()> {
+pub fn set_owner(new_owner: Principal) -> Result<()> {
     STATE.with(|d| {
         let owner = &mut d.borrow_mut().owner;
         if ic_cdk::caller() == *owner {

@@ -5,14 +5,14 @@ use enoki_exchange_shared::{
     has_sharded_users, has_token_info, has_trading_fees, is_owned,
 };
 use enoki_exchange_shared::has_sharded_users::ShardedUserState;
-use enoki_exchange_shared::has_token_info::{TokenInfoState};
+use enoki_exchange_shared::has_token_info::TokenInfoState;
 use enoki_exchange_shared::has_trading_fees::TradingFees;
 use enoki_exchange_shared::is_owned::OwnershipData;
 
 use crate::{brokers, BrokerState, liquidity, orders, synchronize};
 use crate::liquidity::LiquidityState;
 use crate::orders::OrdersState;
-use crate::synchronize::{RunningState};
+use crate::synchronize::RunningState;
 
 #[derive(Deserialize, CandidType)]
 struct UpgradePayload {
@@ -44,14 +44,14 @@ fn pre_upgrade() {
         orders,
         brokers,
         liquidity,
-        run_state
+        run_state,
     };
-    ic_cdk::storage::stable_save((payload,)).expect("failed to save to stable storage");
+    ic_cdk::storage::stable_save((payload, )).expect("failed to save to stable storage");
 }
 
 #[post_upgrade]
 fn post_upgrade() {
-    let (payload,): (UpgradePayload,) =
+    let (payload, ): (UpgradePayload, ) =
         ic_cdk::storage::stable_restore().expect("failed to restore from stable storage");
 
     let UpgradePayload {

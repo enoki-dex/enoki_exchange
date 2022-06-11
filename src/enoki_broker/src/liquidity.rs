@@ -1,4 +1,4 @@
-use std::cell::{RefCell};
+use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
 use std::ops::{AddAssign, Sub, SubAssign};
 
@@ -106,7 +106,7 @@ pub async fn swap(mut order: ProcessedOrderInput) {
         &token_supplier,
         traded.decreased.get(&token_supplier).0.clone(),
     )
-    .await
+        .await
     {
         STATE.with(|s| {
             s.borrow_mut()
@@ -144,7 +144,7 @@ fn pay_rewards_to_market_makers(
             reward.clone(),
             amount_provided.0.to_f64().unwrap() / total.0.to_f64().unwrap(),
         )
-        .unwrap();
+            .unwrap();
         payoffs::add_reward(broker, user, reward_token, user_reward);
     }
 }

@@ -4,7 +4,7 @@ use candid::{candid_method, Principal};
 use ic_cdk_macros::*;
 
 #[allow(unused_imports)]
-use enoki_exchange_shared::has_token_info::{self, TokenPairInfo, AssignedShards};
+use enoki_exchange_shared::has_token_info::{self, AssignedShards, TokenPairInfo};
 #[allow(unused_imports)]
 use enoki_exchange_shared::has_trading_fees::TradingFees;
 #[allow(unused_imports)]
@@ -24,10 +24,11 @@ mod liquidity;
 mod payoffs;
 mod other_brokers;
 mod upgrade;
+mod shared_candid_methods;
 
 #[init]
 #[candid_method(init)]
-async fn init(owner: Principal, exchange: Principal) {
+fn init(owner: Principal, exchange: Principal) {
     is_owned::init_owner(OwnershipData {
         owner,
         deploy_time: ic_cdk::api::time(),

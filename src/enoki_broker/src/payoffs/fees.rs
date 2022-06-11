@@ -1,13 +1,13 @@
-use std::cell::{RefCell};
+use std::cell::RefCell;
 use std::ops::{AddAssign, SubAssign};
 
 use candid::{candid_method, CandidType, Nat};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::{has_trading_fees};
 use enoki_exchange_shared::has_token_info;
+use enoki_exchange_shared::has_trading_fees;
 use enoki_exchange_shared::has_trading_fees::{get_deposit_fee, TradingFees};
-use enoki_exchange_shared::is_managed::{assert_is_manager};
+use enoki_exchange_shared::is_managed::assert_is_manager;
 use enoki_exchange_shared::is_owned::assert_is_owner;
 use enoki_exchange_shared::types::*;
 
@@ -91,7 +91,7 @@ async fn update_upstream_fees() {
 }
 
 async fn update_upstream_token_fee(token: &EnokiToken) -> Result<()> {
-    let result: Result<(Nat,)> = ic_cdk::call(has_token_info::get_token_address(token), "getFee", ())
+    let result: Result<(Nat, )> = ic_cdk::call(has_token_info::get_token_address(token), "getFee", ())
         .await
         .map_err(|e| e.into());
     let fee = result?.0;

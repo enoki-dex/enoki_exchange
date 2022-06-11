@@ -74,9 +74,9 @@ finish() {
     return $?
   fi
   if [ $TOTAL_TESTS == $PASSED_TESTS ]; then
-    echo_e "${GREEN}$PASSED_TESTS/$TOTAL_TESTS tests passed${NC}"
+    echo_e "${GREEN}$PASSED_TESTS/$TOTAL_TESTS tests passed${NC}\n"
   else
-    echo_e "${YELLOW}$PASSED_TESTS/$TOTAL_TESTS tests passed${NC}"
+    echo_e "${YELLOW}$PASSED_TESTS/$TOTAL_TESTS tests passed${NC}\n"
   fi
 }
 
