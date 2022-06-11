@@ -1,0 +1,39 @@
+type AssignedShards = record { token_a : principal; token_b : principal };
+type LiquidityAmount = record { token_a : nat; token_b : nat };
+type Result = variant { Ok; Err : TxError };
+type Result_1 = variant { Ok : AssignedShards; Err : TxError };
+type ShardedTransferNotification = record {
+  to : principal;
+  value : nat;
+  data : text;
+  from : principal;
+  fee_charged : nat;
+  from_shard : principal;
+};
+type TokenInfo = record { "principal" : principal };
+type TokenPairInfo = record {
+  token_a : TokenInfo;
+  token_b : TokenInfo;
+  price_number_of_decimals : nat64;
+};
+type TxError = variant {
+  IntOverflow;
+  ParsingError : text;
+  InsufficientLiquidityAvailable;
+  IntUnderflow;
+  UserNotRegistered;
+  Unauthorized;
+  Other : text;
+  SlippageExceeded;
+  CallbackError : text;
+  InsufficientFunds;
+};
+service : (principal, principal) -> {
+  addBroker : (principal) -> (Result);
+  addLiquidity : (ShardedTransferNotification) -> (Result);
+  getLiquidity : (principal) -> (LiquidityAmount) query;
+  getShardsToAddLiquidity : () -> (AssignedShards) query;
+  initWorker : (TokenPairInfo) -> (Result_1);
+  removeLiquidity : (LiquidityAmount) -> (Result);
+  triggerHeartbeat : () -> (opt nat64);
+}

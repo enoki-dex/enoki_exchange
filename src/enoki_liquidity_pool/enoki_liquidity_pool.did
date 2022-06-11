@@ -1,0 +1,37 @@
+type LiquidityAmount = record { token_a : nat; token_b : nat };
+type LiquidityTrades = record {
+  decreased : LiquidityAmount;
+  increased : LiquidityAmount;
+};
+type Result = variant { Ok; Err : TxError };
+type Result_1 = variant {
+  Ok : record { LiquidityAmount; LiquidityAmount; LiquidityTrades };
+  Err : TxError;
+};
+type TokenInfo = record { "principal" : principal };
+type TokenPairInfo = record {
+  token_a : TokenInfo;
+  token_b : TokenInfo;
+  price_number_of_decimals : nat64;
+};
+type TxError = variant {
+  IntOverflow;
+  ParsingError : text;
+  InsufficientLiquidityAvailable;
+  IntUnderflow;
+  UserNotRegistered;
+  Unauthorized;
+  Other : text;
+  SlippageExceeded;
+  CallbackError : text;
+  InsufficientFunds;
+};
+service : (principal, principal) -> {
+  addBroker : (principal) -> (Result);
+  getUpdatedLiquidity : () -> (LiquidityAmount, LiquidityAmount);
+  getWorker : () -> (principal) query;
+  initLiquidityPool : (TokenPairInfo) -> (principal);
+  initWorker : (principal) -> (Result);
+  resolveLiquidity : (LiquidityAmount, LiquidityAmount, LiquidityTrades) -> ();
+  updateLiquidity : (LiquidityAmount, LiquidityAmount) -> (Result_1);
+}

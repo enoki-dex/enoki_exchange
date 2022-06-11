@@ -5,10 +5,10 @@ use std::collections::HashMap;
 use candid::{candid_method, CandidType, Deserialize, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::is_owned;
-use enoki_exchange_shared::types::*;
-use enoki_exchange_shared::{has_token_info, is_managed};
 use enoki_exchange_shared::has_token_info::AssignedShards;
+use enoki_exchange_shared::types::*;
+use enoki_exchange_shared::{has_sharded_users, is_owned};
+use enoki_exchange_shared::{has_token_info, is_managed};
 
 pub fn assert_is_worker_contract() -> Result<()> {
     if STATE.with(|s| s.borrow().worker_id == ic_cdk::caller()) {
@@ -21,14 +21,12 @@ pub fn assert_is_worker_contract() -> Result<()> {
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
 pub struct WorkerContractData {
     pub worker_id: Principal,
-    pub worker_shard: Principal,
 }
 
 impl Default for WorkerContractData {
     fn default() -> Self {
         Self {
             worker_id: Principal::anonymous(),
-            worker_shard: Principal::anonymous(),
         }
     }
 }
@@ -47,16 +45,30 @@ pub fn get_worker() -> Principal {
 #[candid_method(update, rename = "initWorker")]
 async fn init_worker(worker: Principal) -> Result<()> {
     is_owned::assert_is_owner()?;
-    let response: Result<(Principal,)> =
-        ic_cdk::call(worker, "initWorker", (has_token_info::get_token_info(),))
-            .await
-            .map_err(|e| e.into());
-    let worker_shard = response?.0;
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         s.worker_id = worker;
-        s.worker_shard = worker_shard;
     });
+    Ok(())
+}
+
+pub async fn init_worker_token_data() -> Result<()> {
+    let worker = STATE.with(|s| s.borrow().worker_id);
+    let response: Result<(AssignedShards,)> =
+        ic_cdk::call(worker, "initWorker", (has_token_info::get_token_info(),))
+            .await
+            .map_err(|e| e.into());
+    let worker_shards = response?.0;
+    has_sharded_users::register_user(
+        worker,
+        has_token_info::get_token_address(&EnokiToken::TokenA),
+        worker_shards.token_a,
+    );
+    has_sharded_users::register_user(
+        worker,
+        has_token_info::get_token_address(&EnokiToken::TokenB),
+        worker_shards.token_b,
+    );
     Ok(())
 }
 
@@ -71,8 +83,9 @@ async fn add_broker(broker: Principal) -> Result<()> {
     result
 }
 
-pub fn get_worker_shard() -> Principal {
-    STATE.with(|s| s.borrow().worker_shard)
+pub fn _get_worker_shard(token: &EnokiToken) -> Result<Principal> {
+    let worker = STATE.with(|s| s.borrow().worker_id);
+    has_sharded_users::get_user_shard(worker, has_token_info::get_token_address(token))
 }
 
 pub fn export_stable_storage() -> WorkerContractData {

@@ -3,6 +3,9 @@ source .env
 set +a
 
 dfx identity use default
-#./src/enoki_exchange/deploy.sh
+./src/enoki_exchange/deploy.sh
 ./src/enoki_liquidity_pool/deploy.sh
+./src/enoki_liquidity_pool_worker/deploy.sh
+
+./src/enoki_broker/deploy.sh
 

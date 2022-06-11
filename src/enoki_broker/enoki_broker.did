@@ -95,13 +95,16 @@ type TxError = variant {
   InsufficientFunds;
 };
 service : (principal, principal) -> {
+  addBroker : (principal) -> ();
   fundsSent : (ShardedTransferNotification) -> ();
   getAccruedFees : () -> (LiquidityAmount) query;
   getAssignedShard : (EnokiToken) -> (principal) query;
   getFailedOrders : () -> (vec Order) query;
   getOpenOrders : (principal) -> (OpenOrderStatus) query;
   getPastOrders : (principal) -> (vec Order) query;
-  initBroker : (TokenPairInfo, principal, TradingFees) -> (Result);
+  initBroker : (vec principal, TokenPairInfo, principal, TradingFees) -> (
+      Result,
+    );
   limitOrder : (ShardedTransferNotification) -> ();
   receiveMarketMakerRewards : (ShardedTransferNotification) -> ();
   retrieveOrders : () -> (vec OrderInfo, vec OrderInfo);

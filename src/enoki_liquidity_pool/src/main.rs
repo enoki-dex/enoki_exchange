@@ -21,7 +21,7 @@ mod upgrade;
 
 #[init]
 #[candid_method(init)]
-async fn init(owner: Principal, exchange: Principal, token_a: Principal, token_b: Principal) {
+async fn init(owner: Principal, exchange: Principal) {
     is_owned::init_owner(OwnershipData {
         owner,
         deploy_time: ic_cdk::api::time(),
@@ -29,16 +29,6 @@ async fn init(owner: Principal, exchange: Principal, token_a: Principal, token_b
     is_managed::init_manager(ManagementData {
         manager: exchange
     });
-    let token_info = TokenPairInfo {
-        token_a: TokenInfo {
-            principal: token_a,
-        },
-        token_b: TokenInfo {
-            principal: token_b,
-        },
-        price_number_of_decimals: 0, //TODO: are these necessary on the LP side?
-    };
-    has_token_info::init_token_info(token_info).await.unwrap();
 }
 
 #[cfg(any(target_arch = "wasm32", test))]

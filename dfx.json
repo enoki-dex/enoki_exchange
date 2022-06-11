@@ -10,6 +10,11 @@
       "package": "enoki_liquidity_pool",
       "type": "rust"
     },
+    "enoki_liquidity_pool_worker": {
+      "candid": "src/enoki_liquidity_pool_worker/enoki_liquidity_pool_worker.did",
+      "package": "enoki_liquidity_pool_worker",
+      "type": "rust"
+    },
     "enoki_exchange_assets": {
       "dependencies": [
         "enoki_exchange"
@@ -22,6 +27,16 @@
         "dist/enoki_exchange_assets/"
       ],
       "type": "assets"
+    },
+    "enoki_broker_1": {
+      "candid": "src/enoki_broker/enoki_broker.did",
+      "package": "enoki_broker",
+      "type": "rust"
+    },
+    "enoki_broker_2": {
+      "candid": "src/enoki_broker/enoki_broker.did",
+      "package": "enoki_broker",
+      "type": "rust"
     }
   },
   "defaults": {

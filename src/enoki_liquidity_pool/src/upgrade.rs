@@ -9,9 +9,9 @@ use enoki_exchange_shared::is_owned::OwnershipData;
 use enoki_exchange_shared::{
     has_sharded_users, has_token_info, has_trading_fees, is_managed, is_owned,
 };
+
 use crate::liquidity::PooledAmounts;
 use crate::{liquidity, worker, WorkerContractData};
-
 
 #[derive(Deserialize, CandidType)]
 struct UpgradePayload {
@@ -21,6 +21,7 @@ struct UpgradePayload {
     owner: OwnershipData,
     liquidity: PooledAmounts,
     worker: WorkerContractData,
+    worker_shards: ShardedUserState,
 }
 
 #[pre_upgrade]
@@ -31,13 +32,15 @@ fn pre_upgrade() {
     let owner = is_owned::export_stable_storage();
     let liquidity = liquidity::export_stable_storage();
     let worker = worker::export_stable_storage();
+    let worker_shards = has_sharded_users::export_stable_storage();
     let payload = UpgradePayload {
         token_info,
         trading_fees,
         manager,
         owner,
         liquidity,
-        worker
+        worker,
+        worker_shards,
     };
     ic_cdk::storage::stable_save((payload,)).expect("failed to save to stable storage");
 }
@@ -51,7 +54,10 @@ fn post_upgrade() {
         token_info,
         trading_fees,
         manager,
-        owner, liquidity, worker,
+        owner,
+        liquidity,
+        worker,
+        worker_shards,
     } = payload;
 
     has_token_info::import_stable_storage(token_info);
@@ -60,4 +66,5 @@ fn post_upgrade() {
     is_owned::import_stable_storage(owner);
     liquidity::import_stable_storage(liquidity);
     worker::import_stable_storage(worker);
+    has_sharded_users::import_stable_storage(worker_shards);
 }

@@ -1,0 +1,1 @@
+cargo run --bin "enoki_liquidity_pool_worker" > "$(dirname "$0")"/enoki_liquidity_pool_worker.did

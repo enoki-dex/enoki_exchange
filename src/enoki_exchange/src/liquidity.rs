@@ -7,6 +7,8 @@ use candid::{candid_method, CandidType, Nat, Principal};
 use futures::AsyncReadExt;
 use ic_cdk_macros::*;
 
+use enoki_exchange_shared::has_token_info::get_token_info;
+use enoki_exchange_shared::is_owned::assert_is_owner;
 use enoki_exchange_shared::liquidity::{
     RequestForLiquidityChanges, RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
 };
@@ -46,7 +48,13 @@ pub struct ProposedLiquidityChanges {
 
 #[update(name = "initPool")]
 #[candid_method(update, rename = "initPool")]
-pub fn init_pool(pool: Principal, worker: Principal) {
+async fn init_pool(pool: Principal) {
+    assert_is_owner().unwrap();
+    let response: Result<(Principal,)> =
+        ic_cdk::call(pool, "initLiquidityPool", (get_token_info(),))
+            .await
+            .map_err(|e| e.into());
+    let worker = response.unwrap().0;
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         s.pool_address = pool;
@@ -66,6 +74,8 @@ pub fn get_pool_contract() -> Principal {
     STATE.with(|s| s.borrow().pool_address)
 }
 
+#[query(name = "getLiquidityLocation")]
+#[candid_method(update, rename = "getLiquidityLocation")]
 pub fn get_liquidity_location() -> Principal {
     let location = STATE.with(|s| s.borrow().worker_pool_address);
     assert_ne!(

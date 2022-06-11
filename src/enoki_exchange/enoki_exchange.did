@@ -1,3 +1,23 @@
-service : {
-    "greet": (text) -> (text) query;
+type Broker = record { id : principal };
+type BrokerState = record { brokers : vec record { principal; Broker } };
+type Result = variant { Ok; Err : TxError };
+type TxError = variant {
+  IntOverflow;
+  ParsingError : text;
+  InsufficientLiquidityAvailable;
+  IntUnderflow;
+  UserNotRegistered;
+  Unauthorized;
+  Other : text;
+  SlippageExceeded;
+  CallbackError : text;
+  InsufficientFunds;
+};
+service : (principal, principal, principal, nat64) -> {
+  addBroker : (principal) -> (Result);
+  getBrokerIds : () -> (vec principal) query;
+  getBrokers : () -> (BrokerState) query;
+  getLiquidityLocation : () -> (principal);
+  initPool : (principal) -> ();
+  setFees : (nat, nat, float64, float64, float64) -> ();
 }
