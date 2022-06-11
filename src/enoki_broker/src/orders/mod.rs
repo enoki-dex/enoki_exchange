@@ -24,6 +24,7 @@ use enoki_exchange_shared::types::*;
 
 use crate::orders::order_book::OrderBook;
 use crate::orders::order_history::OrderHistory;
+use crate::payoffs::distribute_market_maker_rewards;
 use crate::{liquidity, payoffs};
 
 mod order_book;
@@ -71,6 +72,7 @@ fn submit_completed_orders(
     });
     let response = liquidity::update_liquidity_target(aggregate_bid_ask, request);
     resolve_completed_orders(completed);
+    ic_cdk::spawn(distribute_market_maker_rewards());
     response
 }
 

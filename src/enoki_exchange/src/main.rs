@@ -22,7 +22,6 @@ async fn init(
     token_a: Principal,
     token_b: Principal,
     price_number_of_decimals: u64,
-    smallest_trade_unit: u64,
 ) {
     is_owned::init_owner(OwnershipData {
         owner,
@@ -32,7 +31,6 @@ async fn init(
         token_a: TokenInfo { principal: token_a },
         token_b: TokenInfo { principal: token_b },
         price_number_of_decimals,
-        smallest_trade_unit,
     };
     has_token_info::init_token_info(token_info).await.unwrap();
 }

@@ -6,14 +6,16 @@ use std::ops::{AddAssign, Div, Mul, Sub, SubAssign};
 
 use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
 use ic_cdk_macros::*;
+use num_traits::cast::ToPrimitive;
 use serde::Serialize;
 
 use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
 use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::has_token_info::{
-    get_assigned_shard, get_assigned_shards, price_in_b_float_to_u64, quant_b_to_quant_a,
-    AssignedShards, QuantityTranslator,
+    get_assigned_shard, get_assigned_shards, price_in_b_float_to_u64, quant_a_to_quant_b,
+    quant_b_to_quant_a, AssignedShards, QuantityTranslator,
 };
+use enoki_exchange_shared::has_trading_fees::{get_swap_fee, get_swap_market_maker_reward};
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 use enoki_exchange_shared::is_managed;
 use enoki_exchange_shared::is_managed::{assert_is_manager, get_manager};
@@ -22,7 +24,7 @@ use enoki_exchange_shared::liquidity::{
     RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
 };
 use enoki_exchange_shared::types::*;
-use enoki_exchange_shared::utils::nat_to_u64;
+use enoki_exchange_shared::utils::{nat_to_u64, nat_x_float};
 
 use crate::payoffs;
 
@@ -31,10 +33,11 @@ thread_local! {
 }
 
 #[derive(Deserialize, CandidType, Clone, Debug, Default)]
-struct LiquidityState {
+pub struct LiquidityState {
     bid_ask: AggregateBidAsk,
     available_liquidity: LiquidityAmount,
     liquidity_traded: LiquidityTrades,
+    id: Nat,
 }
 
 pub fn update_liquidity_target(
@@ -61,7 +64,15 @@ pub fn update_liquidity_target(
     })
 }
 
-pub async fn swap(order: ProcessedOrderInput) {
+pub async fn swap(mut order: ProcessedOrderInput) {
+    let swap_fee = get_swap_fee();
+    let original_quantity = order.quantity.clone();
+    order.quantity = nat_x_float(order.quantity, 1.0 - swap_fee).unwrap();
+    let mut lp_credit = original_quantity - order.quantity.clone();
+    let market_maker_percentage = get_swap_market_maker_reward();
+    let market_maker_reward = nat_x_float(lp_credit.clone(), market_maker_percentage).unwrap();
+    lp_credit -= market_maker_reward.clone();
+
     let swap: Result<LiquidityReference> = STATE.with(|s| {
         let mut s = s.borrow_mut();
         let avg_price = s
@@ -78,7 +89,11 @@ pub async fn swap(order: ProcessedOrderInput) {
             .execute_swap(order.side.clone(), order.quantity.clone()))
     });
     let swap = swap.unwrap();
-    STATE.with(|s| {
+    let (token_supplier, token_user) = match &order.side {
+        Side::Buy => (EnokiToken::TokenA, EnokiToken::TokenB),
+        Side::Sell => (EnokiToken::TokenB, EnokiToken::TokenA),
+    };
+    let traded = STATE.with(|s| {
         let mut s = s.borrow_mut();
         let mut traded = LiquidityTrades::default();
         let quantity_supplier: StableNat = swap
@@ -87,23 +102,63 @@ pub async fn swap(order: ProcessedOrderInput) {
             .flat_map(|(p, val)| val.iter().map(|info| info.quantity.clone()))
             .sum();
         let quantity_user = order.quantity.clone();
-        let (token_supplier, token_user) = match &order.side {
-            Side::Buy => (EnokiToken::TokenA, EnokiToken::TokenB),
-            Side::Sell => (EnokiToken::TokenB, EnokiToken::TokenA),
-        };
         traded
             .increased
             .get_mut(&token_user)
-            .add_assign(StableNat(quantity_user));
+            .add_assign(StableNat(quantity_user + lp_credit));
         traded
             .decreased
             .get_mut(&token_supplier)
             .add_assign(quantity_supplier);
-        s.available_liquidity.add_assign(traded.increased.clone());
         s.available_liquidity.sub_assign(traded.decreased.clone());
+        traded
+    });
+    if let Err(error) = payoffs::send_swap_tokens(
+        order.user,
+        &token_supplier,
+        traded.decreased.get(&token_supplier).0.clone(),
+    )
+    .await
+    {
+        STATE.with(|s| {
+            s.borrow_mut()
+                .available_liquidity
+                .add_assign(traded.decreased)
+        });
+        panic!("{:?}", error);
+    }
+    STATE.with(|s| {
+        let mut s = s.borrow_mut();
+        s.available_liquidity.add_assign(traded.increased.clone());
         s.liquidity_traded.add_assign(traded);
     });
-    payoffs::swap_tokens(order, swap).await.unwrap();
+    pay_rewards_to_market_makers(
+        market_maker_reward,
+        match &order.side {
+            Side::Buy => &EnokiToken::TokenB,
+            Side::Sell => &EnokiToken::TokenA,
+        },
+        swap,
+    );
+}
+
+fn pay_rewards_to_market_makers(
+    reward: Nat,
+    reward_token: &EnokiToken,
+    reference: LiquidityReference,
+) {
+    let amount_by_user = reference.get_map_of_complement_token_by_broker(reward_token);
+    let total = amount_by_user
+        .values()
+        .fold(Nat::default(), |sum, next| sum + next.clone());
+    for (BrokerAndUser { broker, user }, amount_provided) in amount_by_user {
+        let user_reward = nat_x_float(
+            reward.clone(),
+            amount_provided.0.to_f64().unwrap() / total.0.to_f64().unwrap(),
+        )
+        .unwrap();
+        payoffs::add_reward(broker, user, reward_token, user_reward);
+    }
 }
 
 trait SwapLiquidity {
@@ -244,4 +299,44 @@ impl SwapLiquidity for AggregateBidAsk {
 #[derive(Default)]
 pub struct LiquidityReference {
     prices: BTreeMap<u64, Vec<CounterpartyInfo>>,
+}
+
+impl LiquidityReference {
+    pub fn get_map_of_complement_token_by_broker(
+        &self,
+        complement_token: &EnokiToken,
+    ) -> HashMap<BrokerAndUser, Nat> {
+        self.prices
+            .iter()
+            .flat_map(|(&price, parties)| {
+                parties.into_iter().map(move |party| {
+                    (
+                        BrokerAndUser {
+                            broker: party.broker,
+                            user: party.user,
+                        },
+                        match complement_token {
+                            EnokiToken::TokenA => {
+                                quant_b_to_quant_a(party.quantity.0.clone(), price).unwrap()
+                            }
+                            EnokiToken::TokenB => {
+                                quant_a_to_quant_b(party.quantity.0.clone(), price).unwrap()
+                            }
+                        },
+                    )
+                })
+            })
+            .fold(HashMap::new(), |mut map, next| {
+                map.entry(next.0).or_default().add_assign(next.1);
+                map
+            })
+    }
+}
+
+pub fn export_stable_storage() -> LiquidityState {
+    STATE.with(|s| s.take())
+}
+
+pub fn import_stable_storage(data: LiquidityState) {
+    STATE.with(|s| s.replace(data));
 }

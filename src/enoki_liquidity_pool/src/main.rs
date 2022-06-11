@@ -36,7 +36,6 @@ async fn init(owner: Principal, exchange: Principal, token_a: Principal, token_b
             principal: token_b,
         },
         price_number_of_decimals: 0, //TODO: are these necessary on the LP side?
-        smallest_trade_unit: 0
     };
     has_token_info::init_token_info(token_info).await.unwrap();
 }

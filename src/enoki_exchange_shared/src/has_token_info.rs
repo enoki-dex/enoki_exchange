@@ -15,7 +15,6 @@ pub struct TokenPairInfo {
     pub token_a: TokenInfo,
     pub token_b: TokenInfo,
     pub price_number_of_decimals: u64,
-    pub smallest_trade_unit: u64,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
@@ -141,22 +140,6 @@ pub fn get_assigned_shard(for_token: &EnokiToken) -> Principal {
         EnokiToken::TokenA => s.borrow().assigned_shards.token_a,
         EnokiToken::TokenB => s.borrow().assigned_shards.token_a,
     })
-}
-
-pub fn quantity_token_b_nat_to_trade_units(value: Nat) -> Result<u64> {
-    STATE.with(|s| {
-        let s = s.borrow();
-        let unit = s.token_info.smallest_trade_unit;
-        if value.clone().rem(unit) != 0u32 {
-            return Err(TxError::IntUnderflow);
-        }
-        let value_units = value.div(unit);
-        value_units.0.to_u64().ok_or(TxError::IntOverflow)
-    })
-}
-
-pub fn quantity_token_b_trade_units_to_nat(value: u64) -> Nat {
-    STATE.with(|s| Nat::from(s.borrow().token_info.smallest_trade_unit * value))
 }
 
 pub fn price_in_b_float_to_u64(value: f64) -> Result<u64> {

@@ -7,11 +7,11 @@ use crate::types::{EnokiToken, StableNat};
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct TradingFees {
-    pub token_a_deposit_fee: StableNat,
-    pub token_b_deposit_fee: StableNat,
-    pub limit_order_taker_fee: f64,
-    pub swap_fee: f64,
-    pub swap_market_maker_reward: f64,
+    pub token_a_deposit_fee: StableNat, // constant fee charged when swapping or submitting a limit order
+    pub token_b_deposit_fee: StableNat, // constant fee charged when swapping or submitting a limit order
+    pub limit_order_taker_fee: f64,     // as percentage of trade quantity (ex: 0.002)
+    pub swap_fee: f64,                  // as percentage of trade quantity (ex: 0.002)
+    pub swap_market_maker_reward: f64,  // as percentage of the swap fee (ex: 0.3)
 }
 
 thread_local! {
@@ -28,6 +28,17 @@ pub fn import_stable_storage(data: TradingFees) {
 }
 
 pub fn init_fee_info(data: TradingFees) {
+    if data.limit_order_taker_fee > 0.03 || data.limit_order_taker_fee < 0.0 {
+        panic!("limit order taker fee out of range")
+    }
+    if data.swap_fee > 0.03 || data.swap_fee < 0.0 {
+        panic!("swap fee out of range")
+    }
+    if data.swap_market_maker_reward > 1.00 || data.swap_market_maker_reward < 0.0 {
+        panic!("swap market marker reward out of range")
+    }
+
+
     STATE.with(|s| s.replace(data));
 }
 

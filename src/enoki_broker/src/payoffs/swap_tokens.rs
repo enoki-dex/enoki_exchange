@@ -23,11 +23,19 @@ use enoki_exchange_shared::liquidity::{
     RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
 };
 use enoki_exchange_shared::types::*;
+
 use crate::liquidity::LiquidityReference;
 
-pub async fn swap_tokens(
-    order: ProcessedOrderInput,
-    reference_liquidity: LiquidityReference,
+pub async fn send_swap_tokens(
+    user: Principal,
+    token: &EnokiToken,
+    amount_to_send: Nat,
 ) -> Result<()> {
-    todo!()
+    let shard = get_assigned_shard(token);
+    let user_shard = get_user_shard(user, get_token_address(token))?;
+    let result: Result<()> =
+        ic_cdk::call(shard, "shardTransfer", (user_shard, user, amount_to_send))
+            .await
+            .map_err(|e| e.into());
+    result
 }

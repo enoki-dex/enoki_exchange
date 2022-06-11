@@ -163,3 +163,9 @@ pub struct OpenOrderStatus {
     pub open_orders: Vec<OrderInfo>,
     pub pending_cancel: Vec<u64>,
 }
+
+#[derive(CandidType, Eq, PartialEq, Hash)]
+pub struct BrokerAndUser {
+    pub broker: Principal,
+    pub user: Principal,
+}

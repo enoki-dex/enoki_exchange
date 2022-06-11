@@ -22,6 +22,7 @@ mod orders;
 mod liquidity;
 mod payoffs;
 mod other_brokers;
+mod upgrade;
 
 #[init]
 #[candid_method(init)]

@@ -11,6 +11,7 @@ use enoki_exchange_shared::types::*;
 pub struct OrderHistory {
     current_orders: HashMap<Principal, Vec<u64>>,
     past_orders: HashMap<Principal, HashMap<u64, Order>>,
+    accrued_extra_rewards: HashMap<Principal, LiquidityAmount>,
 }
 
 impl OrderHistory {

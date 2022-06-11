@@ -259,6 +259,7 @@ dependencies = [
  "futures",
  "ic-cdk",
  "ic-cdk-macros",
+ "num-traits",
  "serde",
  "serde_json",
 ]

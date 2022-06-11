@@ -30,10 +30,13 @@ use crate::other_brokers::assert_is_broker;
 mod exchange_tokens;
 mod swap_tokens;
 mod fees;
+mod market_maker_extra_rewards;
 
 pub use exchange_tokens::exchange_tokens;
-pub use swap_tokens::swap_tokens;
+pub use swap_tokens::send_swap_tokens;
 pub use fees::charge_deposit_fee;
+pub use market_maker_extra_rewards::{add_reward, distribute_market_maker_rewards};
+use crate::payoffs::market_maker_extra_rewards::MarketMakerAccruedExtraRewards;
 
 thread_local! {
     static STATE: RefCell<PayoffsState> = RefCell::new(PayoffsState::default());
@@ -41,14 +44,11 @@ thread_local! {
 
 #[derive(Deserialize, CandidType, Clone, Debug, Default)]
 struct PayoffsState {
-    pending_lp_payoffs: Vec<LpPayoff>,
     pending_transfers: PendingTransfers,
     failed_exchanges: Vec<TokenExchangeInfo>,
     broker_assigned_shards: HashMap<(Principal, EnokiToken), Principal>,
+    market_maker_pending_rewards: MarketMakerAccruedExtraRewards,
 }
-
-#[derive(Deserialize, CandidType, Clone, Debug, Default)]
-struct LpPayoff {}
 
 #[derive(Deserialize, CandidType, Clone, Debug, Default)]
 pub struct PendingTransfers {
@@ -123,6 +123,13 @@ fn with_pending_transfers_mut<F: FnOnce(&mut PendingTransfers) -> R, R>(f: F) ->
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         f(&mut s.pending_transfers)
+    })
+}
+
+fn with_pending_market_maker_rewards<F: FnOnce(&mut MarketMakerAccruedExtraRewards) -> R, R>(f: F) -> R {
+    STATE.with(|s| {
+        let mut s = s.borrow_mut();
+        f(&mut s.market_maker_pending_rewards)
     })
 }
 
