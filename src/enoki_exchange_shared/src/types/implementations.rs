@@ -1,5 +1,5 @@
 use std::iter::Sum;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
 use lazy_static::lazy_static;
 

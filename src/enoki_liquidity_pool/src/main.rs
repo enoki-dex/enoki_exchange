@@ -1,17 +1,16 @@
 #[allow(unused_imports)]
 use std::collections::HashMap;
 
-use candid::{candid_method, Nat, Principal};
+use candid::{candid_method, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_token_info::{AssignedShards, TokenPairInfo};
 use enoki_exchange_shared::{is_managed, is_owned};
 #[allow(unused_imports)]
-use enoki_exchange_shared::is_owned::OwnershipData;
+use enoki_exchange_shared::{has_token_info, has_token_info::TokenInfo, types::*};
 #[allow(unused_imports)]
 use enoki_exchange_shared::is_managed::ManagementData;
 #[allow(unused_imports)]
-use enoki_exchange_shared::{has_token_info, has_token_info::TokenInfo, types::*};
+use enoki_exchange_shared::is_owned::OwnershipData;
 #[allow(unused_imports)]
 use worker::WorkerContractData;
 

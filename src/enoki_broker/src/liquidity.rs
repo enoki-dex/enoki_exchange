@@ -1,25 +1,14 @@
-use std::borrow::BorrowMut;
-use std::cell::{RefCell, RefMut};
+use std::cell::{RefCell};
 use std::collections::{BTreeMap, HashMap};
-use std::convert::TryInto;
-use std::ops::{AddAssign, Div, Mul, Sub, SubAssign};
+use std::ops::{AddAssign, Sub, SubAssign};
 
-use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
-use ic_cdk_macros::*;
+use candid::{CandidType, Nat};
 use num_traits::cast::ToPrimitive;
-use serde::Serialize;
 
-use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
-use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::has_token_info::{
-    get_assigned_shard, get_assigned_shards, price_in_b_float_to_u64, quant_a_to_quant_b,
-    quant_b_to_quant_a, AssignedShards, QuantityTranslator,
+    quantity_a_to_b, quantity_b_to_a, QuantityTranslator,
 };
 use enoki_exchange_shared::has_trading_fees::{get_swap_fee, get_swap_market_maker_reward};
-use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
-use enoki_exchange_shared::is_managed;
-use enoki_exchange_shared::is_managed::{assert_is_manager, get_manager};
-use enoki_exchange_shared::liquidity::liquidity_pool::LiquidityPool;
 use enoki_exchange_shared::liquidity::{
     RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
 };
@@ -98,7 +87,7 @@ pub async fn swap(mut order: ProcessedOrderInput) {
         let quantity_supplier: StableNat = swap
             .prices
             .iter()
-            .flat_map(|(p, val)| val.iter().map(|info| info.quantity.clone()))
+            .flat_map(|(_p, val)| val.iter().map(|info| info.quantity.clone()))
             .sum();
         let quantity_user = order.quantity.clone();
         traded
@@ -316,10 +305,10 @@ impl LiquidityReference {
                         },
                         match complement_token {
                             EnokiToken::TokenA => {
-                                quant_b_to_quant_a(party.quantity.0.clone(), price).unwrap()
+                                quantity_b_to_a(party.quantity.0.clone(), price).unwrap()
                             }
                             EnokiToken::TokenB => {
-                                quant_a_to_quant_b(party.quantity.0.clone(), price).unwrap()
+                                quantity_a_to_b(party.quantity.0.clone(), price).unwrap()
                             }
                         },
                     )

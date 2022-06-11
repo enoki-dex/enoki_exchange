@@ -1,4 +1,4 @@
-use candid::{CandidType, Deserialize, Principal, Nat};
+use candid::{CandidType, Deserialize, Nat, Principal};
 
 #[derive(CandidType, Debug, Deserialize)]
 pub struct ShardedTransferNotification {

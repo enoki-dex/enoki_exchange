@@ -1,8 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use candid::{candid_method, CandidType, Deserialize, Principal};
-use ic_cdk_macros::*;
+use candid::{CandidType, Principal};
 
 use crate::types::*;
 

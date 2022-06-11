@@ -1,5 +1,4 @@
-use enoki_exchange_shared::types::{OrderInput, Side};
-use serde_json::{Result, Value};
+use enoki_exchange_shared::types::{OrderInput};
 
 fn main() {
     let order = OrderInput {

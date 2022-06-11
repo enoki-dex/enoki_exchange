@@ -1,20 +1,20 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+use candid::{candid_method, CandidType, Nat, Principal};
 use candid::utils::{ArgumentDecoder, ArgumentEncoder};
-use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
-use futures::{StreamExt, TryFutureExt};
 use ic_cdk_macros::*;
 
+use enoki_exchange_shared::{has_token_info, has_trading_fees};
 use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
 use enoki_exchange_shared::has_token_info::AssignedShards;
 use enoki_exchange_shared::has_trading_fees::TradingFees;
 use enoki_exchange_shared::is_owned;
 use enoki_exchange_shared::types::*;
-use enoki_exchange_shared::{has_token_info, has_trading_fees};
 
 use crate::liquidity::{self, get_liquidity_location, init_broker_lp};
 
+#[allow(unused)]
 pub fn assert_is_broker_contract() -> Result<()> {
     if STATE.with(|s| s.borrow().brokers.contains_key(&ic_cdk::caller())) {
         Ok(())
@@ -125,6 +125,7 @@ async fn add_broker(broker: Principal) -> Result<()> {
     Ok(())
 }
 
+#[allow(unused)]
 pub fn get_broker_shard(broker: Principal, token: &EnokiToken) -> Result<Principal> {
     get_user_shard(broker, has_token_info::get_token_address(token))
 }

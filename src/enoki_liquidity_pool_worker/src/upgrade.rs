@@ -1,17 +1,16 @@
 use candid::{CandidType, Deserialize};
 use ic_cdk_macros::*;
 
+use enoki_exchange_shared::{
+    has_sharded_users, has_token_info, is_managed, is_owned,
+};
 use enoki_exchange_shared::has_sharded_users::ShardedUserState;
-use enoki_exchange_shared::has_token_info::{TokenInfo, TokenInfoState};
-use enoki_exchange_shared::has_trading_fees::TradingFees;
+use enoki_exchange_shared::has_token_info::{TokenInfoState};
 use enoki_exchange_shared::is_managed::ManagementData;
 use enoki_exchange_shared::is_owned::OwnershipData;
-use enoki_exchange_shared::{
-    has_sharded_users, has_token_info, has_trading_fees, is_managed, is_owned,
-};
+
 use crate::liquidity;
 use crate::liquidity::LiquidityState;
-
 
 #[derive(Deserialize, CandidType)]
 struct UpgradePayload {

@@ -1,14 +1,12 @@
-use std::borrow::Borrow;
 use std::cell::RefCell;
-use std::collections::HashMap;
 
-use candid::{candid_method, CandidType, Deserialize, Principal};
+use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_token_info::AssignedShards;
-use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::{has_sharded_users, is_owned};
 use enoki_exchange_shared::{has_token_info, is_managed};
+use enoki_exchange_shared::has_token_info::AssignedShards;
+use enoki_exchange_shared::types::*;
 
 pub fn assert_is_worker_contract() -> Result<()> {
     if STATE.with(|s| s.borrow().worker_id == ic_cdk::caller()) {

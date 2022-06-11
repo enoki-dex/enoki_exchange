@@ -1,19 +1,20 @@
 extern crate core;
 
-use candid::{candid_method, types::number::Nat, Principal};
+use candid::{candid_method, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_token_info::{self, AssignedShards, TokenInfo, TokenPairInfo};
+#[allow(unused_imports)]
+use enoki_exchange_shared::has_token_info::{self, TokenPairInfo, AssignedShards};
+#[allow(unused_imports)]
+use enoki_exchange_shared::has_trading_fees::TradingFees;
+#[allow(unused_imports)]
+use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 use enoki_exchange_shared::is_managed::{self, ManagementData};
 use enoki_exchange_shared::is_owned::{self, OwnershipData};
 #[allow(unused_imports)]
-use enoki_exchange_shared::types::*;
-#[allow(unused_imports)]
 use enoki_exchange_shared::liquidity::*;
 #[allow(unused_imports)]
-use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
-#[allow(unused_imports)]
-use enoki_exchange_shared::has_trading_fees::TradingFees;
+use enoki_exchange_shared::types::*;
 #[allow(unused_imports)]
 use payoffs::PendingTransfer;
 

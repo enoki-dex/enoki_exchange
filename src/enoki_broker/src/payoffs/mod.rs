@@ -1,43 +1,26 @@
-use std::borrow::BorrowMut;
-use std::cell::{RefCell, RefMut};
+use std::cell::{RefCell};
 use std::collections::HashMap;
-use std::convert::TryInto;
-use std::ops::{AddAssign, Div, Mul, Sub, SubAssign};
 
-use candid::parser::token::Token;
 use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
-use futures::FutureExt;
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
-use enoki_exchange_shared::has_token_info;
-use enoki_exchange_shared::has_token_info::{
-    get_assigned_shard, get_assigned_shards, get_token_address, price_in_b_float_to_u64,
-    AssignedShards,
-};
+use enoki_exchange_shared::has_sharded_users::{get_user_shard};
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
-use enoki_exchange_shared::is_managed;
-use enoki_exchange_shared::is_managed::{assert_is_manager, get_manager};
-use enoki_exchange_shared::liquidity::liquidity_pool::LiquidityPool;
-use enoki_exchange_shared::liquidity::{
-    RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
-};
+use enoki_exchange_shared::{has_token_info};
 use enoki_exchange_shared::types::*;
+pub use exchange_tokens::exchange_tokens;
+pub use fees::{AccruedFees, export_stable_storage as export_stable_storage_fees, import_stable_storage as import_stable_storage_fees};
+pub use fees::charge_deposit_fee;
+pub use market_maker_extra_rewards::{add_reward, distribute_market_maker_rewards};
+pub use swap_tokens::send_swap_tokens;
 
-use crate::liquidity::LiquidityReference;
 use crate::other_brokers::assert_is_broker;
+use crate::payoffs::market_maker_extra_rewards::MarketMakerAccruedExtraRewards;
 
 mod exchange_tokens;
 mod swap_tokens;
 mod fees;
 mod market_maker_extra_rewards;
-
-pub use exchange_tokens::exchange_tokens;
-pub use swap_tokens::send_swap_tokens;
-pub use fees::charge_deposit_fee;
-pub use market_maker_extra_rewards::{add_reward, distribute_market_maker_rewards};
-pub use fees::{AccruedFees, import_stable_storage as import_stable_storage_fees, export_stable_storage as export_stable_storage_fees};
-use crate::payoffs::market_maker_extra_rewards::MarketMakerAccruedExtraRewards;
 
 thread_local! {
     static STATE: RefCell<PayoffsState> = RefCell::new(PayoffsState::default());
@@ -77,13 +60,13 @@ pub struct PendingTransfer {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
-struct TransferPair {
+pub struct TransferPair {
     waiting_on: TransferInfo,
     next_transfer: TransferInfo,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
-struct TransferInfo {
+pub struct TransferInfo {
     broker: Principal,
     token: EnokiToken,
     to: Principal,
@@ -91,7 +74,7 @@ struct TransferInfo {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
-struct TokenExchangeInfo {
+pub struct TokenExchangeInfo {
     local_user: TransferInfo,
     other_user: TransferInfo,
 }
@@ -102,7 +85,7 @@ async fn get_broker_assigned_shard(broker: Principal, token: EnokiToken) -> Resu
         return Ok(shard);
     }
     let shard = if broker == ic_cdk::id() {
-        get_assigned_shard(&token)
+        has_token_info::get_assigned_shard(&token)
     } else {
         let result: Result<(Principal,)> = ic_cdk::call(broker, "getAssignedShard", ())
             .await
@@ -137,7 +120,7 @@ fn with_pending_market_maker_rewards<F: FnOnce(&mut MarketMakerAccruedExtraRewar
 #[query(name = "getAssignedShard")]
 #[candid_method(query, rename = "getAssignedShard")]
 async fn get_assigned_shard_for_broker(token: EnokiToken) -> Principal {
-    get_assigned_shard(&token)
+    has_token_info::get_assigned_shard(&token)
 }
 
 #[update(name = "sendFunds")]
@@ -178,8 +161,8 @@ async fn funds_sent(notification: ShardedTransferNotification) {
         "amount received not the same as expected"
     );
 
-    let assigned_token_shard = get_assigned_shard(&next_transfer.token);
-    let token_address = get_token_address(&next_transfer.token);
+    let assigned_token_shard = has_token_info::get_assigned_shard(&next_transfer.token);
+    let token_address = has_token_info::get_token_address(&next_transfer.token);
     let to_shard = get_user_shard(next_transfer.to, token_address).unwrap();
     let response: Result<()> = ic_cdk::call(
         assigned_token_shard,

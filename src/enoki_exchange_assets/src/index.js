@@ -1,4 +1,4 @@
-import { enoki_exchange } from "../../declarations/enoki_exchange";
+import {enoki_exchange} from "../../declarations/enoki_exchange";
 
 document.querySelector("form").addEventListener("submit", async (e) => {
   e.preventDefault();

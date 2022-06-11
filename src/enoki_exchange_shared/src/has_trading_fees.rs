@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use candid::{candid_method, CandidType, Nat, Principal};
+use candid::{candid_method, CandidType, Nat};
 use ic_cdk_macros::*;
 
 use crate::types::{EnokiToken, StableNat};

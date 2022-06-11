@@ -1,36 +1,18 @@
-use std::borrow::BorrowMut;
-use std::cell::{RefCell, RefMut};
-use std::collections::HashMap;
-use std::convert::TryInto;
-use std::ops::{AddAssign, Div, Mul, Sub, SubAssign};
-
-use candid::parser::token::Token;
-use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
+use candid::{Nat, Principal};
 use futures::FutureExt;
-use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
+use enoki_exchange_shared::has_sharded_users::{get_user_shard};
 use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::has_token_info::{
-    get_assigned_shard, get_assigned_shards, get_token_address, price_in_b_float_to_u64,
-    AssignedShards,
+    get_token_address,
 };
 use enoki_exchange_shared::has_trading_fees::get_limit_order_taker_fee;
-use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
-use enoki_exchange_shared::is_managed;
-use enoki_exchange_shared::is_managed::{assert_is_manager, get_manager};
-use enoki_exchange_shared::liquidity::liquidity_pool::LiquidityPool;
-use enoki_exchange_shared::liquidity::{
-    RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
-};
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::nat_div_float;
 
-use crate::liquidity::LiquidityReference;
-use crate::other_brokers::assert_is_broker;
 use crate::payoffs::{
-    get_broker_assigned_shard, with_failed_exchanges_mut, with_pending_transfers_mut,
-    PendingTransfer, TokenExchangeInfo, TransferInfo, TransferPair,
+    get_broker_assigned_shard, PendingTransfer, TokenExchangeInfo,
+    TransferInfo, TransferPair, with_failed_exchanges_mut, with_pending_transfers_mut,
 };
 
 async fn send_funds_from(id: String, broker: Principal, info: PendingTransfer) -> Result<()> {
@@ -44,7 +26,7 @@ async fn send_funds_from(id: String, broker: Principal, info: PendingTransfer) -
 }
 
 pub async fn send_funds_internal(id: String, info: PendingTransfer) -> Result<()> {
-    let assigned_token_shard = get_assigned_shard(&info.token);
+    let assigned_token_shard = has_token_info::get_assigned_shard(&info.token);
     let token_address = get_token_address(&info.token);
     let to_shard = get_user_shard(info.to, token_address)?;
     ic_cdk::call(
@@ -89,7 +71,7 @@ pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {
                             broker: market_maker.broker,
                             token: EnokiToken::TokenB,
                             to: market_maker.user,
-                            amount: plus_fees(has_token_info::quant_a_to_quant_b(
+                            amount: plus_fees(has_token_info::quantity_a_to_b(
                                 market_maker.quantity.0.clone(),
                                 market_maker.price,
                             )?)?.into(),
@@ -100,7 +82,7 @@ pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {
                             broker: market_maker.broker,
                             token: EnokiToken::TokenA,
                             to: market_maker.user,
-                            amount: plus_fees(has_token_info::quant_b_to_quant_a(
+                            amount: plus_fees(has_token_info::quantity_b_to_a(
                                 market_maker.quantity.0.clone(),
                                 market_maker.price,
                             )?)?.into(),

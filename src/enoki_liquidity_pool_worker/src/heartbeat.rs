@@ -1,7 +1,6 @@
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 
-use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
+use candid::{candid_method};
 use ic_cdk_macros::*;
 
 use crate::liquidity::update_liquidity_with_manager;

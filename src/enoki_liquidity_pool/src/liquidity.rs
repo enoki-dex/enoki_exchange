@@ -3,10 +3,10 @@ use std::ops::AddAssign;
 
 use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
+
 use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::has_token_info::init_token_info;
 use enoki_exchange_shared::is_managed::assert_is_manager;
-
 use enoki_exchange_shared::liquidity::single_user_liquidity_pool::SingleUserLiquidityPool;
 use enoki_exchange_shared::types::*;
 

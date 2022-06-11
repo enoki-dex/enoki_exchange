@@ -1,10 +1,8 @@
-use std::borrow::{Borrow, BorrowMut};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::ops::{AddAssign, DivAssign, SubAssign};
+use std::ops::{AddAssign, SubAssign};
 
-use candid::{candid_method, CandidType, Nat, Principal};
-use futures::AsyncReadExt;
+use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
 use enoki_exchange_shared::has_token_info::get_token_info;
@@ -13,7 +11,6 @@ use enoki_exchange_shared::liquidity::{
     RequestForLiquidityChanges, RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
 };
 use enoki_exchange_shared::types::*;
-use enoki_exchange_shared::utils::map_assign;
 
 thread_local! {
     static STATE: RefCell<LiquidityState> = RefCell::new(LiquidityState::default());

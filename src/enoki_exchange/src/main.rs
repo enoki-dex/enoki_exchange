@@ -1,7 +1,9 @@
-use candid::{candid_method, types::number::Nat, Principal};
+use candid::{candid_method, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_token_info::{self, AssignedShards, TokenInfo, TokenPairInfo};
+#[allow(unused_imports)]
+use candid::{Nat};
+use enoki_exchange_shared::has_token_info::{self, TokenInfo, TokenPairInfo};
 use enoki_exchange_shared::is_owned::{self, OwnershipData};
 #[allow(unused_imports)]
 use enoki_exchange_shared::types::Result;

@@ -1,6 +1,6 @@
 use std::ops::{AddAssign, SubAssign};
 
-use candid::{CandidType};
+use candid::CandidType;
 
 use crate::types::*;
 

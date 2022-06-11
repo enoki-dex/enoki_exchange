@@ -1,7 +1,4 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-
-use candid::{candid_method, CandidType, Deserialize, Principal};
+use candid::{candid_method, Principal};
 use ic_cdk_macros::*;
 
 use enoki_exchange_shared::has_token_info;

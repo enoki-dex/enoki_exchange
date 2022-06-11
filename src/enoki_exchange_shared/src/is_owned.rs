@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use candid::{candid_method, CandidType, Deserialize, Principal};
+use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
 use crate::types::*;

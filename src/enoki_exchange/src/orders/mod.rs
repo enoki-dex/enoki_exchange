@@ -1,9 +1,7 @@
-use std::borrow::{Borrow, BorrowMut};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use candid::{candid_method, CandidType, Nat, Principal};
-use ic_cdk_macros::*;
+use candid::{CandidType, Principal};
 
 use enoki_exchange_shared::types::*;
 

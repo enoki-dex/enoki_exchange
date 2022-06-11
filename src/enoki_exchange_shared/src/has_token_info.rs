@@ -1,13 +1,10 @@
-use std::borrow::Borrow;
 use std::cell::RefCell;
-use std::ops::{Div, Mul, Rem};
 
 use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk_macros::*;
-use num_traits::cast::ToPrimitive;
 use num_traits::Pow;
 
-use crate::types::{EnokiToken, Result, StableNat, TxError};
+use crate::types::{EnokiToken, Result, TxError};
 use crate::utils::{nat_div_float, nat_x_float};
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
@@ -155,14 +152,14 @@ pub fn price_in_b_u64_to_float(value: u64) -> f64 {
     })
 }
 
-pub fn quant_b_to_quant_a(quant_b: Nat, price: u64) -> Result<Nat> {
+pub fn quantity_b_to_a(quantity_b: Nat, price: u64) -> Result<Nat> {
     let price = price_in_b_u64_to_float(price);
-    nat_div_float(quant_b, price)
+    nat_div_float(quantity_b, price)
 }
 
-pub fn quant_a_to_quant_b(quant_a: Nat, price: u64) -> Result<Nat> {
+pub fn quantity_a_to_b(quantity_a: Nat, price: u64) -> Result<Nat> {
     let price = price_in_b_u64_to_float(price);
-    nat_x_float(quant_a, price)
+    nat_x_float(quantity_a, price)
 }
 
 pub struct QuantityTranslator<'a> {
@@ -175,11 +172,11 @@ impl<'a> QuantityTranslator<'a> {
         Self { price, quantity_a }
     }
     pub fn get_quantity_b(&self) -> Result<Nat> {
-        quant_a_to_quant_b(self.quantity_a.clone(), self.price)
+        quantity_a_to_b(self.quantity_a.clone(), self.price)
     }
     pub fn sub_assign(&mut self, quantity_b: Nat) -> Result<()> {
         let current = self.get_quantity_b()?;
-        *self.quantity_a = quant_b_to_quant_a(current - quantity_b, self.price)?;
+        *self.quantity_a = quantity_b_to_a(current - quantity_b, self.price)?;
         Ok(())
     }
 }

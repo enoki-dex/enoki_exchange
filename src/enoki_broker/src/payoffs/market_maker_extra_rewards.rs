@@ -1,35 +1,19 @@
-use std::borrow::BorrowMut;
-use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
-use std::convert::TryInto;
-use std::ops::{AddAssign, Div, Mul, Sub, SubAssign};
+use std::ops::{AddAssign};
 
-use candid::parser::token::Token;
-use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
-use futures::FutureExt;
+use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
+use enoki_exchange_shared::has_sharded_users::{get_user_shard};
 use enoki_exchange_shared::has_token_info;
-use enoki_exchange_shared::has_token_info::{
-    get_assigned_shard, get_assigned_shards, get_token_address, price_in_b_float_to_u64,
-    AssignedShards,
-};
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
-use enoki_exchange_shared::is_managed;
-use enoki_exchange_shared::is_managed::{assert_is_manager, get_manager};
-use enoki_exchange_shared::liquidity::liquidity_pool::LiquidityPool;
-use enoki_exchange_shared::liquidity::{
-    RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
-};
 use enoki_exchange_shared::types::*;
 
-use crate::liquidity::LiquidityReference;
 use crate::other_brokers::assert_is_broker;
-use crate::payoffs::fees::use_fee_for_transfer;
 use crate::payoffs::{
-    get_assigned_shard_for_broker, get_broker_assigned_shard, with_pending_market_maker_rewards,
+    get_broker_assigned_shard, with_pending_market_maker_rewards,
 };
+use crate::payoffs::fees::use_fee_for_transfer;
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct MarketMakerAccruedExtraRewards {
@@ -91,6 +75,7 @@ impl UserRewards {
 
 pub async fn distribute_market_maker_rewards() {
     distribute_local_rewards().await;
+    distribute_other_broker_rewards().await;
 }
 
 async fn distribute_other_broker_rewards() {
@@ -100,7 +85,7 @@ async fn distribute_other_broker_rewards() {
     let mut failed: HashMap<Principal, HashMap<Principal, LiquidityAmount>> = HashMap::new();
 
     for token in [EnokiToken::TokenA, EnokiToken::TokenB] {
-        let shard_address = get_assigned_shard(&token);
+        let shard_address = has_token_info::get_assigned_shard(&token);
         for (&broker, reward) in rewards.iter() {
             async fn transfer_to_broker(
                 shard_address: Principal,
@@ -166,8 +151,8 @@ async fn distribute_local_rewards() {
         with_pending_market_maker_rewards(|rewards| std::mem::take(&mut rewards.local_rewards));
     let mut failed: HashMap<Principal, LiquidityAmount> = HashMap::new();
     for token in [EnokiToken::TokenA, EnokiToken::TokenB] {
-        let token_address = get_token_address(&token);
-        let shard_address = get_assigned_shard(&token);
+        let token_address = has_token_info::get_token_address(&token);
+        let shard_address = has_token_info::get_assigned_shard(&token);
         for (&user, reward) in local_rewards.iter() {
             let token_reward: Nat = reward.get(&token).clone().into();
             match get_user_shard(user, token_address) {
