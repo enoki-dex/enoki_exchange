@@ -52,11 +52,11 @@ async fn init_worker(worker: Principal) -> Result<()> {
 
 pub async fn init_worker_token_data() -> Result<()> {
     let worker = STATE.with(|s| s.borrow().worker_id);
-    let response: Result<(AssignedShards, )> =
+    let response: Result<(Result<AssignedShards>, )> =
         ic_cdk::call(worker, "initWorker", (has_token_info::get_token_info(), ))
             .await
             .map_err(|e| e.into());
-    let worker_shards = response?.0;
+    let worker_shards = response?.0?;
     has_sharded_users::register_user(
         worker,
         has_token_info::get_token_address(&EnokiToken::TokenA),

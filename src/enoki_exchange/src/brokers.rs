@@ -98,7 +98,7 @@ async fn add_broker(broker: Principal) -> Result<()> {
     let token_info = has_token_info::get_token_info();
     let token_a = token_info.token_a.principal;
     let token_b = token_info.token_b.principal;
-    let response: Result<(AssignedShards, )> = ic_cdk::call(
+    let response: Result<(Result<AssignedShards>, )> = ic_cdk::call(
         broker,
         "initBroker",
         (
@@ -110,7 +110,7 @@ async fn add_broker(broker: Principal) -> Result<()> {
     )
         .await
         .map_err(|e| e.into());
-    let assigned = response?.0;
+    let assigned = response?.0?;
     let _result: Vec<()> = foreach_broker("addBroker", |_| (broker, )).await?;
     STATE.with(|s| s.borrow_mut().brokers.insert(broker, Broker { id: broker }));
     register_user(broker, token_a, assigned.token_a);

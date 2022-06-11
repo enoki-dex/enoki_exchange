@@ -1,3 +1,4 @@
+set -x
 . "$(dirname "$0")"/build.sh
 #ic-cdk-optimizer "$(dirname "$0")"../../target/wasm32-unknown-unknown/release/enoki_wrapped_token.wasm -o "$(dirname "$0")"../../target/wasm32-unknown-unknown/release/opt.wasm
 OWNER="principal \"$(
