@@ -103,7 +103,7 @@ pub async fn swap(order: ProcessedOrderInput) {
         s.available_liquidity.sub_assign(traded.decreased.clone());
         s.liquidity_traded.add_assign(traded);
     });
-    payoffs::exchange_swap(order, swap).await.unwrap();
+    payoffs::swap_tokens(order, swap).await.unwrap();
 }
 
 trait SwapLiquidity {

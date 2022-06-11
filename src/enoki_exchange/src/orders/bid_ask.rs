@@ -22,6 +22,7 @@ impl BidAsk {
                             broker: order.info.broker,
                             user: order.info.user,
                             quantity: order.state.quantity_remaining.clone(),
+                            price: order.info.limit_price,
                         })
                         .collect(),
                 )

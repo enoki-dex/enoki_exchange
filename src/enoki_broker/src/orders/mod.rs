@@ -5,7 +5,6 @@ use std::convert::TryInto;
 use std::ops::{AddAssign, Div, Mul, Sub, SubAssign};
 
 use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
-use futures::FutureExt;
 use ic_cdk_macros::*;
 use serde::Serialize;
 
@@ -39,7 +38,7 @@ thread_local! {
 struct OrdersState {
     order_book: OrderBook,
     order_history: OrderHistory,
-    completed_orders: Vec<Order>,
+    failed_orders: Vec<Order>,
 }
 
 #[update(name = "retrieveOrders")]
@@ -47,6 +46,12 @@ struct OrdersState {
 fn retrieve_orders() -> (Vec<OrderInfo>, Vec<OrderInfo>) {
     assert_is_manager().unwrap();
     STATE.with(|s| s.borrow_mut().order_book.lock_pending_orders())
+}
+
+#[query(name = "getFailedOrders")]
+#[candid_method(query, rename = "getFailedOrders")]
+fn get_failed_orders() -> Vec<Order> {
+    STATE.with(|s| s.borrow().failed_orders.clone())
 }
 
 #[update(name = "submitCompletedOrders")]
@@ -63,31 +68,17 @@ fn submit_completed_orders(
             s.order_book.remove_completed_order(order.info.id);
             s.order_history.add_completed_order(order.clone());
         }
-        let mut completed = completed;
-        s.completed_orders.append(&mut completed);
     });
     let response = liquidity::update_liquidity_target(aggregate_bid_ask, request);
-    ic_cdk::spawn(resolve_completed_orders());
+    resolve_completed_orders(completed);
     response
 }
 
-async fn resolve_completed_orders() {
-    let orders = STATE.with(|s| std::mem::take(&mut s.borrow_mut().completed_orders));
-    let results: Vec<Option<Order>> = futures::future::join_all(orders.into_iter().map(|order| {
-        payoffs::exchange_tokens(order.clone()).map(|res: Result<()>| {
-            if let Err(err) = res {
-                ic_cdk::api::print(format!("error exchanging tokens: {:?}", err));
-                Some(order)
-            } else {
-                None
-            }
-        })
-    }))
-    .await;
-    let mut failed_orders: Vec<_> = results.into_iter().filter_map(|r| r).collect();
-    if !failed_orders.is_empty() {
-        STATE.with(|s| s.borrow_mut().completed_orders.append(&mut failed_orders));
-    }
+fn resolve_completed_orders(mut orders: Vec<Order>) {
+    let mut older_orders = STATE.with(|s| std::mem::take(&mut s.borrow_mut().failed_orders));
+    orders.append(&mut older_orders);
+    let failed = payoffs::exchange_tokens(orders);
+    STATE.with(|s| s.borrow_mut().failed_orders = failed);
 }
 
 #[update(name = "limitOrder")]

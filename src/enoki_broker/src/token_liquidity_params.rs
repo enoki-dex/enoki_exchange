@@ -5,8 +5,9 @@ use std::collections::HashMap;
 use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_token_info;
+use enoki_exchange_shared::{has_token_info, has_trading_fees};
 use enoki_exchange_shared::has_token_info::AssignedShards;
+use enoki_exchange_shared::has_trading_fees::TradingFees;
 use enoki_exchange_shared::is_managed;
 use enoki_exchange_shared::types::*;
 
@@ -36,11 +37,13 @@ pub fn get_lp_worker_location() -> Principal {
 async fn init_broker(
     supply_token_info: has_token_info::TokenPairInfo,
     liquidity_location: Principal,
+    trading_fees: TradingFees,
 ) -> Result<AssignedShards> {
     is_managed::assert_is_manager()?;
     has_token_info::init_token_info(supply_token_info).await?;
     let assigned = has_token_info::get_assigned_shards();
     STATE.with(|s| s.borrow_mut().liquidity_location = liquidity_location);
+    has_trading_fees::init_fee_info(trading_fees);
     Ok(assigned)
 }
 

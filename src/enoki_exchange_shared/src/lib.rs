@@ -6,3 +6,4 @@ pub mod interfaces;
 pub mod has_sharded_users;
 pub mod liquidity;
 pub mod utils;
+pub mod has_trading_fees;

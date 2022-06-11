@@ -33,7 +33,7 @@ pub type Result<T> = std::result::Result<T, TxError>;
 #[derive(CandidType, Debug, Clone, Default, Ord, PartialOrd, Eq, PartialEq)]
 pub struct StableNat(pub Nat);
 
-#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq, Hash)]
 pub enum EnokiToken {
     TokenA,
     TokenB,
@@ -142,6 +142,7 @@ pub struct CounterpartyInfo {
     pub broker: Principal,
     pub user: Principal,
     pub quantity: StableNat,
+    pub price: u64,
 }
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize, Default)]

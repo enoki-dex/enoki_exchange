@@ -12,11 +12,16 @@ use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::liquidity::*;
 #[allow(unused_imports)]
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
+#[allow(unused_imports)]
+use enoki_exchange_shared::has_trading_fees::TradingFees;
+#[allow(unused_imports)]
+use payoffs::PendingTransfer;
 
 mod token_liquidity_params;
 mod orders;
 mod liquidity;
 mod payoffs;
+mod other_brokers;
 
 #[init]
 #[candid_method(init)]
