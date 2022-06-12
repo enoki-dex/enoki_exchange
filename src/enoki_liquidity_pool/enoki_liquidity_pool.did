@@ -1,5 +1,5 @@
 type AssignedShards = record { token_a : principal; token_b : principal };
-type LiquidityAmount = record { token_a : nat; token_b : nat };
+type LiquidityAmount = record { token_a : vec nat8; token_b : vec nat8 };
 type LiquidityTrades = record {
   decreased : LiquidityAmount;
   increased : LiquidityAmount;
@@ -19,8 +19,8 @@ type TradingFees = record {
   limit_order_taker_fee : float64;
   swap_market_maker_reward : float64;
   swap_fee : float64;
-  token_a_deposit_fee : nat;
-  token_b_deposit_fee : nat;
+  token_a_deposit_fee : vec nat8;
+  token_b_deposit_fee : vec nat8;
 };
 type TxError = variant {
   IntOverflow;

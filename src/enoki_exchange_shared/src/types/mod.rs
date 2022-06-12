@@ -3,9 +3,13 @@ use std::string::String;
 
 use candid::{CandidType, Deserialize, Nat, Principal};
 use ic_cdk::api::call::RejectionCode;
+use crate::has_token_info;
+use crate::has_trading_fees::TradingFees;
 
 mod implementations;
-mod serialization;
+mod stable_nat;
+
+pub use stable_nat::StableNat;
 
 #[derive(CandidType, Debug, Deserialize)]
 pub enum TxError {
@@ -28,9 +32,6 @@ impl From<(RejectionCode, String)> for TxError {
 }
 
 pub type Result<T> = std::result::Result<T, TxError>;
-
-#[derive(CandidType, Debug, Clone, Default, Ord, PartialOrd, Eq, PartialEq)]
-pub struct StableNat(pub Nat);
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq, Hash)]
 pub enum EnokiToken {
@@ -168,4 +169,12 @@ pub struct OpenOrderStatus {
 pub struct BrokerAndUser {
     pub broker: Principal,
     pub user: Principal,
+}
+
+#[derive(CandidType, serde::Deserialize, serde::Serialize)]
+pub struct InitBrokerParams {
+    pub other_brokers: Vec<Principal>,
+    pub supply_token_info: has_token_info::TokenPairInfo,
+    pub liquidity_location: Principal,
+    pub trading_fees: TradingFees,
 }

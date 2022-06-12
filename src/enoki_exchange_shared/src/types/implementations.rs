@@ -1,21 +1,6 @@
-use std::iter::Sum;
-use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
-
-use lazy_static::lazy_static;
+use std::ops::{AddAssign, Div, Sub, SubAssign};
 
 use crate::types::*;
-
-impl From<Nat> for StableNat {
-    fn from(v: Nat) -> Self {
-        Self(v)
-    }
-}
-
-impl From<StableNat> for Nat {
-    fn from(v: StableNat) -> Self {
-        v.0
-    }
-}
 
 impl FromIterator<TokenAmount> for LiquidityAmount {
     fn from_iter<T: IntoIterator<Item=TokenAmount>>(iter: T) -> Self {
@@ -49,8 +34,8 @@ impl LiquidityAmount {
     }
     pub fn div_int(self, val: usize) -> Self {
         Self {
-            token_a: StableNat(self.token_a.0.div(val)),
-            token_b: StableNat(self.token_b.0.div(val)),
+            token_a: self.token_a.to_nat().div(val).into(),
+            token_b: self.token_b.to_nat().div(val).into(),
         }
     }
     pub fn sub_assign_or_zero(&mut self, other: Self) {
@@ -78,74 +63,6 @@ impl LiquidityAmount {
                 StableNat::zero()
             },
         }
-    }
-}
-
-lazy_static! {
-    static ref ZERO: Nat = Nat::from(0);
-}
-
-impl StableNat {
-    pub fn is_nonzero(&self) -> bool {
-        self.0 > *ZERO
-    }
-    pub fn zero() -> Self {
-        Self(Nat::from(0))
-    }
-}
-
-impl Add for StableNat {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
-    }
-}
-
-impl Sub for StableNat {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0)
-    }
-}
-
-impl AddAssign for StableNat {
-    fn add_assign(&mut self, rhs: Self) {
-        let lhs = std::mem::take(&mut self.0);
-        *self = Self(lhs + rhs.0)
-    }
-}
-
-impl SubAssign for StableNat {
-    fn sub_assign(&mut self, rhs: Self) {
-        let lhs = std::mem::take(&mut self.0);
-        *self = Self(lhs - rhs.0)
-    }
-}
-
-impl Mul for StableNat {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        Self(self.0 * rhs.0)
-    }
-}
-
-impl Div for StableNat {
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        Self(self.0 / rhs.0)
-    }
-}
-
-impl Sum for StableNat {
-    fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
-        iter.fold(Default::default(), |mut sum, next| {
-            sum.add_assign(next);
-            sum
-        })
     }
 }
 

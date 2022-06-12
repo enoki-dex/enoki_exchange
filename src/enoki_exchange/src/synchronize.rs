@@ -40,18 +40,18 @@ pub async fn run() {
         return;
     }
 
-    ic_cdk::api::print("start exchange run");
+    // ic_cdk::api::print("start exchange run");
     let result = do_run().await;
-    ic_cdk::api::print(format!(
-        "end exchange run {}",
-        match result {
-            Ok(_) => "OK".to_string(),
-            Err(err) => format!("with ERR: {:?}", err),
-        }
-    ));
-    // if let Err(error) = result {
-    //     ic_cdk::api::print(format!("error with run: {:?}", error));
-    // }
+    // ic_cdk::api::print(format!(
+    //     "end exchange run {}",
+    //     match result {
+    //         Ok(_) => "OK".to_string(),
+    //         Err(err) => format!("with ERR: {:?}", err),
+    //     }
+    // ));
+    if let Err(error) = result {
+        ic_cdk::api::print(format!("ERROR during exchange run: {:?}", error));
+    }
 
     STATE.with(|s| s.borrow_mut().unlock());
 }
@@ -83,9 +83,9 @@ async fn do_run() -> Result<()> {
                 proposed_liquidity_target_for_brokers.clone(),
             )
         },
-        |res: (ResponseAboutLiquidityChanges, )| res.0,
+        |res: (ResponseAboutLiquidityChanges,)| res.0,
     )
-        .await?;
+    .await?;
 
     update_committed_broker_liquidity(changes_in_liquidity_by_broker).await?;
 

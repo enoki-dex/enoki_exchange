@@ -93,7 +93,7 @@ pub async fn swap(mut order: ProcessedOrderInput) {
         traded
             .increased
             .get_mut(&token_user)
-            .add_assign(StableNat(quantity_user + lp_credit));
+            .add_assign((quantity_user + lp_credit).into());
         traded
             .decreased
             .get_mut(&token_supplier)
@@ -104,7 +104,7 @@ pub async fn swap(mut order: ProcessedOrderInput) {
     if let Err(error) = payoffs::send_swap_tokens(
         order.user,
         &token_supplier,
-        traded.decreased.get(&token_supplier).0.clone(),
+        traded.decreased.get(&token_supplier).clone().into(),
     )
         .await
     {
@@ -179,7 +179,7 @@ impl SwapLiquidity for AggregateBidAsk {
                     .iter()
                     .flat_map(|(&price, parties)| parties.into_iter().map(move |p| (price, p)))
                 {
-                    let mut party_quantity = party.quantity.0.clone();
+                    let mut party_quantity: Nat = party.quantity.clone().into();
                     let quantity_b_traded =
                         trade(&mut party_quantity, &mut quantity_remaining, price);
                     price_times_quantity.add_assign(quantity_b_traded.clone() * price);
@@ -196,7 +196,7 @@ impl SwapLiquidity for AggregateBidAsk {
                     .rev()
                     .flat_map(|(&price, parties)| parties.into_iter().map(move |p| (price, p)))
                 {
-                    let mut party_quantity = party.quantity.0.clone();
+                    let mut party_quantity: Nat = party.quantity.clone().into();
                     let quantity_b_traded =
                         trade(&mut quantity_remaining, &mut party_quantity, price);
                     price_times_quantity.add_assign(quantity_b_traded.clone() * price);
@@ -225,8 +225,10 @@ impl SwapLiquidity for AggregateBidAsk {
                     .flat_map(|(&price, parties)| parties.into_iter().map(move |p| (price, p)))
                 {
                     let original_party_quantity = party.quantity.clone();
+                    let mut party_quantity = party.quantity.take_as_nat();
                     let _quantity_b_traded =
-                        trade(&mut party.quantity.0, &mut quantity_remaining, price);
+                        trade(&mut party_quantity, &mut quantity_remaining, price);
+                    party.quantity = party_quantity.into();
                     let mut reference = party.clone();
                     reference.quantity = original_party_quantity.sub(reference.quantity);
                     liquidity_reference
@@ -247,8 +249,10 @@ impl SwapLiquidity for AggregateBidAsk {
                     .rev()
                     .flat_map(|(&price, parties)| parties.into_iter().map(move |p| (price, p)))
                 {
+                    let mut party_quantity = party.quantity.take_as_nat();
                     let quantity_b_traded =
-                        trade(&mut quantity_remaining, &mut party.quantity.0, price);
+                        trade(&mut quantity_remaining, &mut party_quantity, price);
+                    party.quantity = party_quantity.into();
                     let mut reference = party.clone();
                     reference.quantity = quantity_b_traded.into();
                     liquidity_reference
@@ -305,10 +309,10 @@ impl LiquidityReference {
                         },
                         match complement_token {
                             EnokiToken::TokenA => {
-                                quantity_b_to_a(party.quantity.0.clone(), price).unwrap()
+                                quantity_b_to_a(party.quantity.clone().into(), price).unwrap()
                             }
                             EnokiToken::TokenB => {
-                                quantity_a_to_b(party.quantity.0.clone(), price).unwrap()
+                                quantity_a_to_b(party.quantity.clone().into(), price).unwrap()
                             }
                         },
                     )

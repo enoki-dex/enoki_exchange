@@ -71,7 +71,7 @@ pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {
                             token: EnokiToken::TokenB,
                             to: market_maker.user,
                             amount: plus_fees(has_token_info::quantity_a_to_b(
-                                market_maker.quantity.0.clone(),
+                                market_maker.quantity.clone().into(),
                                 market_maker.price,
                             )?)?.into(),
                         },
@@ -82,7 +82,7 @@ pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {
                             token: EnokiToken::TokenA,
                             to: market_maker.user,
                             amount: plus_fees(has_token_info::quantity_b_to_a(
-                                market_maker.quantity.0.clone(),
+                                market_maker.quantity.clone().into(),
                                 market_maker.price,
                             )?)?.into(),
                         },

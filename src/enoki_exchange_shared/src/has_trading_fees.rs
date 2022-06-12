@@ -50,8 +50,8 @@ pub fn get_trading_fees() -> TradingFees {
 
 pub fn get_deposit_fee(token: &EnokiToken) -> Nat {
     STATE.with(|s| match token {
-        EnokiToken::TokenA => s.borrow().token_a_deposit_fee.0.clone(),
-        EnokiToken::TokenB => s.borrow().token_b_deposit_fee.0.clone(),
+        EnokiToken::TokenA => s.borrow().token_a_deposit_fee.clone().to_nat(),
+        EnokiToken::TokenB => s.borrow().token_b_deposit_fee.clone().to_nat(),
     })
 }
 

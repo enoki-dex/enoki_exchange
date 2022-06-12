@@ -3,11 +3,10 @@ use std::cell::RefCell;
 use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::{has_token_info, has_trading_fees};
 use enoki_exchange_shared::has_token_info::AssignedShards;
-use enoki_exchange_shared::has_trading_fees::TradingFees;
 use enoki_exchange_shared::is_managed;
 use enoki_exchange_shared::types::*;
+use enoki_exchange_shared::{has_token_info, has_trading_fees};
 
 use crate::other_brokers::init_brokers;
 
@@ -43,19 +42,20 @@ pub fn get_lp_worker_assigned_shard(token: &EnokiToken) -> Principal {
 
 #[update(name = "initBroker")]
 #[candid_method(update, rename = "initBroker")]
-async fn init_broker(
-    other_brokers: Vec<Principal>,
-    supply_token_info: has_token_info::TokenPairInfo,
-    liquidity_location: Principal,
-    trading_fees: TradingFees,
-) -> Result<AssignedShards> {
+async fn init_broker(params: InitBrokerParams) -> Result<AssignedShards> {
+    let InitBrokerParams {
+        other_brokers,
+        supply_token_info,
+        liquidity_location,
+        trading_fees,
+    } = params;
     is_managed::assert_is_manager()?;
     init_brokers(other_brokers);
     has_token_info::start_init_token_info(supply_token_info);
     has_token_info::finish_init_token_info().await?;
     let assigned = has_token_info::get_assigned_shards();
 
-    let worker_assigned_shards: Result<(AssignedShards, )> =
+    let worker_assigned_shards: Result<(AssignedShards,)> =
         ic_cdk::call(liquidity_location, "getAssignedShards", ())
             .await
             .map_err(|e| e.into());

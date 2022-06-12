@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::ops::{AddAssign, SubAssign};
 
 use candid::{candid_method, CandidType, Nat};
@@ -25,8 +26,8 @@ pub struct AccruedFees {
 impl AccruedFees {
     pub fn get_token_fee(&self, token: &EnokiToken) -> Option<Nat> {
         match token {
-            EnokiToken::TokenA => self.token_a_transfer_fee.clone().map(|val| val.0),
-            EnokiToken::TokenB => self.token_b_transfer_fee.clone().map(|val| val.0),
+            EnokiToken::TokenA => self.token_a_transfer_fee.clone().map(|val| val.into()),
+            EnokiToken::TokenB => self.token_b_transfer_fee.clone().map(|val| val.into()),
         }
     }
     pub fn get_token_fee_mut(&mut self, token: &EnokiToken) -> &mut Option<StableNat> {
@@ -60,7 +61,7 @@ pub async fn use_fee_for_transfer(token: &EnokiToken) -> Result<Nat> {
     ))?;
     STATE.with(|s| {
         let mut s = s.borrow_mut();
-        if s.deposit_fees.get(token).0 < transfer_fee {
+        if s.deposit_fees.get(token).compare_with(&transfer_fee) == Ordering::Less {
             Err(TxError::InsufficientFunds)
         } else {
             s.deposit_fees

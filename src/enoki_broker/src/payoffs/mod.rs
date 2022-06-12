@@ -156,7 +156,7 @@ async fn funds_sent(notification: ShardedTransferNotification) {
         "recipient not the same as expected"
     );
     assert_eq!(
-        waiting_on.amount.0,
+        waiting_on.amount.to_nat(),
         notification.value + notification.fee_charged,
         "amount received not the same as expected"
     );

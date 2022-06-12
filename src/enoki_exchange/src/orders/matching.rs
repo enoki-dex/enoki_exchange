@@ -21,18 +21,19 @@ impl OrderMatching for Order {
         if let OrderStatus::Pending = self.state.status {
             if let OrderStatus::Pending = executor.state.status {
                 let taker_fee = get_limit_order_taker_fee();
-                let mut quantity_remaining = std::mem::take(&mut self.state.quantity_remaining.0);
+                let mut quantity_remaining = self.state.quantity_remaining.take_as_nat();
                 quantity_remaining = nat_x_float(quantity_remaining, 1.0 - taker_fee).unwrap();
                 let market_maker_original_quantity = executor.state.quantity_remaining.clone();
+                let mut executor_quantity_remaining = executor.state.quantity_remaining.take_as_nat();
                 let (mut quantity_translator, quantity_b) = match order_quantity_token {
                     EnokiToken::TokenA => (
                         QuantityTranslator::new(executor.info.limit_price, &mut quantity_remaining),
-                        &mut executor.state.quantity_remaining.0,
+                        &mut executor_quantity_remaining,
                     ),
                     EnokiToken::TokenB => (
                         QuantityTranslator::new(
                             executor.info.limit_price,
-                            &mut executor.state.quantity_remaining.0,
+                            &mut executor_quantity_remaining,
                         ),
                         &mut quantity_remaining,
                     ),
@@ -51,8 +52,10 @@ impl OrderMatching for Order {
                             .unwrap()
                             .into();
                 }
-                if !executor.state.quantity_remaining.is_nonzero() {
+                if executor_quantity_remaining == 0u32 {
                     executor.state.status = OrderStatus::Completed;
+                } else {
+                    executor.state.quantity_remaining = executor_quantity_remaining.into();
                 }
                 self.state.marker_makers.push(CounterpartyInfo {
                     broker: executor.info.broker,

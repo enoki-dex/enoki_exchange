@@ -986,6 +986,7 @@ dependencies = [
 name = "test_main"
 version = "0.1.0"
 dependencies = [
+ "candid",
  "enoki_exchange_shared",
  "serde",
  "serde_json",

@@ -6,11 +6,17 @@ type AssignedShards = record { token_a : principal; token_b : principal };
 type CounterpartyInfo = record {
   broker : principal;
   user : principal;
-  quantity : nat;
+  quantity : vec nat8;
   price : nat64;
 };
 type EnokiToken = variant { TokenA; TokenB };
-type LiquidityAmount = record { token_a : nat; token_b : nat };
+type InitBrokerParams = record {
+  liquidity_location : principal;
+  other_brokers : vec principal;
+  supply_token_info : TokenPairInfo;
+  trading_fees : TradingFees;
+};
+type LiquidityAmount = record { token_a : vec nat8; token_b : vec nat8 };
 type LiquidityTrades = record {
   decreased : LiquidityAmount;
   increased : LiquidityAmount;
@@ -28,12 +34,12 @@ type OrderInfo = record {
   limit_price : nat64;
   side : Side;
   user : principal;
-  quantity : nat;
+  quantity : vec nat8;
   expiration_time : opt nat64;
 };
 type OrderState = record {
   status : OrderStatus;
-  quantity_remaining : nat;
+  quantity_remaining : vec nat8;
   marker_makers : vec CounterpartyInfo;
 };
 type OrderStatus = variant {
@@ -79,8 +85,8 @@ type TradingFees = record {
   limit_order_taker_fee : float64;
   swap_market_maker_reward : float64;
   swap_fee : float64;
-  token_a_deposit_fee : nat;
-  token_b_deposit_fee : nat;
+  token_a_deposit_fee : vec nat8;
+  token_b_deposit_fee : vec nat8;
 };
 type TxError = variant {
   IntOverflow;
@@ -109,9 +115,7 @@ service : (principal, principal) -> {
   getPastOrders : (principal) -> (vec Order) query;
   getTokenInfo : () -> (TokenPairInfo) query;
   getTradingFees : () -> (TradingFees) query;
-  initBroker : (vec principal, TokenPairInfo, principal, TradingFees) -> (
-      Result,
-    );
+  initBroker : (InitBrokerParams) -> (Result);
   limitOrder : (ShardedTransferNotification) -> ();
   receiveMarketMakerRewards : (ShardedTransferNotification) -> ();
   retrieveOrders : () -> (vec OrderInfo, vec OrderInfo);

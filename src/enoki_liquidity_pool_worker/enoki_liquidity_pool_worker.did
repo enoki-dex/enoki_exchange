@@ -1,5 +1,5 @@
 type AssignedShards = record { token_a : principal; token_b : principal };
-type LiquidityAmount = record { token_a : nat; token_b : nat };
+type LiquidityAmount = record { token_a : vec nat8; token_b : vec nat8 };
 type Result = variant { Ok; Err : TxError };
 type Result_1 = variant { Ok : AssignedShards; Err : TxError };
 type ShardedTransferNotification = record {

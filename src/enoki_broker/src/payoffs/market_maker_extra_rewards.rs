@@ -51,11 +51,11 @@ fn receive_market_maker_rewards(notification: ShardedTransferNotification) {
     assert_is_broker(broker).unwrap();
     let user_rewards: UserRewards = serde_json::from_str(&notification.data).unwrap();
     assert_eq!(
-        user_rewards.0.values().cloned().sum::<StableNat>().0,
+        user_rewards.0.values().cloned().sum::<StableNat>().to_nat(),
         notification.value
     );
     for (user, reward) in user_rewards.0 {
-        add_reward(ic_cdk::id(), user, &token, reward.0);
+        add_reward(ic_cdk::id(), user, &token, reward.into());
     }
 }
 
