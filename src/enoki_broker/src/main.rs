@@ -10,7 +10,7 @@ use enoki_exchange_shared::has_trading_fees::TradingFees;
 #[allow(unused_imports)]
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 use enoki_exchange_shared::is_managed::{self, ManagementData};
-use enoki_exchange_shared::is_owned::{self, OwnershipData};
+use enoki_exchange_shared::is_owned::{self, assert_is_owner, OwnershipData};
 #[allow(unused_imports)]
 use enoki_exchange_shared::liquidity::*;
 #[allow(unused_imports)]
@@ -28,11 +28,18 @@ mod shared_candid_methods;
 
 #[init]
 #[candid_method(init)]
-fn init(owner: Principal, exchange: Principal) {
+fn init() {
     is_owned::init_owner(OwnershipData {
-        owner,
+        owner: ic_cdk::caller(),
         deploy_time: ic_cdk::api::time(),
     });
+}
+
+#[update(name = "finishInit")]
+#[candid_method(update, rename = "finishInit")]
+fn finish_init(exchange: Principal) {
+    assert_is_owner().unwrap();
+    assert_eq!(is_managed::get_manager(), Principal::anonymous(), "already init");
     is_managed::init_manager(ManagementData { manager: exchange });
 }
 

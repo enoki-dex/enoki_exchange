@@ -51,8 +51,7 @@ async fn init_broker(params: InitBrokerParams) -> AssignedShards {
     } = params;
     is_managed::assert_is_manager().unwrap();
     init_brokers(other_brokers);
-    has_token_info::start_init_token_info(supply_token_info);
-    has_token_info::finish_init_token_info().await.unwrap();
+    has_token_info::init_token_info(supply_token_info).await.unwrap();
     let assigned = has_token_info::get_assigned_shards();
 
     let worker_assigned_shards: Result<(AssignedShards, )> =

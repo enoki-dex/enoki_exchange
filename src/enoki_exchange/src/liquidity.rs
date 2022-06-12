@@ -47,6 +47,9 @@ pub struct ProposedLiquidityChanges {
 #[candid_method(update, rename = "initPool")]
 async fn init_pool(pool: Principal) {
     assert_is_owner().unwrap();
+    if STATE.with(|s| s.borrow().pool_address != Principal::anonymous()) {
+        panic!("pool already init");
+    }
     let response: Result<(Principal, )> =
         ic_cdk::call(pool, "initLiquidityPool", (get_token_info(), ))
             .await

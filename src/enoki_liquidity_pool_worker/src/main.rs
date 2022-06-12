@@ -22,12 +22,19 @@ mod shared_candid_methods;
 
 #[init]
 #[candid_method(init)]
-fn init(owner: Principal, manager: Principal) {
-    is_managed::init_manager(ManagementData { manager });
+fn init() {
     is_owned::init_owner(OwnershipData {
-        owner,
+        owner: ic_cdk::caller(),
         deploy_time: ic_cdk::api::time(),
     });
+}
+
+#[update(name = "finishInit")]
+#[candid_method(update, rename = "finishInit")]
+fn finish_init(main_pool: Principal) {
+    is_owned::assert_is_owner().unwrap();
+    assert_eq!(is_managed::get_manager(), Principal::anonymous(), "already init");
+    is_managed::init_manager(ManagementData { manager: main_pool });
 }
 
 #[cfg(any(target_arch = "wasm32", test))]

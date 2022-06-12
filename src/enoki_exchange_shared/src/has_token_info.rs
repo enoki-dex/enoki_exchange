@@ -35,7 +35,7 @@ impl TokenPairInfo {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Eq, PartialEq)]
 pub struct AssignedShards {
     pub token_a: Principal,
     pub token_b: Principal,
@@ -69,12 +69,8 @@ pub fn import_stable_storage(data: TokenInfoState) {
     STATE.with(|s| s.replace(data));
 }
 
-pub fn start_init_token_info(token_info: TokenPairInfo) {
-    STATE.with(|s| s.borrow_mut().token_info = token_info);
-}
-
-pub async fn finish_init_token_info() -> Result<()> {
-    let token_info = STATE.with(|s| s.borrow().token_info.clone());
+pub async fn init_token_info(token_info: TokenPairInfo) -> Result<()> {
+    STATE.with(|s| s.borrow_mut().token_info = token_info.clone());
     let (token_a, token_b) = register_tokens(&token_info).await?;
     STATE.with(|s| s.borrow_mut().assigned_shards = AssignedShards { token_a, token_b });
     Ok(())
@@ -85,12 +81,12 @@ async fn register_tokens(token_info: &TokenPairInfo) -> Result<(Principal, Princ
         register(token_info.token_a.principal),
         register(token_info.token_b.principal),
     )
-        .await;
+    .await;
     Ok((assigned_a?, assigned_b?))
 }
 
 async fn register(with_token: Principal) -> Result<Principal> {
-    let result: Result<(Principal, )> = ic_cdk::call(with_token, "register", (ic_cdk::id(), ))
+    let result: Result<(Principal,)> = ic_cdk::call(with_token, "register", (ic_cdk::id(),))
         .await
         .map_err(|e| e.into_tx_error());
     result.map(|r| r.0)
@@ -98,11 +94,11 @@ async fn register(with_token: Principal) -> Result<Principal> {
 
 pub async fn add_token_spender(principal: Principal) -> Result<()> {
     let shards = get_assigned_shards();
-    let result: Result<()> = ic_cdk::call(shards.token_a, "addSpender", (principal, ))
+    let result: Result<()> = ic_cdk::call(shards.token_a, "addSpender", (principal,))
         .await
         .map_err(|e| e.into_tx_error());
     result?;
-    let result: Result<()> = ic_cdk::call(shards.token_b, "addSpender", (principal, ))
+    let result: Result<()> = ic_cdk::call(shards.token_b, "addSpender", (principal,))
         .await
         .map_err(|e| e.into_tx_error());
     result

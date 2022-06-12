@@ -13,6 +13,11 @@ install:
 init-local:
 	./scripts/initalize_local_balance.sh $(II_PRINCIPAL)
 
+.PHONE: deploy
+.SILENT: deploy
+deploy:
+	./scripts/deploy.sh
+
 .PHONY: build
 .SILENT: build
 build:
