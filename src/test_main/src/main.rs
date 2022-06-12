@@ -1,7 +1,7 @@
 use candid::Nat;
 
 use enoki_exchange_shared::has_trading_fees::TradingFees;
-use enoki_exchange_shared::types::{OrderInput};
+use enoki_exchange_shared::types::OrderInput;
 
 fn main() {
     let order = OrderInput {

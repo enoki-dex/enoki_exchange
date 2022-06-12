@@ -28,7 +28,7 @@ pub fn assert_is_manager() -> Result<()> {
     if STATE.with(|s| s.borrow().manager) == ic_cdk::caller() {
         Ok(())
     } else {
-        Err(TxError::Unauthorized)
+        Err(TxError::Unauthorized.into())
     }
 }
 

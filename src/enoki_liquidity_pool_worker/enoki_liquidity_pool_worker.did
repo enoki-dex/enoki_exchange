@@ -1,48 +1,51 @@
-type AssignedShards = record { token_a : principal; token_b : principal };
-type LiquidityAmount = record { token_a : vec nat8; token_b : vec nat8 };
-type Result = variant { Ok; Err : TxError };
-type Result_1 = variant { Ok : AssignedShards; Err : TxError };
+type AssignedShards = record {
+    token_a : principal;
+    token_b : principal
+};
+
+type LiquidityAmount = record {
+    token_a : vec nat8;
+    token_b : vec nat8
+};
+
+type LiquidityAmountNat = record {
+    token_a : nat;
+    token_b : nat
+};
+
 type ShardedTransferNotification = record {
-  to : principal;
-  value : nat;
-  data : text;
-  from : principal;
-  fee_charged : nat;
-  from_shard : principal;
+    to : principal;
+    value : nat;
+    data : text;
+    from : principal;
+    fee_charged : nat;
+    from_shard : principal;
 };
-type TokenInfo = record { "principal" : principal };
+
+type TokenInfo = record {
+    "principal" : principal
+};
+
 type TokenPairInfo = record {
-  token_a : TokenInfo;
-  token_b : TokenInfo;
-  price_number_of_decimals : nat64;
-};
-type TxError = variant {
-  IntOverflow;
-  ParsingError : text;
-  InsufficientLiquidityAvailable;
-  IntUnderflow;
-  UserNotRegistered;
-  Unauthorized;
-  Other : text;
-  SlippageExceeded;
-  CallbackError : text;
-  InsufficientFunds;
+    token_a : TokenInfo;
+    token_b : TokenInfo;
+    price_number_of_decimals : nat64;
 };
 service : (principal, principal) -> {
-  addBroker : (principal) -> (Result);
-  addLiquidity : (ShardedTransferNotification) -> ();
-  getAssignedShardA : () -> (principal) query;
-  getAssignedShardB : () -> (principal) query;
-  getAssignedShards : () -> (AssignedShards) query;
-  getLiquidity : (principal) -> (LiquidityAmount) query;
-  getManager : () -> (principal) query;
-  getOwner : () -> (principal) query;
-  getShardsToAddLiquidity : () -> (AssignedShards) query;
-  getTokenInfo : () -> (TokenPairInfo) query;
-  initWorker : (TokenPairInfo) -> (Result_1);
-  removeAllLiquidity : () -> ();
-  removeLiquidity : (LiquidityAmount) -> ();
-  setManager : (principal) -> (Result);
-  setOwner : (principal) -> (Result);
-  triggerHeartbeat : () -> (opt nat64);
+    addBroker : (principal) -> ();
+    addLiquidity : (ShardedTransferNotification) -> ();
+    getAssignedShardA : () -> (principal) query;
+    getAssignedShardB : () -> (principal) query;
+    getAssignedShards : () -> (AssignedShards) query;
+    getLiquidity : (principal) -> (LiquidityAmountNat) query;
+    getManager : () -> (principal) query;
+    getOwner : () -> (principal) query;
+    getShardsToAddLiquidity : () -> (AssignedShards) query;
+    getTokenInfo : () -> (TokenPairInfo) query;
+    initWorker : (TokenPairInfo) -> (AssignedShards);
+    removeAllLiquidity : () -> ();
+    removeLiquidity : (LiquidityAmount) -> ();
+    setManager : (principal) -> ();
+    setOwner : (principal) -> ();
+    triggerHeartbeat : () -> (opt nat64);
 }

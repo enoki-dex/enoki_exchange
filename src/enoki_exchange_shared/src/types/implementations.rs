@@ -134,3 +134,12 @@ impl AggregateBidAsk {
         *self = next;
     }
 }
+
+impl From<LiquidityAmount> for LiquidityAmountNat {
+    fn from(val: LiquidityAmount) -> Self {
+        Self {
+            token_a: val.token_a.into(),
+            token_b: val.token_b.into(),
+        }
+    }
+}

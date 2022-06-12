@@ -89,7 +89,7 @@ async fn get_broker_assigned_shard(broker: Principal, token: EnokiToken) -> Resu
     } else {
         let result: Result<(Principal, )> = ic_cdk::call(broker, "getAssignedShard", ())
             .await
-            .map_err(|e| e.into());
+            .map_err(|e| e.into_tx_error());
         result?.0
     };
     STATE.with(|s| s.borrow_mut().broker_assigned_shards.insert(key, shard));
@@ -125,9 +125,9 @@ async fn get_assigned_shard_for_broker(token: EnokiToken) -> Principal {
 
 #[update(name = "sendFunds")]
 #[candid_method(update, rename = "sendFunds")]
-async fn send_funds(id: String, info: PendingTransfer) -> Result<()> {
-    assert_is_broker(ic_cdk::caller())?;
-    exchange_tokens::send_funds_internal(id, info).await
+async fn send_funds(id: String, info: PendingTransfer) {
+    assert_is_broker(ic_cdk::caller()).unwrap();
+    exchange_tokens::send_funds_internal(id, info).await.unwrap()
 }
 
 #[update(name = "fundsSent")]
@@ -170,7 +170,7 @@ async fn funds_sent(notification: ShardedTransferNotification) {
         (to_shard, next_transfer.to, next_transfer.amount),
     )
         .await
-        .map_err(|e| e.into());
+        .map_err(|e| e.into_tx_error());
     response.unwrap();
 }
 

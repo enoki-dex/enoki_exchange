@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use candid::{CandidType, Nat, Principal};
 use num_traits::Pow;
 
-use crate::types::{EnokiToken, Result, TxError};
+use crate::types::{EnokiToken, IntoTxError, Result, TxError};
 use crate::utils::{nat_div_float, nat_x_float};
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
@@ -92,7 +92,7 @@ async fn register_tokens(token_info: &TokenPairInfo) -> Result<(Principal, Princ
 async fn register(with_token: Principal) -> Result<Principal> {
     let result: Result<(Principal, )> = ic_cdk::call(with_token, "register", (ic_cdk::id(), ))
         .await
-        .map_err(|e| e.into());
+        .map_err(|e| e.into_tx_error());
     result.map(|r| r.0)
 }
 
@@ -100,11 +100,11 @@ pub async fn add_token_spender(principal: Principal) -> Result<()> {
     let shards = get_assigned_shards();
     let result: Result<()> = ic_cdk::call(shards.token_a, "addSpender", (principal, ))
         .await
-        .map_err(|e| e.into());
+        .map_err(|e| e.into_tx_error());
     result?;
     let result: Result<()> = ic_cdk::call(shards.token_b, "addSpender", (principal, ))
         .await
-        .map_err(|e| e.into());
+        .map_err(|e| e.into_tx_error());
     result
 }
 
@@ -192,7 +192,7 @@ pub fn parse_from() -> Result<EnokiToken> {
         } else if s.assigned_shards.token_b == caller {
             Ok(EnokiToken::TokenB)
         } else {
-            Err(TxError::Unauthorized)
+            Err(TxError::Unauthorized.into())
         }
     })
 }

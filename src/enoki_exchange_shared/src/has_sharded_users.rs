@@ -12,7 +12,7 @@ pub fn register_user(user: Principal, token: Principal, assigned_shard: Principa
 pub fn get_user_shard(user: Principal, token: Principal) -> Result<Principal> {
     STATE
         .with(|s| s.borrow().users.get(&UserAndToken { user, token }).copied())
-        .ok_or(TxError::UserNotRegistered)
+        .ok_or(TxError::UserNotRegistered.into())
 }
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]

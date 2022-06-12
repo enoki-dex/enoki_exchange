@@ -45,5 +45,5 @@ pub fn nat_div_float(value: Nat, divisor: f64) -> Result<Nat> {
 }
 
 pub fn nat_to_u64(value: Nat) -> Result<u64> {
-    value.0.to_u64().ok_or(TxError::IntOverflow)
+    value.0.to_u64().ok_or(TxError::IntOverflow.into())
 }

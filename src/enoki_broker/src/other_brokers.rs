@@ -15,7 +15,7 @@ pub fn assert_is_broker(principal: Principal) -> Result<()> {
     if STATE.with(|s| s.borrow().other_brokers.contains(&principal)) {
         Ok(())
     } else {
-        Err(TxError::Unauthorized)
+        Err(TxError::Unauthorized.into())
     }
 }
 

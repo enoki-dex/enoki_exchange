@@ -1,37 +1,16 @@
 use std::collections::BTreeMap;
-use std::string::String;
 
-use candid::{CandidType, Deserialize, Nat, Principal};
-use ic_cdk::api::call::RejectionCode;
+use candid::{CandidType, Nat, Principal};
+
+pub use result::{IntoTxError, Result, TxError};
+pub use stable_nat::StableNat;
+
 use crate::has_token_info;
 use crate::has_trading_fees::TradingFees;
 
 mod implementations;
 mod stable_nat;
-
-pub use stable_nat::StableNat;
-
-#[derive(CandidType, Debug, Deserialize)]
-pub enum TxError {
-    InsufficientFunds,
-    InsufficientLiquidityAvailable,
-    SlippageExceeded,
-    Unauthorized,
-    UserNotRegistered,
-    IntOverflow,
-    IntUnderflow,
-    ParsingError(String),
-    CallbackError(String),
-    Other(String),
-}
-
-impl From<(RejectionCode, String)> for TxError {
-    fn from(err: (RejectionCode, String)) -> Self {
-        Self::CallbackError(format!("Error in callback (code {:?}): {}", err.0, err.1))
-    }
-}
-
-pub type Result<T> = std::result::Result<T, TxError>;
+mod result;
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq, Hash)]
 pub enum EnokiToken {
@@ -49,6 +28,12 @@ pub struct TokenAmount {
 pub struct LiquidityAmount {
     pub token_a: StableNat,
     pub token_b: StableNat,
+}
+
+#[derive(CandidType, Debug, Clone, candid::Deserialize, Default)]
+pub struct LiquidityAmountNat {
+    pub token_a: Nat,
+    pub token_b: Nat,
 }
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize, Default)]

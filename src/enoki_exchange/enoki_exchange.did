@@ -1,45 +1,50 @@
-type AssignedShards = record { token_a : principal; token_b : principal };
-type Broker = record { id : principal };
-type BrokerState = record { brokers : vec record { principal; Broker } };
-type Result = variant { Ok; Err : TxError };
-type TokenInfo = record { "principal" : principal };
+type AssignedShards = record {
+    token_a : principal;
+    token_b : principal
+};
+
+type Broker = record {
+    id : principal
+};
+
+type BrokerState = record {
+    brokers : vec record {
+        principal;
+        Broker
+    }
+};
+
+type TokenInfo = record {
+    "principal" : principal
+};
+
 type TokenPairInfo = record {
-  token_a : TokenInfo;
-  token_b : TokenInfo;
-  price_number_of_decimals : nat64;
+    token_a : TokenInfo;
+    token_b : TokenInfo;
+    price_number_of_decimals : nat64;
 };
+
 type TradingFees = record {
-  limit_order_taker_fee : float64;
-  swap_market_maker_reward : float64;
-  swap_fee : float64;
-  token_a_deposit_fee : vec nat8;
-  token_b_deposit_fee : vec nat8;
-};
-type TxError = variant {
-  IntOverflow;
-  ParsingError : text;
-  InsufficientLiquidityAvailable;
-  IntUnderflow;
-  UserNotRegistered;
-  Unauthorized;
-  Other : text;
-  SlippageExceeded;
-  CallbackError : text;
-  InsufficientFunds;
+    limit_order_taker_fee : float64;
+    swap_market_maker_reward : float64;
+    swap_fee : float64;
+    token_a_deposit_fee : vec nat8;
+    token_b_deposit_fee : vec nat8;
 };
 service : (principal, principal, principal, nat64) -> {
-  addBroker : (principal) -> ();
-  finishInit : () -> ();
-  getAssignedShardA : () -> (principal) query;
-  getAssignedShardB : () -> (principal) query;
-  getAssignedShards : () -> (AssignedShards) query;
-  getBrokerIds : () -> (vec principal) query;
-  getBrokers : () -> (BrokerState) query;
-  getLiquidityLocation : () -> (principal);
-  getOwner : () -> (principal) query;
-  getTokenInfo : () -> (TokenPairInfo) query;
-  getTradingFees : () -> (TradingFees) query;
-  initPool : (principal) -> ();
-  setFees : (nat, nat, float64, float64, float64) -> ();
-  setOwner : (principal) -> (Result);
+    addBroker : (principal) -> ();
+    finishInit : () -> ();
+    getAssignedShardA : () -> (principal) query;
+    getAssignedShardB : () -> (principal) query;
+    getAssignedShards : () -> (AssignedShards) query;
+    getBrokerIds : () -> (vec principal) query;
+    getBrokers : () -> (BrokerState) query;
+    getLiquidityLocation : () -> (principal);
+    getOwner : () -> (principal) query;
+    getTokenInfo : () -> (TokenPairInfo) query;
+    getTradingFees : () -> (TradingFees) query;
+    initPool : (principal) -> ();
+    setFees : (nat, nat, float64, float64, float64) -> ();
+    setOwner : (principal) -> ();
+    triggerRun : () -> ();
 }

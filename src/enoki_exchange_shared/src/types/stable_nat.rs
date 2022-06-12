@@ -6,16 +6,16 @@ use candid::{CandidType, Nat};
 use num_bigint::BigUint;
 
 #[derive(
-    CandidType,
-    Debug,
-    Clone,
-    Default,
-    Ord,
-    PartialOrd,
-    Eq,
-    PartialEq,
-    serde::Serialize,
-    serde::Deserialize,
+CandidType,
+Debug,
+Clone,
+Default,
+Ord,
+PartialOrd,
+Eq,
+PartialEq,
+serde::Serialize,
+serde::Deserialize,
 )]
 pub struct StableNat(Vec<u8>);
 
@@ -106,7 +106,7 @@ impl Div for StableNat {
 }
 
 impl Sum for StableNat {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+    fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
         iter.fold(Default::default(), |mut sum, next| {
             sum.add_assign(next);
             sum

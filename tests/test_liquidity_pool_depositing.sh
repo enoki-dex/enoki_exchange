@@ -30,9 +30,17 @@ if [ "0 : nat" == "$(dfx canister call "$assigned_shard_1" shardBalanceOf "(prin
 fi
 end
 
-#start "deposit funds on LP"
-#dfx --identity pooler1 canister call
-#end
+start "deposit funds on LP"
+worker_principal=$(dfx canister id enoki_liquidity_pool_worker)
+deposit_shard_a=$(dfx canister call enoki_liquidity_pool_worker getAssignedShardA | grep -oE $REGEX_PRINCIPAL)
+deposit_shard_b=$(dfx canister call enoki_liquidity_pool_worker getAssignedShardB | grep -oE $REGEX_PRINCIPAL)
+dfx --identity pooler1 canister call "$assigned_shard_1" shardTransferAndCall "(principal \"$deposit_shard_a\", principal \"$worker_principal\", 700_000_000 : nat, principal \"$worker_principal\", \"addLiquidity\", \"\")"
+dfx --identity pooler1 canister call "$assigned_shard_b_1" shardTransferAndCall "(principal \"$deposit_shard_b\", principal \"$worker_principal\", 700_000_000: nat, principal \"$worker_principal\", \"addLiquidity\", \"\")"
+dfx --identity pooler2 canister call "$assigned_shard_2" shardTransferAndCall "(principal \"$deposit_shard_a\", principal \"$worker_principal\", 1_000_000_000: nat, principal \"$worker_principal\", \"addLiquidity\", \"\")"
+dfx canister call enoki_liquidity_pool_worker triggerHeartbeat
+info "pooler 1 liquidity: $(dfx canister call enoki_liquidity_pool_worker getLiquidity "(principal \"$pooler1\")")"
+info "pooler 2 liquidity: $(dfx canister call enoki_liquidity_pool_worker getLiquidity "(principal \"$pooler2\")")"
+end
 
 #start "setting up user1 on enoki_wrapped_token"
 #dfx identity use user1

@@ -70,7 +70,7 @@ pub async fn swap(mut order: ProcessedOrderInput) {
             Side::Buy => avg_price > order.limit_price_in_b,
             Side::Sell => avg_price < order.limit_price_in_b,
         } {
-            return Err(TxError::SlippageExceeded);
+            return Err(TxError::SlippageExceeded.into());
         }
 
         Ok(s.bid_ask
@@ -208,7 +208,7 @@ impl SwapLiquidity for AggregateBidAsk {
             }
         }
         if quantity_remaining != 0u32 {
-            return Err(TxError::InsufficientLiquidityAvailable);
+            return Err(TxError::InsufficientLiquidityAvailable.into());
         }
         let avg_price = price_times_quantity / quantity_b_traded_total;
         nat_to_u64(avg_price)

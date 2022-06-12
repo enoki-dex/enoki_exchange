@@ -62,7 +62,7 @@ pub async fn use_fee_for_transfer(token: &EnokiToken) -> Result<Nat> {
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         if s.deposit_fees.get(token).compare_with(&transfer_fee) == Ordering::Less {
-            Err(TxError::InsufficientFunds)
+            Err(TxError::InsufficientFunds.into())
         } else {
             s.deposit_fees
                 .get_mut(token)
@@ -94,7 +94,7 @@ async fn update_upstream_fees() {
 async fn update_upstream_token_fee(token: &EnokiToken) -> Result<()> {
     let result: Result<(Nat, )> = ic_cdk::call(has_token_info::get_token_address(token), "getFee", ())
         .await
-        .map_err(|e| e.into());
+        .map_err(|e| e.into_tx_error());
     let fee = result?.0;
     STATE.with(|s| *s.borrow_mut().get_token_fee_mut(token) = Some(fee.into()));
     Ok(())

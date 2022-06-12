@@ -1,54 +1,54 @@
-type AssignedShards = record { token_a : principal; token_b : principal };
-type LiquidityAmount = record { token_a : vec nat8; token_b : vec nat8 };
+type AssignedShards = record {
+    token_a : principal;
+    token_b : principal
+};
+
+type LiquidityAmount = record {
+    token_a : vec nat8;
+    token_b : vec nat8
+};
+
 type LiquidityTrades = record {
-  decreased : LiquidityAmount;
-  increased : LiquidityAmount;
+    decreased : LiquidityAmount;
+    increased : LiquidityAmount;
 };
-type Result = variant { Ok; Err : TxError };
-type Result_1 = variant {
-  Ok : record { LiquidityAmount; LiquidityAmount; LiquidityTrades };
-  Err : TxError;
+
+type TokenInfo = record {
+    "principal" : principal
 };
-type TokenInfo = record { "principal" : principal };
+
 type TokenPairInfo = record {
-  token_a : TokenInfo;
-  token_b : TokenInfo;
-  price_number_of_decimals : nat64;
+    token_a : TokenInfo;
+    token_b : TokenInfo;
+    price_number_of_decimals : nat64;
 };
+
 type TradingFees = record {
-  limit_order_taker_fee : float64;
-  swap_market_maker_reward : float64;
-  swap_fee : float64;
-  token_a_deposit_fee : vec nat8;
-  token_b_deposit_fee : vec nat8;
-};
-type TxError = variant {
-  IntOverflow;
-  ParsingError : text;
-  InsufficientLiquidityAvailable;
-  IntUnderflow;
-  UserNotRegistered;
-  Unauthorized;
-  Other : text;
-  SlippageExceeded;
-  CallbackError : text;
-  InsufficientFunds;
+    limit_order_taker_fee : float64;
+    swap_market_maker_reward : float64;
+    swap_fee : float64;
+    token_a_deposit_fee : vec nat8;
+    token_b_deposit_fee : vec nat8;
 };
 service : (principal, principal) -> {
-  addBroker : (principal) -> (Result);
-  getAssignedShardA : () -> (principal) query;
-  getAssignedShardB : () -> (principal) query;
-  getAssignedShards : () -> (AssignedShards) query;
-  getManager : () -> (principal) query;
-  getOwner : () -> (principal) query;
-  getTokenInfo : () -> (TokenPairInfo) query;
-  getTradingFees : () -> (TradingFees) query;
-  getUpdatedLiquidity : () -> (LiquidityAmount, LiquidityAmount);
-  getWorker : () -> (principal) query;
-  initLiquidityPool : (TokenPairInfo) -> (principal);
-  initWorker : (principal) -> (Result);
-  resolveLiquidity : (LiquidityAmount, LiquidityAmount, LiquidityTrades) -> ();
-  setManager : (principal) -> (Result);
-  setOwner : (principal) -> (Result);
-  updateLiquidity : (LiquidityAmount, LiquidityAmount) -> (Result_1);
+    addBroker : (principal) -> ();
+    getAssignedShardA : () -> (principal) query;
+    getAssignedShardB : () -> (principal) query;
+    getAssignedShards : () -> (AssignedShards) query;
+    getManager : () -> (principal) query;
+    getOwner : () -> (principal) query;
+    getTokenInfo : () -> (TokenPairInfo) query;
+    getTradingFees : () -> (TradingFees) query;
+    getUpdatedLiquidity : () -> (LiquidityAmount, LiquidityAmount);
+    getWorker : () -> (principal) query;
+    initLiquidityPool : (TokenPairInfo) -> (principal);
+    initWorker : (principal) -> ();
+    resolveLiquidity : (LiquidityAmount, LiquidityAmount, LiquidityTrades) -> ();
+    setManager : (principal) -> ();
+    setOwner : (principal) -> ();
+    updateLiquidity : (LiquidityAmount, LiquidityAmount) -> (
+    LiquidityAmount,
+    LiquidityAmount,
+    LiquidityTrades,
+    );
 }

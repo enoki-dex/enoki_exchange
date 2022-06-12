@@ -4,7 +4,6 @@ use ic_cdk_macros::*;
 use enoki_exchange_shared::{has_token_info, has_trading_fees, is_managed, is_owned};
 use enoki_exchange_shared::has_token_info::{AssignedShards, TokenPairInfo};
 use enoki_exchange_shared::has_trading_fees::TradingFees;
-use enoki_exchange_shared::types::*;
 
 #[query(name = "getOwner")]
 #[candid_method(query, rename = "getOwner")]
@@ -14,8 +13,8 @@ fn get_owner() -> Principal {
 
 #[update(name = "setOwner")]
 #[candid_method(update, rename = "setOwner")]
-fn set_owner(new_owner: Principal) -> Result<()> {
-    is_owned::set_owner(new_owner)
+fn set_owner(new_owner: Principal) {
+    is_owned::set_owner(new_owner).unwrap()
 }
 
 #[query(name = "getTokenInfo")]
@@ -56,6 +55,6 @@ fn get_manager() -> Principal {
 
 #[update(name = "setManager")]
 #[candid_method(update, rename = "setManager")]
-fn set_manager(new_manager: Principal) -> Result<()> {
-    is_managed::set_manager(new_manager)
+fn set_manager(new_manager: Principal) {
+    is_managed::set_manager(new_manager).unwrap()
 }

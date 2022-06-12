@@ -19,7 +19,7 @@ async fn send_funds_from(id: String, broker: Principal, info: PendingTransfer) -
     } else {
         ic_cdk::call(broker, "sendFunds", (id, info))
             .await
-            .map_err(|e| e.into())
+            .map_err(|e| e.into_tx_error())
     }
 }
 
@@ -40,7 +40,7 @@ pub async fn send_funds_internal(id: String, info: PendingTransfer) -> Result<()
         ),
     )
         .await
-        .map_err(|e| e.into())
+        .map_err(|e| e.into_tx_error())
 }
 
 pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {

@@ -114,7 +114,7 @@ async fn distribute_other_broker_rewards() {
                     ),
                 )
                     .await
-                    .map_err(|e| e.into());
+                    .map_err(|e| e.into_tx_error());
 
                 result
             }
@@ -163,7 +163,7 @@ async fn distribute_local_rewards() {
                         (user_shard, user, token_reward.clone()),
                     )
                         .await
-                        .map_err(|e| e.into());
+                        .map_err(|e| e.into_tx_error());
                     if let Err(err) = result {
                         ic_cdk::api::print(format!("error distributing extra reward: {:?}", err));
                         failed

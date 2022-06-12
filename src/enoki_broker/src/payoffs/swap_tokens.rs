@@ -20,6 +20,6 @@ pub async fn send_swap_tokens(
         (lp_location, user_shard, user, amount_to_send),
     )
         .await
-        .map_err(|e| e.into());
+        .map_err(|e| e.into_tx_error());
     result
 }

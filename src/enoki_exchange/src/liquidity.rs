@@ -50,7 +50,7 @@ async fn init_pool(pool: Principal) {
     let response: Result<(Principal, )> =
         ic_cdk::call(pool, "initLiquidityPool", (get_token_info(), ))
             .await
-            .map_err(|e| e.into());
+            .map_err(|e| e.into_tx_error());
     let worker = response.unwrap().0;
     STATE.with(|s| {
         let mut s = s.borrow_mut();
@@ -87,7 +87,7 @@ pub async fn get_updated_liquidity_from_pool() -> Result<RequestForNewLiquidityT
     let result: Result<(LiquidityAmount, LiquidityAmount)> =
         ic_cdk::call(get_pool_contract(), "getUpdatedLiquidity", ())
             .await
-            .map_err(|e| e.into());
+            .map_err(|e| e.into_tx_error());
     let (to_add, to_remove) = result?;
     let request_from_pool = RequestForLiquidityChanges { to_add, to_remove };
     let proposed_target_for_brokers =
@@ -156,7 +156,7 @@ pub async fn update_committed_broker_liquidity(
         (added, removed, traded),
     )
         .await
-        .map_err(|e| e.into());
+        .map_err(|e| e.into_tx_error());
     result
 }
 

@@ -29,7 +29,7 @@ pub fn assert_is_owner() -> Result<()> {
     if STATE.with(|s| s.borrow().owner) == ic_cdk::caller() {
         Ok(())
     } else {
-        Err(TxError::Unauthorized)
+        Err(TxError::Unauthorized.into())
     }
 }
 
@@ -48,7 +48,7 @@ pub fn set_owner(new_owner: Principal) -> Result<()> {
             *owner = new_owner;
             Ok(())
         } else {
-            Err(TxError::Unauthorized)
+            Err(TxError::Unauthorized.into())
         }
     })
 }

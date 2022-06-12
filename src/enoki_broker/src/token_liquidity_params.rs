@@ -3,10 +3,10 @@ use std::cell::RefCell;
 use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
+use enoki_exchange_shared::{has_token_info, has_trading_fees};
 use enoki_exchange_shared::has_token_info::AssignedShards;
 use enoki_exchange_shared::is_managed;
 use enoki_exchange_shared::types::*;
-use enoki_exchange_shared::{has_token_info, has_trading_fees};
 
 use crate::other_brokers::init_brokers;
 
@@ -42,24 +42,24 @@ pub fn get_lp_worker_assigned_shard(token: &EnokiToken) -> Principal {
 
 #[update(name = "initBroker")]
 #[candid_method(update, rename = "initBroker")]
-async fn init_broker(params: InitBrokerParams) -> Result<AssignedShards> {
+async fn init_broker(params: InitBrokerParams) -> AssignedShards {
     let InitBrokerParams {
         other_brokers,
         supply_token_info,
         liquidity_location,
         trading_fees,
     } = params;
-    is_managed::assert_is_manager()?;
+    is_managed::assert_is_manager().unwrap();
     init_brokers(other_brokers);
     has_token_info::start_init_token_info(supply_token_info);
-    has_token_info::finish_init_token_info().await?;
+    has_token_info::finish_init_token_info().await.unwrap();
     let assigned = has_token_info::get_assigned_shards();
 
-    let worker_assigned_shards: Result<(AssignedShards,)> =
+    let worker_assigned_shards: Result<(AssignedShards, )> =
         ic_cdk::call(liquidity_location, "getAssignedShards", ())
             .await
-            .map_err(|e| e.into());
-    let worker_assigned_shards = worker_assigned_shards?.0;
+            .map_err(|e| e.into_tx_error());
+    let worker_assigned_shards = worker_assigned_shards.unwrap().0;
 
     STATE.with(|s| {
         let mut s = s.borrow_mut();
@@ -67,7 +67,7 @@ async fn init_broker(params: InitBrokerParams) -> Result<AssignedShards> {
         s.assigned_shards_for_worker = worker_assigned_shards;
     });
     has_trading_fees::init_fee_info(trading_fees);
-    Ok(assigned)
+    assigned
 }
 
 pub fn export_stable_storage() -> TokenLiquidityData {

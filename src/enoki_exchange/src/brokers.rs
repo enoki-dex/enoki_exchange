@@ -1,16 +1,16 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use candid::utils::{ArgumentDecoder, ArgumentEncoder};
 use candid::{candid_method, CandidType, Nat, Principal};
+use candid::utils::{ArgumentDecoder, ArgumentEncoder};
 use ic_cdk_macros::*;
 
+use enoki_exchange_shared::{has_token_info, has_trading_fees};
 use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
 use enoki_exchange_shared::has_token_info::AssignedShards;
 use enoki_exchange_shared::has_trading_fees::TradingFees;
 use enoki_exchange_shared::is_owned;
 use enoki_exchange_shared::types::*;
-use enoki_exchange_shared::{has_token_info, has_trading_fees};
 
 use crate::liquidity::{self, get_liquidity_location, init_broker_lp};
 
@@ -19,7 +19,7 @@ pub fn assert_is_broker_contract() -> Result<()> {
     if STATE.with(|s| s.borrow().brokers.contains_key(&ic_cdk::caller())) {
         Ok(())
     } else {
-        Err(TxError::Unauthorized)
+        Err(TxError::Unauthorized.into())
     }
 }
 
@@ -50,11 +50,11 @@ pub async fn foreach_broker<
         ids.into_iter()
             .map(|id| ic_cdk::call(id, method, args_getter(id))),
     )
-    .await;
+        .await;
     responses
         .into_iter()
         .collect::<std::result::Result<Vec<R>, _>>()
-        .map_err(|err| err.into())
+        .map_err(|err| err.into_tx_error())
 }
 
 pub async fn foreach_broker_map<
@@ -98,7 +98,7 @@ async fn add_broker(broker: Principal) {
     let token_info = has_token_info::get_token_info();
     let token_a = token_info.token_a.principal;
     let token_b = token_info.token_b.principal;
-    let response: Result<(Result<AssignedShards>,)> = ic_cdk::call(
+    let response: Result<(AssignedShards, )> = ic_cdk::call(
         broker,
         "initBroker",
         (InitBrokerParams {
@@ -106,20 +106,20 @@ async fn add_broker(broker: Principal) {
             supply_token_info: token_info,
             liquidity_location: get_liquidity_location(),
             trading_fees: has_trading_fees::get_trading_fees(),
-        },),
+        }, ),
     )
-    .await
-    .map_err(|e| e.into());
-    let assigned = response.unwrap().0.unwrap();
-    let _result: Vec<()> = foreach_broker("addBroker", |_| (broker,)).await.unwrap();
+        .await
+        .map_err(|e| e.into_tx_error());
+    let assigned = response.unwrap().0;
+    let _result: Vec<()> = foreach_broker("addBroker", |_| (broker, )).await.unwrap();
     STATE.with(|s| s.borrow_mut().brokers.insert(broker, Broker { id: broker }));
     register_user(broker, token_a, assigned.token_a);
     register_user(broker, token_b, assigned.token_b);
     init_broker_lp(broker);
 
-    let result: Result<()> = ic_cdk::call(liquidity::get_pool_contract(), "addBroker", (broker,))
+    let result: Result<()> = ic_cdk::call(liquidity::get_pool_contract(), "addBroker", (broker, ))
         .await
-        .map_err(|e| e.into());
+        .map_err(|e| e.into_tx_error());
     result.unwrap();
 }
 
@@ -154,7 +154,7 @@ async fn set_fees(
         swap_market_maker_reward,
     });
     let data = has_trading_fees::get_trading_fees();
-    let _result: Vec<()> = foreach_broker("setFees", |_| (data.clone(),))
+    let _result: Vec<()> = foreach_broker("setFees", |_| (data.clone(), ))
         .await
         .unwrap();
 }

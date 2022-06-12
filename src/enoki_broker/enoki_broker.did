@@ -1,133 +1,166 @@
 type AggregateBidAsk = record {
-  asks : vec record { nat64; vec CounterpartyInfo };
-  bids : vec record { nat64; vec CounterpartyInfo };
+    asks : vec record {
+        nat64;
+        vec CounterpartyInfo
+    };
+    bids : vec record {
+        nat64;
+        vec CounterpartyInfo
+    };
 };
-type AssignedShards = record { token_a : principal; token_b : principal };
+
+type AssignedShards = record {
+    token_a : principal;
+    token_b : principal
+};
+
 type CounterpartyInfo = record {
-  broker : principal;
-  user : principal;
-  quantity : vec nat8;
-  price : nat64;
+    broker : principal;
+    user : principal;
+    quantity : vec nat8;
+    price : nat64;
 };
-type EnokiToken = variant { TokenA; TokenB };
+
+type EnokiToken = variant {
+    TokenA;
+    TokenB
+};
+
 type InitBrokerParams = record {
-  liquidity_location : principal;
-  other_brokers : vec principal;
-  supply_token_info : TokenPairInfo;
-  trading_fees : TradingFees;
+    liquidity_location : principal;
+    other_brokers : vec principal;
+    supply_token_info : TokenPairInfo;
+    trading_fees : TradingFees;
 };
-type LiquidityAmount = record { token_a : vec nat8; token_b : vec nat8 };
+
+type LiquidityAmount = record {
+    token_a : vec nat8;
+    token_b : vec nat8
+};
+
 type LiquidityTrades = record {
-  decreased : LiquidityAmount;
-  increased : LiquidityAmount;
+    decreased : LiquidityAmount;
+    increased : LiquidityAmount;
 };
-type MakerTaker = variant { OnlyMaker; OnlyTaker; MakerOrTaker };
+
+type MakerTaker = variant {
+    OnlyMaker;
+    OnlyTaker;
+    MakerOrTaker
+};
+
 type OpenOrderStatus = record {
-  open_orders : vec OrderInfo;
-  pending_cancel : vec nat64;
+    open_orders : vec OrderInfo;
+    pending_cancel : vec nat64;
 };
-type Order = record { info : OrderInfo; state : OrderState };
+
+type Order = record {
+    info : OrderInfo;
+    state : OrderState
+};
+
 type OrderInfo = record {
-  id : nat64;
-  maker_taker : MakerTaker;
-  broker : principal;
-  limit_price : nat64;
-  side : Side;
-  user : principal;
-  quantity : vec nat8;
-  expiration_time : opt nat64;
+    id : nat64;
+    maker_taker : MakerTaker;
+    broker : principal;
+    limit_price : nat64;
+    side : Side;
+    user : principal;
+    quantity : vec nat8;
+    expiration_time : opt nat64;
 };
+
 type OrderState = record {
-  status : OrderStatus;
-  quantity_remaining : vec nat8;
-  marker_makers : vec CounterpartyInfo;
+    status : OrderStatus;
+    quantity_remaining : vec nat8;
+    marker_makers : vec CounterpartyInfo;
 };
+
 type OrderStatus = variant {
-  InvalidPrice;
-  InsufficientLiquidity;
-  Cancelled;
-  Completed;
-  Expired;
-  Pending;
+    InvalidPrice;
+    InsufficientLiquidity;
+    Cancelled;
+    Completed;
+    Expired;
+    Pending;
 };
+
 type PendingTransfer = record {
-  to : principal;
-  token : EnokiToken;
-  amount : nat;
+    to : principal;
+    token : EnokiToken;
+    amount : nat;
 };
+
 type RequestForNewLiquidityTarget = record {
-  extra_liquidity_available : LiquidityAmount;
-  target : LiquidityAmount;
+    extra_liquidity_available : LiquidityAmount;
+    target : LiquidityAmount;
 };
+
 type ResponseAboutLiquidityChanges = record {
-  added : LiquidityAmount;
-  traded : LiquidityTrades;
-  removed : LiquidityAmount;
+    added : LiquidityAmount;
+    traded : LiquidityTrades;
+    removed : LiquidityAmount;
 };
-type Result = variant { Ok : AssignedShards; Err : TxError };
-type Result_1 = variant { Ok; Err : TxError };
+
 type ShardedTransferNotification = record {
-  to : principal;
-  value : nat;
-  data : text;
-  from : principal;
-  fee_charged : nat;
-  from_shard : principal;
+    to : principal;
+    value : nat;
+    data : text;
+    from : principal;
+    fee_charged : nat;
+    from_shard : principal;
 };
-type Side = variant { Buy; Sell };
-type TokenInfo = record { "principal" : principal };
+
+type Side = variant {
+    Buy;
+    Sell
+};
+
+type TokenInfo = record {
+    "principal" : principal
+};
+
 type TokenPairInfo = record {
-  token_a : TokenInfo;
-  token_b : TokenInfo;
-  price_number_of_decimals : nat64;
+    token_a : TokenInfo;
+    token_b : TokenInfo;
+    price_number_of_decimals : nat64;
 };
+
 type TradingFees = record {
-  limit_order_taker_fee : float64;
-  swap_market_maker_reward : float64;
-  swap_fee : float64;
-  token_a_deposit_fee : vec nat8;
-  token_b_deposit_fee : vec nat8;
-};
-type TxError = variant {
-  IntOverflow;
-  ParsingError : text;
-  InsufficientLiquidityAvailable;
-  IntUnderflow;
-  UserNotRegistered;
-  Unauthorized;
-  Other : text;
-  SlippageExceeded;
-  CallbackError : text;
-  InsufficientFunds;
+    limit_order_taker_fee : float64;
+    swap_market_maker_reward : float64;
+    swap_fee : float64;
+    token_a_deposit_fee : vec nat8;
+    token_b_deposit_fee : vec nat8;
 };
 service : (principal, principal) -> {
-  addBroker : (principal) -> ();
-  fundsSent : (ShardedTransferNotification) -> ();
-  getAccruedFees : () -> (LiquidityAmount) query;
-  getAssignedShard : (EnokiToken) -> (principal) query;
-  getAssignedShardA : () -> (principal) query;
-  getAssignedShardB : () -> (principal) query;
-  getAssignedShards : () -> (AssignedShards) query;
-  getFailedOrders : () -> (vec Order) query;
-  getManager : () -> (principal) query;
-  getOpenOrders : (principal) -> (OpenOrderStatus) query;
-  getOwner : () -> (principal) query;
-  getPastOrders : (principal) -> (vec Order) query;
-  getTokenInfo : () -> (TokenPairInfo) query;
-  getTradingFees : () -> (TradingFees) query;
-  initBroker : (InitBrokerParams) -> (Result);
-  limitOrder : (ShardedTransferNotification) -> ();
-  receiveMarketMakerRewards : (ShardedTransferNotification) -> ();
-  retrieveOrders : () -> (vec OrderInfo, vec OrderInfo);
-  sendFunds : (text, PendingTransfer) -> (Result_1);
-  setFees : (TradingFees) -> ();
-  setManager : (principal) -> (Result_1);
-  setOwner : (principal) -> (Result_1);
-  submitCompletedOrders : (
-      vec Order,
-      AggregateBidAsk,
-      RequestForNewLiquidityTarget,
+    addBroker : (principal) -> ();
+    fundsSent : (ShardedTransferNotification) -> ();
+    getAccruedFees : () -> (LiquidityAmount) query;
+    getAssignedShard : (EnokiToken) -> (principal) query;
+    getAssignedShardA : () -> (principal) query;
+    getAssignedShardB : () -> (principal) query;
+    getAssignedShards : () -> (AssignedShards) query;
+    getFailedOrders : () -> (vec Order) query;
+    getManager : () -> (principal) query;
+    getOpenOrders : (principal) -> (OpenOrderStatus) query;
+    getOwner : () -> (principal) query;
+    getPastOrders : (principal) -> (vec Order) query;
+    getTokenInfo : () -> (TokenPairInfo) query;
+    getTradingFees : () -> (TradingFees) query;
+    initBroker : (InitBrokerParams) -> (AssignedShards);
+    limitOrder : (ShardedTransferNotification) -> ();
+    receiveMarketMakerRewards : (ShardedTransferNotification) -> ();
+    retrieveOrders : () -> (vec OrderInfo, vec OrderInfo);
+    sendFunds : (text, PendingTransfer) -> ();
+    setFees : (TradingFees) -> ();
+    setManager : (principal) -> ();
+    setOwner : (principal) -> ();
+    submitCompletedOrders : (
+    vec Order,
+    AggregateBidAsk,
+    RequestForNewLiquidityTarget,
     ) -> (ResponseAboutLiquidityChanges);
-  swap : (ShardedTransferNotification) -> ();
-  updateUpstreamFees : () -> ();
+    swap : (ShardedTransferNotification) -> ();
+    updateUpstreamFees : () -> ();
 }

@@ -32,10 +32,7 @@ pub fn import_stable_storage(data: PooledAmounts) {
     STATE.with(|b| b.replace(data));
 }
 
-pub fn lock_liquidity() -> (
-    LiquidityAmount,
-    LiquidityAmount,
-) {
+pub fn lock_liquidity() -> (LiquidityAmount, LiquidityAmount) {
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         s.worker_pool.lock_liquidity();
@@ -60,21 +57,14 @@ async fn init_liquidity_pool(supply_token_info: has_token_info::TokenPairInfo) -
 
 #[update(name = "getUpdatedLiquidity")]
 #[candid_method(update, rename = "getUpdatedLiquidity")]
-fn get_updated_liquidity() -> (
-    LiquidityAmount,
-    LiquidityAmount,
-) {
+fn get_updated_liquidity() -> (LiquidityAmount, LiquidityAmount) {
     assert_is_manager().unwrap();
     lock_liquidity()
 }
 
 #[update(name = "resolveLiquidity")]
 #[candid_method(update, rename = "resolveLiquidity")]
-fn resolve_liquidity(
-    added: LiquidityAmount,
-    removed: LiquidityAmount,
-    traded: LiquidityTrades,
-) {
+fn resolve_liquidity(added: LiquidityAmount, removed: LiquidityAmount, traded: LiquidityTrades) {
     assert_is_manager().unwrap();
     STATE.with(|s| {
         let mut s = s.borrow_mut();
@@ -90,30 +80,27 @@ fn resolve_liquidity(
 fn update_liquidity(
     pending_add: LiquidityAmount,
     pending_remove: LiquidityAmount,
-) -> Result<(LiquidityAmount, LiquidityAmount, LiquidityTrades)> {
-    assert_is_worker_contract()?;
-    STATE.with(|s| {
+) -> (LiquidityAmount, LiquidityAmount, LiquidityTrades) {
+    assert_is_worker_contract().unwrap();
+    let result: Result<(LiquidityAmount, LiquidityAmount, LiquidityTrades)> = STATE.with(|s| {
         let mut s = s.borrow_mut();
         let LiquidityAmount {
             token_a: add_a,
             token_b: add_b,
         } = pending_add;
-        s.worker_pool.user_add_liquidity(
-            TokenAmount {
-                token: EnokiToken::TokenA,
-                amount: add_a,
-            },
-        );
-        s.worker_pool.user_add_liquidity(
-            TokenAmount {
-                token: EnokiToken::TokenB,
-                amount: add_b,
-            },
-        );
+        s.worker_pool.user_add_liquidity(TokenAmount {
+            token: EnokiToken::TokenA,
+            amount: add_a,
+        });
+        s.worker_pool.user_add_liquidity(TokenAmount {
+            token: EnokiToken::TokenB,
+            amount: add_b,
+        });
         s.worker_pool.user_remove_liquidity(pending_remove)?;
         let added = std::mem::take(&mut s.added);
         let removed = std::mem::take(&mut s.removed);
         let traded = std::mem::take(&mut s.traded);
         Ok((added, removed, traded))
-    })
+    });
+    result.unwrap()
 }

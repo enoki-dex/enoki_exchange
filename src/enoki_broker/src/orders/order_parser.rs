@@ -20,7 +20,7 @@ pub fn validate_order_input(
         EnokiToken::TokenB => Side::Buy,
     };
     if quantity == 0u32 {
-        return Err(TxError::IntUnderflow);
+        return Err(TxError::IntUnderflow.into());
     }
     let price = price_in_b_float_to_u64(order.limit_price_in_b)?;
     register_user(

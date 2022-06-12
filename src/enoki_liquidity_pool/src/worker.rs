@@ -12,7 +12,7 @@ pub fn assert_is_worker_contract() -> Result<()> {
     if STATE.with(|s| s.borrow().worker_id == ic_cdk::caller()) {
         Ok(())
     } else {
-        Err(TxError::Unauthorized)
+        Err(TxError::Unauthorized.into())
     }
 }
 
@@ -41,22 +41,21 @@ pub fn get_worker() -> Principal {
 
 #[update(name = "initWorker")]
 #[candid_method(update, rename = "initWorker")]
-async fn init_worker(worker: Principal) -> Result<()> {
-    is_owned::assert_is_owner()?;
+async fn init_worker(worker: Principal) {
+    is_owned::assert_is_owner().unwrap();
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         s.worker_id = worker;
     });
-    Ok(())
 }
 
 pub async fn init_worker_token_data() -> Result<()> {
     let worker = STATE.with(|s| s.borrow().worker_id);
-    let response: Result<(Result<AssignedShards>, )> =
+    let response: Result<(AssignedShards, )> =
         ic_cdk::call(worker, "initWorker", (has_token_info::get_token_info(), ))
             .await
-            .map_err(|e| e.into());
-    let worker_shards = response?.0?;
+            .map_err(|e| e.into_tx_error());
+    let worker_shards = response?.0;
     has_sharded_users::register_user(
         worker,
         has_token_info::get_token_address(&EnokiToken::TokenA),
@@ -72,13 +71,13 @@ pub async fn init_worker_token_data() -> Result<()> {
 
 #[update(name = "addBroker")]
 #[candid_method(update, rename = "addBroker")]
-async fn add_broker(broker: Principal) -> Result<()> {
-    is_managed::assert_is_manager()?;
+async fn add_broker(broker: Principal) {
+    is_managed::assert_is_manager().unwrap();
 
     let result: Result<()> = ic_cdk::call(get_worker(), "addBroker", (broker, ))
         .await
-        .map_err(|e| e.into());
-    result
+        .map_err(|e| e.into_tx_error());
+    result.unwrap();
 }
 
 pub fn _get_worker_shard(token: &EnokiToken) -> Result<Principal> {

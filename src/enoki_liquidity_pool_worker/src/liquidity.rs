@@ -26,6 +26,11 @@ pub struct LiquidityState {
     rounding_error: LiquidityTrades, //TODO: send these to the accrued fees / use fees to pay for these
 }
 
+#[query]
+fn get_state() -> LiquidityState {
+    STATE.with(|s| s.borrow().clone())
+}
+
 pub async fn update_liquidity_with_manager() {
     if STATE.with(|s| {
         let s = s.borrow();
@@ -42,25 +47,26 @@ pub async fn update_liquidity_with_manager() {
             s.pool.count_locked_remove_liquidity(),
         )
     });
-    let response: Result<(Result<(LiquidityAmount, LiquidityAmount, LiquidityTrades)>, )> =
-        ic_cdk::call(
-            get_manager(),
-            "updateLiquidity",
-            (pending_add, pending_remove),
-        )
-            .await
-            .map_err(|e| e.into());
+    let response: Result<(LiquidityAmount, LiquidityAmount, LiquidityTrades)> = ic_cdk::call(
+        get_manager(),
+        "updateLiquidity",
+        (pending_add, pending_remove),
+    )
+        .await
+        .map_err(|e| e.into_tx_error());
     let final_result: Result<Vec<(Principal, TokenAmount)>> = match response {
-        Ok((Ok((added, removed, traded)), )) => STATE.with(|s| {
+        Ok((added, removed, traded)) => STATE.with(|s| {
             let mut s = s.borrow_mut();
             s.locked = false;
-            apply_traded(traded, &mut s.pool);
+            let rounding_error = apply_traded(traded, &mut s.pool);
+            s.rounding_error.add_assign(rounding_error);
+
             apply_new_liquidity(added, &mut s.pool);
             let withdrawals = calculate_withdrawals(removed, &mut s.pool);
             s.pool.remove_zeros();
             Ok(withdrawals)
         }),
-        Ok((Err(err), )) | Err(err) => {
+        Err(err) => {
             STATE.with(|s| {
                 let mut s = s.borrow_mut();
                 s.locked = false;
@@ -81,7 +87,7 @@ pub async fn update_liquidity_with_manager() {
     }
 }
 
-fn apply_traded(traded: LiquidityTrades, pool: &mut LiquidityPool) {
+fn apply_traded(traded: LiquidityTrades, pool: &mut LiquidityPool) -> LiquidityTrades {
     let balances = pool.get_liquidity_by_principal();
     let total_a: StableNat = balances
         .values()
@@ -157,9 +163,7 @@ fn apply_traded(traded: LiquidityTrades, pool: &mut LiquidityPool) {
 
     let mut rounding_error = traded;
     rounding_error.sub_assign(aggr_changes_for_users);
-    STATE.with(|s| {
-        s.borrow_mut().rounding_error.add_assign(rounding_error);
-    });
+    rounding_error
 }
 
 fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut LiquidityPool) {
@@ -237,28 +241,40 @@ async fn withdraw_for_user(
     user: Principal,
     withdrawal: TokenAmount,
 ) -> Option<(Principal, TokenAmount)> {
-    let user_shard = get_user_shard(user, has_token_info::get_token_address(&withdrawal.token));
-    let TokenAmount { token, amount } = withdrawal.clone();
-    let amount: Nat = amount.into();
-    let my_shard = get_assigned_shard(&token);
-    let result: Result<()> = ic_cdk::call(my_shard, "shardTransfer", (user_shard, user, amount))
-        .await
-        .map_err(|e| e.into());
-    match result {
-        Ok(_) => None,
+    let error;
+    match get_user_shard(user, has_token_info::get_token_address(&withdrawal.token)) {
+        Ok(user_shard) => {
+            let TokenAmount { token, amount } = withdrawal.clone();
+            let amount: Nat = amount.into();
+            let my_shard = get_assigned_shard(&token);
+            let result: Result<()> =
+                ic_cdk::call(my_shard, "shardTransfer", (user_shard, user, amount))
+                    .await
+                    .map_err(|e| e.into_tx_error());
+            match result {
+                Ok(_) => {
+                    return None;
+                }
+                Err(err) => {
+                    error = err;
+                }
+            }
+        }
         Err(err) => {
-            ic_cdk::api::print(format!("failed to remove liquidity: {:?}", err));
-            Some((user, withdrawal))
+            error = err;
         }
     }
+    ic_cdk::api::print(format!("failed to remove liquidity: {:?}", error));
+    Some((user, withdrawal))
 }
 
 #[query(name = "getLiquidity")]
 #[candid_method(query, rename = "getLiquidity")]
-fn get_liquidity(user: Principal) -> LiquidityAmount {
+fn get_liquidity(user: Principal) -> LiquidityAmountNat {
     STATE
         .with(|s| s.borrow().pool.get_user_liquidity(user))
         .unwrap_or_default()
+        .into()
 }
 
 #[query(name = "getShardsToAddLiquidity")]
@@ -290,13 +306,17 @@ async fn add_liquidity(notification: ShardedTransferNotification) {
 async fn remove_liquidity(amount: LiquidityAmount) {
     let from = ic_cdk::caller();
 
-    STATE.with(|s| s.borrow_mut().pool.user_remove_liquidity(from, amount)).unwrap();
+    STATE
+        .with(|s| s.borrow_mut().pool.user_remove_liquidity(from, amount))
+        .unwrap();
 }
 
 #[update(name = "removeAllLiquidity")]
 #[candid_method(update, rename = "removeAllLiquidity")]
 async fn remove_all_liquidity() {
-    remove_liquidity(get_liquidity(ic_cdk::caller())).await;
+    if let Some(liquidity) = STATE.with(|s| s.borrow().pool.get_user_liquidity(ic_cdk::caller())) {
+        remove_liquidity(liquidity).await;
+    }
 }
 
 pub fn export_stable_storage() -> LiquidityState {
