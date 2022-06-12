@@ -1,5 +1,15 @@
 . "$(dirname "$0")"/setup.sh
 
+if [ -z "$APP_TOKEN_A" ]; then
+  APP_TOKEN_A=$(dfx canister id enoki_wrapped_token)
+  export APP_TOKEN_A
+  APP_TOKEN_B=$(dfx canister id enoki_wrapped_token_b)
+  export APP_TOKEN_B
+    echo "setting tokens A=$APP_TOKEN_A B=$APP_TOKEN_B";
+  else
+    echo "tokens already set A=$APP_TOKEN_A B=$APP_TOKEN_B";
+fi
+
 start "creating users"
 dfx identity new pooler1 || true
 dfx identity new pooler2 || true
