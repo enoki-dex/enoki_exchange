@@ -43,7 +43,7 @@ const Swap = () => {
                 <img src={`img/${IMAGES[pair[0]]}`} alt=""/>
                 <h3>{pair[0]}</h3>
               </div>
-              <input type='number' value={swapValue} min={0} onChange={handleChange} />
+              <input type='number' value={swapValue} min={0} onChange={handleChange}/>
             </div>
             <div className="box_footer">
               <p>Balance: {balances[pair[0]]} {pair[0]} <a href="#">DEPOSIT</a></p>
@@ -72,9 +72,9 @@ const Swap = () => {
           <div className="cal_details">
             <p>1 eICP = 5.2125464 eXTC</p>
             <p>Fee: 0.03%
-              <Tooltip style={{marginLeft: 5, display: "inline"}}
+              <Tooltip style={{display: "inline"}}
                        text={"Enoki pays for all of your gas, but this small fee is given to Liquidity Providers and Market Makers."}>
-                <img src="img/i6.png" alt=""/>
+                <img style={{marginLeft: 5}} src="img/i6.png" alt=""/>
               </Tooltip>
             </p>
           </div>
@@ -84,7 +84,7 @@ const Swap = () => {
         </div>
       </div>
     </div>
-)
+  )
 }
 
 export default Swap;
