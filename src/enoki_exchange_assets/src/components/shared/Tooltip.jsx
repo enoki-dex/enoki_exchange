@@ -29,10 +29,10 @@ const Tooltip = ({text, children, style}) => {
   const newStyle = Object.assign({}, styles.container, style);
 
   return (
-    <div style={newStyle} {...hoverAttributes}>
-      {hovering && <div style={styles.tooltip}>{text}</div>}
+    <span style={newStyle} {...hoverAttributes}>
+      {hovering && <span style={styles.tooltip}>{text}</span>}
       {children}
-    </div>
+    </span>
   );
 }
 

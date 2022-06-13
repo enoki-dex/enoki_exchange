@@ -208,7 +208,7 @@
 		font-size: 1.6rem;
 		padding: 1rem 0;
 	}
-	.top_icon.before{
+	.top_icon_before{
 		width: 3.5rem;
 		height: 3.5rem;
 		background-size: contain;
@@ -220,7 +220,7 @@
 		background-size: contain;
 		top: -2.3rem;
 	}
-	.pool_body2 .top_icon.before{
+	.pool_body2 .top_icon_before{
 		width: 3.5rem;
 		height: 3.5rem;
 		background-size: contain;
