@@ -1,32 +1,36 @@
-import * as React from 'react';
+import React from "react";
+import {
+  HashRouter as Router,
+  Redirect,
+  Route,
+  Switch
+} from "react-router-dom";
+import store from './store';
+import {Provider} from 'react-redux';
+import Swap from "./components/Swap/Swap";
+import Pool from "./components/Pool/Pool";
+import Trade from "./components/Trade/Trade";
+import Nav from "./components/Nav/Nav";
+
 import {enoki_exchange} from "../../declarations/enoki_exchange";
 
 const App = () => {
-  const [greeting, setGreeting] = React.useState("");
-  const [pending, setPending] = React.useState(false);
-  const inputRef = React.useRef();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (pending) return;
-    setPending(true);
-
-    // Interact with hello actor, calling the greet method
-    const response = await enoki_exchange.getOwner();
-    setGreeting(`the owner is ${response.toString()}`);
-    setPending(false);
-    return false;
-  }
-
   return (
-    <main>
-      <img src="logo.png" alt="DFINITY logo" />
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="name">get exchange owner: &nbsp;</label>
-        <button id="clickMeBtn" type="submit" disabled={pending}>Click Me!</button>
-      </form>
-      <section id="greeting">{greeting}</section>
-    </main>
+    <Provider store={store}>
+      <Router>
+        <Nav/>
+        <div className="tab-content" id="page_main_tab">
+          <Switch>
+            <Route path="/swap" component={Swap}/>
+            <Route path="/pool" component={Pool}/>
+            <Route path="/trade" component={Trade}/>
+            {/*<Redirect path="/" exact to="/swap" />*/}
+            {/*<Route render={() => <h1>404</h1>} />*/}
+            <Redirect to="/swap"/>
+          </Switch>
+        </div>
+      </Router>
+    </Provider>
   )
 }
 

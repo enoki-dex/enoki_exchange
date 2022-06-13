@@ -1,0 +1,49 @@
+type Metadata = record {
+  underlying_token : principal;
+  decimals : nat8;
+  logo : text;
+  name : text;
+  symbol : text;
+};
+type Result = variant { Ok; Err : TxError };
+type Shard = record { id : principal; num_accounts : nat64 };
+type Stats = record {
+  fee : nat;
+  deploy_time : nat64;
+  owner : principal;
+  cycles : nat64;
+  total_supply : nat;
+};
+type TxError = variant {
+  UnderlyingTransferFailure;
+  TransferCallbackError : text;
+  InsufficientBalance;
+  TransferValueTooSmall;
+  Unauthorized;
+  AccountDoesNotExist;
+  ShardDoesNotExist;
+  AccountAlreadyExists;
+  Other : text;
+};
+service : (principal, text, text, text, nat8, nat) -> {
+  addShard : (principal) -> (Result);
+  balanceOf : (principal) -> (nat) query;
+  decimals : () -> (nat8) query;
+  getAccruedFees : () -> (nat) query;
+  getAssignedShardId : (principal) -> (principal) query;
+  getFee : () -> (nat) query;
+  getLogo : () -> (text) query;
+  getMetadata : () -> (Metadata) query;
+  getShardIds : () -> (vec principal) query;
+  getShardsInfo : () -> (vec Shard) query;
+  name : () -> (text) query;
+  owner : () -> (principal) query;
+  register : (principal) -> (principal);
+  setFee : (nat) -> (Result);
+  setLogo : (text) -> (Result);
+  setOwner : (principal) -> (Result);
+  stats : () -> (Stats) query;
+  symbol : () -> (text) query;
+  totalSupply : () -> (nat) query;
+  transfer : (principal, nat) -> ();
+}

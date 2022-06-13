@@ -1,0 +1,73 @@
+type ManagerContractData = record {
+  fee : nat;
+  deploy_time : nat64;
+  underlying_token : principal;
+  owner : principal;
+  sibling_shards : vec principal;
+  manager_contract : principal;
+};
+type Result = variant { Ok; Err : TxError };
+type ShardedTransferNotification = record {
+  to : principal;
+  value : nat;
+  data : text;
+  from : principal;
+  fee_charged : nat;
+  from_shard : principal;
+};
+type TxError = variant {
+  UnderlyingTransferFailure;
+  TransferCallbackError : text;
+  InsufficientBalance;
+  TransferValueTooSmall;
+  Unauthorized;
+  AccountDoesNotExist;
+  ShardDoesNotExist;
+  AccountAlreadyExists;
+  Other : text;
+};
+service : (principal, principal) -> {
+  addSiblingShard : (principal) -> (Result);
+  addSpender : (principal) -> ();
+  createAccount : (principal) -> (Result);
+  getAccruedFees : () -> (nat) query;
+  getFee : () -> (nat) query;
+  getManagementDetails : () -> (ManagerContractData) query;
+  getOwner : () -> (principal) query;
+  initShard : (principal, vec principal, nat) -> (Result);
+  mint : (nat) -> ();
+  removeSiblingShard : (principal) -> (Result);
+  removeSpender : (principal) -> ();
+  setFee : (nat) -> (Result);
+  setOwner : (principal) -> (Result);
+  shardBalanceOf : (principal) -> (nat) query;
+  shardGetSupply : () -> (nat) query;
+  shardReceiveTransfer : (principal, nat) -> (Result);
+  shardReceiveTransferAndCall : (
+      ShardedTransferNotification,
+      principal,
+      text,
+    ) -> (Result);
+  shardSpend : (principal, principal, principal, nat) -> ();
+  shardSpendAndCall : (
+      principal,
+      principal,
+      principal,
+      nat,
+      principal,
+      text,
+      text,
+    ) -> ();
+  shardTransfer : (principal, principal, nat) -> ();
+  shardTransferAndCall : (
+      principal,
+      principal,
+      nat,
+      principal,
+      text,
+      text,
+    ) -> ();
+  transferFromManager : (principal, principal, principal, nat) -> (Result);
+  unwrap : (nat, principal) -> ();
+  wrap : (nat) -> ();
+}

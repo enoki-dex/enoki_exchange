@@ -69,7 +69,7 @@
       "wasm": "src_dev/enoki_wrapped_token_shard/enoki_wrapped_token_shard.wasm"
     },
     "enoki_broker_1": {
-      "candid": "src_dev/enoki_broker/enoki_broker.did",
+      "candid": "src/enoki_broker/enoki_broker.did",
       "package": "enoki_broker",
       "type": "rust"
     },
