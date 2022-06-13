@@ -18,7 +18,7 @@ const Swap = () => {
 
   const handleChange = e => {
     let value = parseFloat(e.target.value);
-    setIsError(typeof value !== 'number' || isNaN(value));
+    setIsError(typeof value !== 'number' || isNaN(value) || value < 0);
     setSwapValue(e.target.value);
   };
 
@@ -33,7 +33,7 @@ const Swap = () => {
           <h1>SWAP</h1>
           <SwapConfig/>
           <div className="match_box">
-            <div className="select_wrap">
+            <div className={"select_wrap" + (isError ? " error_border" : "")}>
               <div className="input_wrap">
                 {/*<select name="" id="">*/}
                 {/*  <option value="">eICP</option>*/}
@@ -43,7 +43,7 @@ const Swap = () => {
                 <img src={`img/${IMAGES[pair[0]]}`} alt=""/>
                 <h3>{pair[0]}</h3>
               </div>
-              <input type='number' value={swapValue} min={0} onChange={handleChange}/>
+              <input type='number' value={swapValue} onChange={handleChange}/>
             </div>
             <div className="box_footer">
               <p>Balance: {balances[pair[0]]} {pair[0]} <a href="#">DEPOSIT</a></p>
