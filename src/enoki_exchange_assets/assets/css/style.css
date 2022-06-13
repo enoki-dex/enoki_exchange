@@ -361,6 +361,7 @@ header .wallet .arrow {
 	font-size: 3.2rem;
 	font-weight: 700;
 	color: var(--text-color);
+	border:none;
 }
 
 .match_box .box_footer{
@@ -1500,4 +1501,14 @@ th:last-child {
 
 .error_border {
 	border-color: red !important;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+input[type=number] {
+	-moz-appearance: textfield;
+	/* Firefox */
 }
