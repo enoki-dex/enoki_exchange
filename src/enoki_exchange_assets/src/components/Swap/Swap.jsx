@@ -2,6 +2,7 @@ import React from "react";
 import SwapConfig from "./SwapConfig";
 import {useSelector, useDispatch} from 'react-redux'
 import {setManual, setAuto, setManualValue} from "../../state/swapSlice";
+import Tooltip from "../shared/Tooltip";
 
 const IMAGES = {
   "eICP": "i4.png",
@@ -40,6 +41,7 @@ const Swap = () => {
                 {/*  <option value="">eICP</option>*/}
                 {/*</select>*/}
                 <img src={`img/${IMAGES[pair[0]]}`} alt=""/>
+                <h3>{pair[0]}</h3>
               </div>
               <input type='number' value={swapValue} min={0} onChange={handleChange} />
             </div>
@@ -58,6 +60,7 @@ const Swap = () => {
                 {/*  <option value="">eICP</option>*/}
                 {/*</select>*/}
                 <img src={`img/${IMAGES[pair[1]]}`} alt=""/>
+                <h3>{pair[1]}</h3>
               </div>
               <h3>111.199899</h3>
             </div>
@@ -68,7 +71,12 @@ const Swap = () => {
           </div>
           <div className="cal_details">
             <p>1 eICP = 5.2125464 eXTC</p>
-            <p>Fee: 0.01% <img src="img/i6.png" alt=""/></p>
+            <p>Fee: 0.03%
+              <Tooltip style={{marginLeft: 5, display: "inline"}}
+                       text={"Enoki pays for all of your gas, but this small fee is given to Liquidity Providers and Market Makers."}>
+                <img src="img/i6.png" alt=""/>
+              </Tooltip>
+            </p>
           </div>
           <div className="text-center">
             <a className="btn connect" href="#">CONNECT WALLET</a>

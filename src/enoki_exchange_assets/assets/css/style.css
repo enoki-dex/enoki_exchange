@@ -348,6 +348,8 @@ header .wallet .arrow {
 }
 
 .match_box .select_wrap h3{
+	padding-top: 4px;
+	margin-left: 60px;
 	font-size: 3.2rem;
 	font-weight: 700;
 	color: var(--text-color);
@@ -1487,9 +1489,9 @@ th:last-child {
 	transform: translateX(-100%);
 }
 
-.mode-switch label:active:after {
-	width: 130px;
-}
+/*.mode-switch label:active:after {*/
+/*	width: 130px;*/
+/*}*/
 
 .simplebar-scrollbar::before{
 	background: var(--secondary-color);
