@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fmt::{Debug, Formatter};
 use std::iter::Sum;
 use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
@@ -6,18 +7,16 @@ use candid::{CandidType, Nat};
 use num_bigint::BigUint;
 
 #[derive(
-CandidType,
-Debug,
-Clone,
-Default,
-Ord,
-PartialOrd,
-Eq,
-PartialEq,
-serde::Serialize,
-serde::Deserialize,
+    CandidType, Clone, Default, Ord, PartialOrd, Eq, PartialEq, serde::Serialize, serde::Deserialize,
 )]
 pub struct StableNat(Vec<u8>);
+
+impl Debug for StableNat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let val: StableNat = self.clone().into();
+        write!(f, "{:?}", val)
+    }
+}
 
 impl StableNat {
     pub fn is_nonzero(&self) -> bool {
@@ -106,7 +105,7 @@ impl Div for StableNat {
 }
 
 impl Sum for StableNat {
-    fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Default::default(), |mut sum, next| {
             sum.add_assign(next);
             sum

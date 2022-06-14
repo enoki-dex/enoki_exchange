@@ -22,9 +22,13 @@ export const bigIntToStr = (value, token, decimals, defaultVal) => {
   return isNaN(ret) ? defaultVal : ret.toString();
 }
 
-export const floatToBigInt = (value, token) => {
+// use significant digits due to javascript floating point error
+export const floatToBigInt = (value, token, significantDigits = 8) => {
   let tokenDecimal = tokenDecimals[token];
   if (!tokenDecimal) return null;
-  let str = value.toFixed(tokenDecimal);
-  return BigInt(str.split('.')[0])
+  if (tokenDecimal <= significantDigits) {
+    return BigInt(value.toFixed(tokenDecimal).replace(/\./g, ''));
+  } else {
+    return BigInt(value.toFixed(significantDigits).replace(/\./g, '') + '0'.repeat(tokenDecimal - significantDigits));
+  }
 }
