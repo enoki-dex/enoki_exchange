@@ -35,6 +35,8 @@ export const idlFactory = ({ IDL }) => {
       ),
     'setOwner' : IDL.Func([IDL.Principal], [], []),
     'triggerRun' : IDL.Func([], [], []),
+    'whoami' : IDL.Func([], [IDL.Principal], ['query']),
+    'whoisanon' : IDL.Func([], [IDL.Principal], ['query']),
   });
 };
 export const init = ({ IDL }) => { return []; };

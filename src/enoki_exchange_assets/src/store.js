@@ -1,10 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit'
 import swapReducer from "./state/swapSlice";
 import balancesReducer from "./state/balancesSlice";
+import internetIdentityReducer from "./state/internetIdentitySlice";
+import lastTradeReducer from "./state/lastTradeSlice";
+
+const DEFAULT_II = {
+  isLoggedIn: false
+};
 
 // convert object to string and store in localStorage
 function saveToLocalStorage(state) {
   try {
+    state = Object.assign({}, state);
+    delete state.ii;
     const serialisedState = JSON.stringify(state);
     localStorage.setItem("enokiPersistentState", serialisedState);
   } catch (e) {
@@ -18,7 +26,9 @@ function loadFromLocalStorage() {
   try {
     const serialisedState = localStorage.getItem("enokiPersistentState");
     if (serialisedState === null) return undefined;
-    return JSON.parse(serialisedState);
+    const state = JSON.parse(serialisedState);
+    state.ii = DEFAULT_II;
+    return state;
   } catch (e) {
     console.warn(e);
     return undefined;
@@ -29,6 +39,8 @@ const store = configureStore({
   reducer: {
     swap: swapReducer,
     balances: balancesReducer,
+    ii: internetIdentityReducer,
+    lastTrade: lastTradeReducer,
   },
   preloadedState: loadFromLocalStorage()
 });

@@ -14,13 +14,14 @@ const styles =
       bottom: "100%",
       left: "50%",
       marginLeft: "-80px",
-      borderRadius: "3px",
+      borderRadius: "5px",
       backgroundColor: "hsla(0, 0%, 20%, 0.9)",
-      padding: "7px",
+      padding: "12px",
       marginBottom: "5px",
       color: "#fff",
+      fontWeight: "bold",
       textAlign: "center",
-      fontSize: "14px"
+      fontSize: "14px",
     }
   };
 

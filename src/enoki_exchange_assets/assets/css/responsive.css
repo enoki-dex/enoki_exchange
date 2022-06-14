@@ -1,272 +1,330 @@
 /*Extra large devices (large desktops, 1200px and up)*/
-@media (min-width: 1850px) { 
-	.container{
-		max-width: 1810px;
-	}
+@media (min-width: 1850px) {
+    .container {
+        max-width: 1810px;
+    }
 }
 
 @media (max-width: 1849px) {
-	.trade_content .content_wrap1{
-		flex-wrap: wrap;
-	}
-	.cal_area{
-		width: 40%;
-		margin-right: 2%;
-	}
-	.trades_table{
-		width: 58%;
-	}
-	.chart{
-		width: 100%;
-		margin-top: 4rem;
-	}
+    .trade_content .content_wrap1 {
+        flex-wrap: wrap;
+    }
+
+    .cal_area {
+        width: 40%;
+        margin-right: 2%;
+    }
+
+    .trades_table {
+        width: 58%;
+    }
+
+    .chart {
+        width: 100%;
+        margin-top: 4rem;
+    }
 }
 
-@media (min-width: 992px) and (max-width: 1199px){
-	header .wallet{
-		padding: 1.3rem 1.8rem;
-		font-size: 1.6rem;
-	}
+@media (min-width: 992px) and (max-width: 1199px) {
+    header .wallet {
+        padding: 1.3rem 1.8rem;
+        font-size: 1.6rem;
+    }
 }
 
 @media (max-width: 991px) {
-	html{
-		font-size: 55%;
-	}
-	.match_box .select_wrap h3{
-		margin-left: 50px;
-	}
-	.match_box .select_wrap input{
-		max-width: 200px;
-	}
+    html {
+        font-size: 55%;
+    }
 
+    .match_box .select_wrap h3 {
+        margin-left: 50px;
+    }
+
+    .match_box .select_wrap input {
+        max-width: 200px;
+    }
+
+    header .container {
+        padding-left: 2rem;
+        padding-right: 2rem;
+        padding-top: 0;
+    }
+    #page_main_tab .content_wrap {
+        padding: 5rem 0;
+    }
 }
 
 /*Medium devices (tablets, 767px and down)*/
 
-@media (min-width: 768px) and (max-width: 991px){
-	header .nav-tabs .nav-link{
-		padding: 1.2rem 3rem;
-		font-size: 1.5rem;
-	}
-	header .connect{
-		font-size: 1.6rem;
-	}
-	header .wallet{
-		padding: .8rem 1.8rem;
-	}
-	header .wallet span {
-		margin: 0 .5rem 0 1rem;
-		font-size: 1.6rem;
-	}
-	header .wallet img:nth-child(1){
-		width: 3rem;
-	}
+@media (min-width: 768px) and (max-width: 991px) {
+    header .nav-tabs .nav-link {
+        padding: 1.2rem 3rem;
+        font-size: 1.5rem;
+    }
+
+    header .connect {
+        font-size: 1.6rem;
+    }
+
+    header .wallet {
+        padding: .8rem 1.8rem;
+    }
+
+    header .wallet span {
+        margin: 0 .5rem 0 1rem;
+        font-size: 1.6rem;
+    }
+
+    header .wallet img:nth-child(1) {
+        width: 3rem;
+    }
 }
 
 @media (max-width: 767px) {
-	header .nav-tabs {
-		margin-top: 3rem;
-	}
-	header{
-		height: auto;
-		padding: 3rem 0 1rem;
-	}
-	.swap_content .right_links a{
-		width: 8rem;
-		height: 3.3rem;
-		font-size: 1.5rem;
-	}
-	.swap_content .right_links a:nth-child(1) img{
-		width: 5rem;
-	}
-	.swap_content .right_links a:nth-child(2) img{
-		width: 1.5rem;
-	}
-	.cal_area{
-		width: 100%;
-		margin-right: 0;
-		margin-bottom: 4rem;
-	}
-	.trades_table{
-		width: 100%;
-	}
-	.chart .nice-select{
-		width: 8rem;
-	}
+    header .nav-tabs {
+        margin-top: 3rem;
+    }
 
-	.openOrder_table_body{
-		max-width: 80rem;
-		overflow: auto;
-	}
+    header {
+        height: auto;
+        padding: 3rem 0 1rem;
+    }
 
-	#past-orders .wrapper1,
-	#open-orders .wrapper1{
-		min-width: 80rem;
-		max-height: 100%;
-	}
+    .swap_content .right_links a {
+        width: 8rem;
+        height: 3.3rem;
+        font-size: 1.5rem;
+    }
 
-	#past-orders .wrapper2,
-	#open-orders .wrapper2 {
-		min-height: 100%;
-	}
+    .swap_content .right_links a:nth-child(1) img {
+        width: 5rem;
+    }
 
-	.content_wrap2{
-		height: 100% !important;
-	}
+    .swap_content .right_links a:nth-child(2) img {
+        width: 1.5rem;
+    }
 
-	.openOrder_table table th {
-		width: 0% !important;
-	}
-	.wallet-modal .modal-dialog{
-		right: 50%;
-		transform: translateX(50%);
-	}
+    .cal_area {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 4rem;
+    }
+
+    .trades_table {
+        width: 100%;
+    }
+
+    .chart .nice-select {
+        width: 8rem;
+    }
+
+    .openOrder_table_body {
+        max-width: 80rem;
+        overflow: auto;
+    }
+
+    #past-orders .wrapper1,
+    #open-orders .wrapper1 {
+        min-width: 80rem;
+        max-height: 100%;
+    }
+
+    #past-orders .wrapper2,
+    #open-orders .wrapper2 {
+        min-height: 100%;
+    }
+
+    .content_wrap2 {
+        height: 100% !important;
+    }
+
+    .openOrder_table table th {
+        width: 0% !important;
+    }
+
+    .wallet-modal .modal-dialog {
+        right: 50%;
+        transform: translateX(50%);
+    }
 }
 
 /*Small devices (landscape phones, 575px and down)*/
 
-@media (min-width: 576px){
-	.modal-dialog {
-		max-width: 480px;
-		margin: 15rem auto 0 auto;
-	}
+@media (min-width: 576px) {
+    .modal-dialog {
+        max-width: 480px;
+        margin: 15rem auto 0 auto;
+    }
 }
 
 @media (max-width: 575px) {
-	.container{
-		padding-left: 3rem;
-		padding-right: 3rem;
-	}
-	h1{
-		font-size: 3.3rem;
-	}
-	.swap_content .right_links {
-		right: 3rem;
-	}
-	.swap_content .right_links a{
-		margin-top: 7px;
-	}
-	header .nav-tabs .nav-link{
-		padding: 1.2rem 3rem;
-		font-size: 1.5rem;
-	}
-	header .connect{
-		font-size: 1.6rem;
-	}
-	header .wallet{
-		padding: .8rem 1.8rem;
-	}
-	header .wallet span {
-		margin: 0 .5rem 0 1rem;
-		font-size: 1.6rem;
-	}
-	header .wallet img:nth-child(1){
-		width: 3rem;
-	}
-	.match_box{
-		padding: 1.3rem;
-		padding-bottom: 1.6rem;
-	}
-	.match_box .select_wrap h3{
-		font-size: 2.5rem;
-	}
-	.match_box .select_wrap input{
-		max-width: 150px;
-		font-size: 2.5rem;
-	}
-	.match_box .input_wrap{
-		width: 15rem;
-	}
-	.match_box .select_wrap{
-		padding: 1rem;
-	}
-	.btn{
-		font-size: 1.8rem;
-	}
-	.pool_body2 .details_box{
-		padding: 1.3rem;
-	}
-	.pool_body2 .details_box h3{
-		font-size: 1.8rem;
-	}
-	.pool_body2 .details_box p{
-		font-size: 1.3rem;
-	}
-	.openOrder_table .nav-tabs li{
-		width: 50%;
-	}
-	.openOrder_table .nav-tabs .nav-link{
-		width: 100%;
-		padding: 1.5rem 0;
-	}
-	.accordion-item{
-		padding: 0 1.5rem;
-	}
-	.accordion-body .btn {
-		width: 13rem;
-		font-size: 1.6rem;
-		padding: 1rem 0;
-	}
-	.top_icon_before{
-		width: 3.5rem;
-		height: 3.5rem;
-		background-size: contain;
-		top: -2.3rem;
-	}
-	.top_icon::before{
-		width: 3.5rem;
-		height: 3.5rem;
-		background-size: contain;
-		top: -2.3rem;
-	}
-	.pool_body2 .top_icon_before{
-		width: 3.5rem;
-		height: 3.5rem;
-		background-size: contain;
-		top: -2.3rem;
-	}
-	.pool_body2 .top_icon::before{
-		width: 3.5rem;
-		height: 3.5rem;
-		background-size: contain;
-		top: -2.3rem;
-	}
-	.modal-dialog{
-		margin: 25rem 2rem 0 2rem;
-	}
-	.wallet-modal .modal-dialog{
-		top: 70px;
-		width: 95%;
-	}
-	.wallet-modal .box {
-		padding: 1rem;
-	}
-	.wallet-modal h5{
-		font-size: 1.3rem;
-	}
+    .container {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+
+    h1 {
+        font-size: 3.3rem;
+    }
+
+    .swap_content .right_links {
+        right: 3rem;
+    }
+
+    .swap_content .right_links a {
+        margin-top: 7px;
+    }
+
+    header .nav-tabs .nav-link {
+        padding: 1.2rem 3rem;
+        font-size: 1.5rem;
+    }
+
+    header .connect {
+        font-size: 1.6rem;
+    }
+
+    header .wallet {
+        padding: .8rem 1.8rem;
+    }
+
+    header .wallet span {
+        margin: 0 .5rem 0 1rem;
+        font-size: 1.6rem;
+    }
+
+    header .wallet img:nth-child(1) {
+        width: 3rem;
+    }
+
+    .match_box {
+        padding: 1.3rem;
+        padding-bottom: 1.6rem;
+    }
+
+    .match_box .select_wrap h3 {
+        font-size: 2.5rem;
+    }
+
+    .match_box .select_wrap input {
+        max-width: 150px;
+        font-size: 2.5rem;
+    }
+
+    .match_box .input_wrap {
+        width: 15rem;
+    }
+
+    .match_box .select_wrap {
+        padding: 1rem;
+    }
+
+    .btn {
+        font-size: 1.8rem;
+    }
+
+    .pool_body2 .details_box {
+        padding: 1.3rem;
+    }
+
+    .pool_body2 .details_box h3 {
+        font-size: 1.8rem;
+    }
+
+    .pool_body2 .details_box p {
+        font-size: 1.3rem;
+    }
+
+    .openOrder_table .nav-tabs li {
+        width: 50%;
+    }
+
+    .openOrder_table .nav-tabs .nav-link {
+        width: 100%;
+        padding: 1.5rem 0;
+    }
+
+    .accordion-item {
+        padding: 0 1.5rem;
+    }
+
+    .accordion-body .btn {
+        width: 13rem;
+        font-size: 1.6rem;
+        padding: 1rem 0;
+    }
+
+    .top_icon_before {
+        width: 3.5rem;
+        height: 3.5rem;
+        background-size: contain;
+        top: -2.3rem;
+    }
+
+    .top_icon::before {
+        width: 3.5rem;
+        height: 3.5rem;
+        background-size: contain;
+        top: -2.3rem;
+    }
+
+    .pool_body2 .top_icon_before {
+        width: 3.5rem;
+        height: 3.5rem;
+        background-size: contain;
+        top: -2.3rem;
+    }
+
+    .pool_body2 .top_icon::before {
+        width: 3.5rem;
+        height: 3.5rem;
+        background-size: contain;
+        top: -2.3rem;
+    }
+
+    .modal-dialog {
+        margin: 25rem 2rem 0 2rem;
+    }
+
+    .wallet-modal .modal-dialog {
+        top: 70px;
+        width: 95%;
+    }
+
+    .wallet-modal .box {
+        padding: 1rem;
+    }
+
+    .wallet-modal h5 {
+        font-size: 1.3rem;
+    }
 }
 
 @media (max-width: 340px) {
-	html{
-		font-size: 45%;
-	}
-	.mode-switch label::after {
-		top: 2.5px;
-		width: 15px;
-		height: 15px;
-	}
-	.mode-switch label {
-		width: 40px;
-		height: 21px;
-	}
-	.match_box .select_wrap input{
-		max-width: 100px;
-		font-size: 2.5rem;
-	}
-	.match_box .select_wrap h3{
-		margin-left: 42px;
-	}
+    html {
+        font-size: 45%;
+    }
+
+    .mode-switch label::after {
+        top: 2.5px;
+        width: 15px;
+        height: 15px;
+    }
+
+    .mode-switch label {
+        width: 40px;
+        height: 21px;
+    }
+
+    .match_box .select_wrap input {
+        max-width: 100px;
+        font-size: 2.5rem;
+    }
+
+    .match_box .select_wrap h3 {
+        margin-left: 42px;
+    }
 }
 
 

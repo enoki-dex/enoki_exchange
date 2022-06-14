@@ -1,60 +1,29 @@
 import type { Principal } from '@dfinity/principal';
 export interface AccountBalanceArgs { 'account' : AccountIdentifier }
-export type AccountIdentifier = string;
-export interface ArchiveOptions {
-  'num_blocks_to_archive' : bigint,
-  'trigger_threshold' : bigint,
-  'max_message_size_bytes' : [] | [bigint],
-  'node_max_memory_size_bytes' : [] | [bigint],
-  'controller_id' : Principal,
-}
-export type BlockHeight = bigint;
-export interface Duration { 'secs' : bigint, 'nanos' : number }
-export interface ICPTs { 'e8s' : bigint }
-export interface LedgerCanisterInitPayload {
-  'send_whitelist' : Array<Principal>,
-  'minting_account' : AccountIdentifier,
-  'transaction_window' : [] | [Duration],
-  'max_message_size_bytes' : [] | [bigint],
-  'archive_options' : [] | [ArchiveOptions],
-  'initial_values' : Array<[AccountIdentifier, ICPTs]>,
-}
+export type AccountIdentifier = Array<number>;
+export type BlockIndex = bigint;
 export type Memo = bigint;
-export interface NotifyCanisterArgs {
-  'to_subaccount' : [] | [SubAccount],
-  'from_subaccount' : [] | [SubAccount],
-  'to_canister' : Principal,
-  'max_fee' : ICPTs,
-  'block_height' : BlockHeight,
-}
-export interface SendArgs {
+export type SubAccount = Array<number>;
+export interface TimeStamp { 'timestamp_nanos' : bigint }
+export interface Tokens { 'e8s' : bigint }
+export interface TransferArgs {
   'to' : AccountIdentifier,
-  'fee' : ICPTs,
+  'fee' : Tokens,
   'memo' : Memo,
   'from_subaccount' : [] | [SubAccount],
   'created_at_time' : [] | [TimeStamp],
-  'amount' : ICPTs,
+  'amount' : Tokens,
 }
-export type SubAccount = Array<number>;
-export interface TimeStamp { 'timestamp_nanos' : bigint }
-export interface Transaction {
-  'memo' : Memo,
-  'created_at' : BlockHeight,
-  'transfer' : Transfer,
-}
-export type Transfer = {
-    'Burn' : { 'from' : AccountIdentifier, 'amount' : ICPTs }
+export type TransferError = {
+    'TxTooOld' : { 'allowed_window_nanos' : bigint }
   } |
-  { 'Mint' : { 'to' : AccountIdentifier, 'amount' : ICPTs } } |
-  {
-    'Send' : {
-      'to' : AccountIdentifier,
-      'from' : AccountIdentifier,
-      'amount' : ICPTs,
-    }
-  };
+  { 'BadFee' : { 'expected_fee' : Tokens } } |
+  { 'TxDuplicate' : { 'duplicate_of' : BlockIndex } } |
+  { 'TxCreatedInFuture' : null } |
+  { 'InsufficientFunds' : { 'balance' : Tokens } };
+export type TransferResult = { 'Ok' : BlockIndex } |
+  { 'Err' : TransferError };
 export interface _SERVICE {
-  'account_balance_dfx' : (arg_0: AccountBalanceArgs) => Promise<ICPTs>,
-  'notify_dfx' : (arg_0: NotifyCanisterArgs) => Promise<undefined>,
-  'send_dfx' : (arg_0: SendArgs) => Promise<BlockHeight>,
+  'account_balance' : (arg_0: AccountBalanceArgs) => Promise<Tokens>,
+  'transfer' : (arg_0: TransferArgs) => Promise<TransferResult>,
 }

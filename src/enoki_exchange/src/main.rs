@@ -45,6 +45,18 @@ async fn finish_init(token_a: Principal, token_b: Principal, price_number_of_dec
     has_token_info::init_token_info(token_info).await.unwrap();
 }
 
+#[query(name = "whoami")]
+#[candid_method(query, rename = "whoami")]
+async fn who_am_i() -> Principal {
+    ic_cdk::caller()
+}
+
+#[query(name = "whoisanon")]
+#[candid_method(query, rename = "whoisanon")]
+async fn who_is_anon() -> Principal {
+    Principal::anonymous()
+}
+
 #[cfg(any(target_arch = "wasm32", test))]
 fn main() {}
 

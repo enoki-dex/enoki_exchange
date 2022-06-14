@@ -1,11 +1,14 @@
 SHELL = /bin/zsh
 
 .PHONY: all
-all: clean start deps install test
+all: clean init deps install test
 
 .PHONY: start
-.SILENT: start
-start:
+start: init deps install
+
+.PHONY: init
+.SILENT: init
+init:
 	dfx start --background
 
 .PHONY: deps
