@@ -1525,6 +1525,7 @@ th:last-child {
 }
 .btn-black:active {
     transform: translateY(2px);
+    transition-duration: 50ms;
 }
 .btn-black-disabled {
     font-size: 18px;

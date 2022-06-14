@@ -5,6 +5,7 @@ use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
 use candid::{CandidType, Nat};
 use num_bigint::BigUint;
+use crate::types::LiquidityAmount;
 
 #[derive(
     CandidType, Clone, Default, Ord, PartialOrd, Eq, PartialEq, serde::Serialize, serde::Deserialize,
@@ -13,8 +14,7 @@ pub struct StableNat(Vec<u8>);
 
 impl Debug for StableNat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let val: StableNat = self.clone().into();
-        write!(f, "{:?}", val)
+        write!(f, "{}", self.clone().to_nat().to_string())
     }
 }
 
@@ -106,6 +106,15 @@ impl Div for StableNat {
 
 impl Sum for StableNat {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Default::default(), |mut sum, next| {
+            sum.add_assign(next);
+            sum
+        })
+    }
+}
+
+impl Sum for LiquidityAmount {
+    fn sum<I: Iterator<Item=Self>>(iter: I) -> Self {
         iter.fold(Default::default(), |mut sum, next| {
             sum.add_assign(next);
             sum

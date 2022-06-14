@@ -61,26 +61,27 @@ pub async fn do_run() -> Result<()> {
     if get_broker_ids().is_empty() {
         return Ok(());
     }
-    ic_cdk::api::print("started exchange sync");
+    ic_cdk::println!("[exchange] started exchange sync");
     let proposed_liquidity_target_for_brokers =
         liquidity::get_updated_liquidity_from_pool().await?;
 
     ic_cdk::api::print(format!(
-        "got liquidity: {:?}",
+        "[exchange] got liquidity: {:?}",
         proposed_liquidity_target_for_brokers
     ));
 
     let (new_orders, orders_to_cancel) =
         flat_map_vecs(foreach_broker("retrieveOrders", |_| ()).await?);
 
-    ic_cdk::api::print(format!(
-        "got new orders: {:?} / {:?}",
-        new_orders, orders_to_cancel
-    ));
+    ic_cdk::println!(
+        "[exchange] got new orders: {:?} / {:?}",
+        new_orders,
+        orders_to_cancel
+    );
 
     let (mut completed_orders, aggregate_bid_ask) = match_orders(new_orders, orders_to_cancel);
 
-    ic_cdk::api::print(format!("completed orders: {:?}", completed_orders));
+    ic_cdk::println!("[exchange] completed orders: {:?}", completed_orders);
 
     STATE.with(|s| {
         s.borrow_mut()
@@ -88,7 +89,7 @@ pub async fn do_run() -> Result<()> {
             .change_to_next(&aggregate_bid_ask)
     });
 
-    ic_cdk::api::print("submitting orders to brokers...");
+    ic_cdk::println!("[exchange] submitting orders to brokers...");
 
     let changes_in_liquidity_by_broker = foreach_broker_map(
         "submitCompletedOrders",
@@ -99,15 +100,15 @@ pub async fn do_run() -> Result<()> {
                 proposed_liquidity_target_for_brokers.clone(),
             )
         },
-        |res: (ResponseAboutLiquidityChanges, )| res.0,
+        |res: (ResponseAboutLiquidityChanges,)| res.0,
     )
-        .await?;
+    .await?;
 
-    ic_cdk::api::print("updating changes in liquidity...");
+    ic_cdk::println!("[exchange] updating changes in liquidity...");
 
     update_committed_broker_liquidity(changes_in_liquidity_by_broker).await?;
 
-    ic_cdk::api::print("end exchange sync");
+    ic_cdk::println!("[exchange] end exchange sync");
 
     Ok(())
 }

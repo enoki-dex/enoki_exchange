@@ -5,9 +5,7 @@ use std::ops::{AddAssign, Sub, SubAssign};
 use candid::{CandidType, Nat};
 use num_traits::cast::ToPrimitive;
 
-use enoki_exchange_shared::has_token_info::{
-    quantity_a_to_b, quantity_b_to_a, QuantityTranslator,
-};
+use enoki_exchange_shared::has_token_info::{quantity_a_to_b, quantity_b_to_a, QuantityTranslator};
 use enoki_exchange_shared::has_trading_fees::{get_swap_fee, get_swap_market_maker_reward};
 use enoki_exchange_shared::liquidity::{
     RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
@@ -36,6 +34,12 @@ pub fn update_liquidity_target(
         let mut s = s.borrow_mut();
         s.bid_ask = bid_ask;
 
+        ic_cdk::println!(
+            "[broker] new liquidity target: {:?}. Existing available: {:?}",
+            target,
+            s.available_liquidity
+        );
+
         let removed = s.available_liquidity.sub_or_zero(&target.target);
         let mut added = target.target.sub_or_zero(&s.available_liquidity);
         added.token_a = added.token_a.min(target.extra_liquidity_available.token_a);
@@ -43,6 +47,11 @@ pub fn update_liquidity_target(
 
         s.available_liquidity.add_assign(added.clone());
         s.available_liquidity.sub_assign(removed.clone());
+
+        ic_cdk::println!(
+            "[broker] current available liquidity: {:?}",
+            s.available_liquidity
+        );
 
         ResponseAboutLiquidityChanges {
             added,
@@ -106,7 +115,7 @@ pub async fn swap(mut order: ProcessedOrderInput) {
         &token_supplier,
         traded.decreased.get(&token_supplier).clone().into(),
     )
-        .await
+    .await
     {
         STATE.with(|s| {
             s.borrow_mut()
@@ -144,7 +153,7 @@ fn pay_rewards_to_market_makers(
             reward.clone(),
             amount_provided.0.to_f64().unwrap() / total.0.to_f64().unwrap(),
         )
-            .unwrap();
+        .unwrap();
         payoffs::add_reward(broker, user, reward_token, user_reward);
     }
 }

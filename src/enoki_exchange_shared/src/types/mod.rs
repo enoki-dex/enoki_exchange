@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::fmt::{Debug, Formatter};
 
 use candid::{CandidType, Nat, Principal};
 
@@ -9,13 +10,26 @@ use crate::has_token_info;
 use crate::has_trading_fees::TradingFees;
 
 mod implementations;
-mod stable_nat;
 mod result;
+mod stable_nat;
 
-#[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq, Hash)]
+#[derive(CandidType, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq, Hash)]
 pub enum EnokiToken {
     TokenA,
     TokenB,
+}
+
+impl Debug for EnokiToken {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                EnokiToken::TokenA => "TokenA",
+                EnokiToken::TokenB => "TokenB",
+            }
+        )
+    }
 }
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]

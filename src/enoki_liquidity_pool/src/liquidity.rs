@@ -5,7 +5,7 @@ use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
 use enoki_exchange_shared::has_token_info;
-use enoki_exchange_shared::has_token_info::{init_token_info};
+use enoki_exchange_shared::has_token_info::init_token_info;
 use enoki_exchange_shared::is_managed::assert_is_manager;
 use enoki_exchange_shared::liquidity::single_user_liquidity_pool::SingleUserLiquidityPool;
 use enoki_exchange_shared::types::*;
@@ -35,11 +35,7 @@ pub fn import_stable_storage(data: PooledAmounts) {
 pub fn lock_liquidity() -> (LiquidityAmount, LiquidityAmount) {
     STATE.with(|s| {
         let mut s = s.borrow_mut();
-        s.worker_pool.lock_liquidity();
-        (
-            s.worker_pool.count_locked_add_liquidity(),
-            s.worker_pool.count_locked_remove_liquidity(),
-        )
+        s.worker_pool.lock_liquidity()
     })
 }
 
@@ -58,13 +54,25 @@ async fn init_liquidity_pool(supply_token_info: has_token_info::TokenPairInfo) -
 #[candid_method(update, rename = "getUpdatedLiquidity")]
 fn get_updated_liquidity() -> (LiquidityAmount, LiquidityAmount) {
     assert_is_manager().unwrap();
-    lock_liquidity()
+    let (to_add, to_remove) = lock_liquidity();
+    ic_cdk::println!(
+        "[lp] updated liquidity: {:?} to add, {:?} to remove",
+        to_add,
+        to_remove
+    );
+    (to_add, to_remove)
 }
 
 #[update(name = "resolveLiquidity")]
 #[candid_method(update, rename = "resolveLiquidity")]
 fn resolve_liquidity(added: LiquidityAmount, removed: LiquidityAmount, traded: LiquidityTrades) {
     assert_is_manager().unwrap();
+    ic_cdk::println!(
+        "[lp] resolved liquidity: {:?} added, {:?} removed, {:?} traded",
+        added,
+        removed,
+        traded
+    );
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         s.added.add_assign(added);

@@ -7,11 +7,11 @@ use ic_cdk_macros::*;
 use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
 use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::has_token_info::{
-    AssignedShards, get_assigned_shard, get_assigned_shards,
+    get_assigned_shard, get_assigned_shards, AssignedShards,
 };
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 use enoki_exchange_shared::is_managed::get_manager;
-use enoki_exchange_shared::liquidity::liquidity_pool::LiquidityPool;
+use enoki_exchange_shared::liquidity::liquidity_pool::{LiquidityPool, LiquidityPoolTotalBalance};
 use enoki_exchange_shared::types::*;
 
 thread_local! {
@@ -34,26 +34,22 @@ fn get_state() -> LiquidityState {
 pub async fn update_liquidity_with_manager() {
     if STATE.with(|s| {
         let s = s.borrow();
-        s.locked || (s.pool.nothing_pending())
+        s.locked
     }) {
         return;
     }
     let (pending_add, pending_remove) = STATE.with(|s| {
         let mut s = s.borrow_mut();
         s.locked = true;
-        s.pool.lock_liquidity();
-        (
-            s.pool.count_locked_add_liquidity(),
-            s.pool.count_locked_remove_liquidity(),
-        )
+        s.pool.lock_liquidity()
     });
     let response: Result<(LiquidityAmount, LiquidityAmount, LiquidityTrades)> = ic_cdk::call(
         get_manager(),
         "updateLiquidity",
         (pending_add, pending_remove),
     )
-        .await
-        .map_err(|e| e.into_tx_error());
+    .await
+    .map_err(|e| e.into_tx_error());
     let final_result: Result<Vec<(Principal, TokenAmount)>> = match response {
         Ok((added, removed, traded)) => STATE.with(|s| {
             let mut s = s.borrow_mut();
@@ -88,15 +84,12 @@ pub async fn update_liquidity_with_manager() {
 }
 
 fn apply_traded(traded: LiquidityTrades, pool: &mut LiquidityPool) -> LiquidityTrades {
+    ic_cdk::println!("[worker] resolved: applying traded: {:?}", traded);
+    let total = LiquidityPoolTotalBalance::new(pool).get_total_balances();
+    ic_cdk::println!("[worker] liquidity before applying traded: {:?}", total);
+    let total_a = total.token_a;
+    let total_b = total.token_b;
     let balances = pool.get_liquidity_by_principal();
-    let total_a: StableNat = balances
-        .values()
-        .map(|val| val.get(&EnokiToken::TokenA).clone())
-        .sum();
-    let total_b: StableNat = balances
-        .values()
-        .map(|val| val.get(&EnokiToken::TokenA).clone())
-        .sum();
 
     let changes_per_user = balances
         .into_iter()
@@ -161,13 +154,34 @@ fn apply_traded(traded: LiquidityTrades, pool: &mut LiquidityPool) -> LiquidityT
         },
     );
 
+    ic_cdk::println!(
+        "[worker] liquidity after applying traded: {:?}",
+        LiquidityPoolTotalBalance::new(pool)
+    );
+
     let mut rounding_error = traded;
     rounding_error.sub_assign(aggr_changes_for_users);
+
+    if rounding_error.decreased.token_a.is_nonzero()
+        || rounding_error.decreased.token_b.is_nonzero()
+        || rounding_error.increased.token_a.is_nonzero()
+        || rounding_error.increased.token_b.is_nonzero()
+    {
+        ic_cdk::println!(
+            "[worker] liquidity after applying traded there is a rounding error: {:?}",
+            rounding_error
+        );
+    }
+
     rounding_error
 }
 
 fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut LiquidityPool) {
     let mut i = 0;
+    ic_cdk::println!(
+        "[worker] resolved: adding more total liquidity: {:?}",
+        amount
+    );
     while amount.token_a.is_nonzero() || amount.token_b.is_nonzero() {
         let item = pool
             .get_locked_add_item(i)
@@ -179,6 +193,12 @@ fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut LiquidityPool) {
             amount_left.sub_assign(diff.clone());
             item.1.amount.sub_assign(diff.clone());
             let addr = item.0;
+            ic_cdk::println!(
+                "[worker] liquidity for user {} was successfully added: {:?} {:?}",
+                addr,
+                diff,
+                token
+            );
             pool.get_user_liquidity_mut(addr, &token).add_assign(diff);
         }
         i += 1;
@@ -191,6 +211,7 @@ fn calculate_withdrawals(
 ) -> Vec<(Principal, TokenAmount)> {
     let mut amounts_to_distribute: Vec<(Principal, TokenAmount)> = Default::default();
     let mut i = 0;
+    ic_cdk::println!("[worker] resolved: removing total liquidity: {:?}", amount);
     while amount.token_a.is_nonzero() || amount.token_b.is_nonzero() {
         let item = pool
             .get_locked_remove_item(i)
@@ -207,6 +228,12 @@ fn calculate_withdrawals(
             item.1.amount.sub_assign(diff.clone());
             pool.get_user_liquidity_mut(addr, &token)
                 .sub_assign(diff.clone());
+            ic_cdk::println!(
+                "[worker] liquidity for user {} is successfully being removed: {:?} {:?}",
+                addr,
+                diff,
+                token
+            );
             amounts_to_distribute.push((
                 addr,
                 TokenAmount {
@@ -229,7 +256,7 @@ async fn distribute_withdrawals(mut withdrawals: Vec<(Principal, TokenAmount)>) 
             .into_iter()
             .map(|(user, withdrawal)| withdraw_for_user(user, withdrawal)),
     )
-        .await;
+    .await;
     STATE.with(|s| {
         s.borrow_mut()
             .earnings_pending
@@ -247,12 +274,21 @@ async fn withdraw_for_user(
             let TokenAmount { token, amount } = withdrawal.clone();
             let amount: Nat = amount.into();
             let my_shard = get_assigned_shard(&token);
-            let result: Result<()> =
-                ic_cdk::call(my_shard, "shardTransfer", (user_shard, user, amount))
-                    .await
-                    .map_err(|e| e.into_tx_error());
+            let result: Result<()> = ic_cdk::call(
+                my_shard,
+                "shardTransfer",
+                (user_shard, user, amount.clone()),
+            )
+            .await
+            .map_err(|e| e.into_tx_error());
             match result {
                 Ok(_) => {
+                    ic_cdk::println!(
+                        "[worker] liquidity for user {} was successfully distributed: {:?} {:?}",
+                        user,
+                        amount,
+                        token
+                    );
                     return None;
                 }
                 Err(err) => {
