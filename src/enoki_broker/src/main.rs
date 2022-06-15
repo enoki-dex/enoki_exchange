@@ -16,7 +16,7 @@ use enoki_exchange_shared::liquidity::*;
 #[allow(unused_imports)]
 use enoki_exchange_shared::types::*;
 #[allow(unused_imports)]
-use payoffs::PendingTransfer;
+use payoffs::FirstTransfer;
 
 mod token_liquidity_params;
 mod orders;

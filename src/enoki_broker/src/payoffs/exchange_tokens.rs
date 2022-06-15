@@ -10,16 +10,19 @@ use enoki_exchange_shared::utils::nat_div_float;
 
 use crate::payoffs::{
     with_failed_exchanges_mut, with_pending_transfers_mut,
-    PendingTransfer, TokenExchangeInfo, TransferInfo, TransferPair,
+    FirstTransfer, TokenExchangeInfo, TransferInfo, TransferPair,
 };
 
-async fn send_funds_from(id: String, broker: Principal, info: PendingTransfer, user_shard_id_to_retrieve: Principal) -> Result<()> {
+async fn send_funds_from(id: String, broker: Principal, info: FirstTransfer) -> Result<()> {
     if broker == ic_cdk::id() {
-        let shard_id_to_retrieve = get_user_shard(user_shard_id_to_retrieve, get_token_address(&info.token.opposite()))?;
+        let shard_id_to_retrieve = get_user_shard(
+            info.user_for_shard_id_to_retrieve,
+            get_token_address(&info.token.opposite()),
+        )?;
         send_funds_internal(id, info, ic_cdk::id(), shard_id_to_retrieve).await
     } else {
         ic_cdk::println!("[broker] sending exchange id {} to broker {}", id, broker);
-        ic_cdk::call(broker, "sendFunds", (id, info, user_shard_id_to_retrieve))
+        ic_cdk::call(broker, "sendFunds", (id, info))
             .await
             .map_err(|e| e.into_tx_error())
     }
@@ -27,13 +30,12 @@ async fn send_funds_from(id: String, broker: Principal, info: PendingTransfer, u
 
 pub async fn send_funds_internal(
     id: String,
-    info: PendingTransfer,
+    info: FirstTransfer,
     notify_principal: Principal,
     shard_id_to_retrieve: Principal,
 ) -> Result<()> {
     let assigned_token_shard = has_token_info::get_assigned_shard(&info.token);
-    let token_address = get_token_address(&info.token);
-    let to_shard = get_user_shard(info.to, token_address)?;
+    let to_shard = info.to_shard;
     let message = format!("{}|{}", id, shard_id_to_retrieve.to_string());
     ic_cdk::println!("[broker] executing first half of exchange id {}", id);
     ic_cdk::call(
@@ -123,7 +125,10 @@ async fn execute_exchanges(mut exchanges: Vec<TokenExchangeInfo>) {
         futures::future::join_all(exchanges.into_iter().map(|exchange| {
             execute_exchange(exchange.clone()).map(|res: Result<()>| {
                 if let Err(err) = res {
-                    ic_cdk::api::print(format!("[broker] error exchanging tokens: {:?}. Input: {:?}", err, exchange));
+                    ic_cdk::api::print(format!(
+                        "[broker] error exchanging tokens: {:?}. Input: {:?}",
+                        err, exchange
+                    ));
                     Some(exchange)
                 } else {
                     None
@@ -145,7 +150,8 @@ async fn execute_exchange(exchange: TokenExchangeInfo) -> Result<()> {
         other_user,
     } = exchange;
 
-    let user_shard_id_to_retrieve = other_user.to;
+    let user_for_shard_id_to_retrieve = other_user.to;
+    let to_shard = get_user_shard(local_user.to, get_token_address(&local_user.token))?;
     let id = with_pending_transfers_mut(|pending_transfers| {
         pending_transfers.create_new(TransferPair {
             waiting_on: local_user.clone(),
@@ -156,12 +162,13 @@ async fn execute_exchange(exchange: TokenExchangeInfo) -> Result<()> {
     send_funds_from(
         id.to_string(),
         local_user.broker,
-        PendingTransfer {
+        FirstTransfer {
             to: local_user.to,
+            to_shard,
             token: local_user.token,
             amount: local_user.amount.into(),
+            user_for_shard_id_to_retrieve,
         },
-        user_shard_id_to_retrieve
     )
     .await
 }

@@ -35,6 +35,7 @@ service : (principal, text, text, text, nat8, nat) -> {
   getLogo : () -> (text) query;
   getMetadata : () -> (Metadata) query;
   getShardIds : () -> (vec principal) query;
+  getShardIdsUpdate : () -> (vec principal) query;
   getShardsInfo : () -> (vec Shard) query;
   name : () -> (text) query;
   owner : () -> (principal) query;

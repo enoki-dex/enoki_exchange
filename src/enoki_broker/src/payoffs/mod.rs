@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};
 
 use candid::{candid_method, CandidType, Deserialize, Nat, Principal};
@@ -21,11 +21,13 @@ pub use swap_tokens::send_swap_tokens;
 
 use crate::other_brokers::assert_is_broker;
 use crate::payoffs::market_maker_extra_rewards::MarketMakerAccruedExtraRewards;
+use crate::payoffs::token_shard_validation::is_valid_token_shard;
 
 mod exchange_tokens;
 mod fees;
 mod market_maker_extra_rewards;
 mod swap_tokens;
+mod token_shard_validation;
 
 thread_local! {
     static STATE: RefCell<PayoffsState> = RefCell::new(PayoffsState::default());
@@ -36,6 +38,8 @@ pub struct PayoffsState {
     pending_transfers: PendingTransfers,
     failed_exchanges: Vec<TokenExchangeInfo>,
     broker_assigned_shards: HashMap<(Principal, EnokiToken), Principal>,
+    valid_token_shards_a: HashSet<Principal>,
+    valid_token_shards_b: HashSet<Principal>,
     market_maker_pending_rewards: MarketMakerAccruedExtraRewards,
 }
 
@@ -55,13 +59,18 @@ impl PendingTransfers {
     pub fn remove(&mut self, id: u64) -> Option<TransferPair> {
         self.pending.remove(&id)
     }
+    pub fn get_token_for_first_part(&self, id: u64) -> Option<EnokiToken> {
+        self.pending.get(&id).map(|val| val.waiting_on.token.clone())
+    }
 }
 
 #[derive(Deserialize, CandidType, Clone, Debug)]
-pub struct PendingTransfer {
+pub struct FirstTransfer {
     to: Principal,
+    to_shard: Principal,
     token: EnokiToken,
     amount: Nat,
+    user_for_shard_id_to_retrieve: Principal,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug)]
@@ -114,6 +123,19 @@ fn with_pending_transfers_mut<F: FnOnce(&mut PendingTransfers) -> R, R>(f: F) ->
     })
 }
 
+fn with_valid_token_shards<F: FnOnce(&mut HashSet<Principal>) -> R, R>(
+    token: &EnokiToken,
+    f: F,
+) -> R {
+    STATE.with(|s| {
+        let mut s = s.borrow_mut();
+        match token {
+            EnokiToken::TokenA => f(&mut s.valid_token_shards_a),
+            EnokiToken::TokenB => f(&mut s.valid_token_shards_b),
+        }
+    })
+}
+
 fn with_pending_market_maker_rewards<F: FnOnce(&mut MarketMakerAccruedExtraRewards) -> R, R>(
     f: F,
 ) -> R {
@@ -154,7 +176,7 @@ async fn get_broker_assigned_shard(broker: Principal, token: EnokiToken) -> Resu
 
 #[update(name = "sendFunds")]
 #[candid_method(update, rename = "sendFunds")]
-async fn send_funds(id: String, info: PendingTransfer, user_shard_id_to_retrieve: Principal) {
+async fn send_funds(id: String, info: FirstTransfer) {
     assert_is_broker(ic_cdk::caller()).unwrap();
     ic_cdk::println!(
         "[broker] received exchange id {} from broker {}",
@@ -162,7 +184,7 @@ async fn send_funds(id: String, info: PendingTransfer, user_shard_id_to_retrieve
         ic_cdk::caller()
     );
     let shard_id_to_retrieve = get_user_shard(
-        user_shard_id_to_retrieve,
+        info.user_for_shard_id_to_retrieve,
         has_token_info::get_token_address(&info.token.opposite()),
     )
     .unwrap();
@@ -174,14 +196,6 @@ async fn send_funds(id: String, info: PendingTransfer, user_shard_id_to_retrieve
 #[update(name = "fundsSent")]
 #[candid_method(update, rename = "fundsSent")]
 async fn funds_sent(notification: ShardedTransferNotification) {
-    if !STATE.with(|s| {
-        s.borrow()
-            .broker_assigned_shards
-            .values()
-            .any(|val| *val == ic_cdk::caller())
-    }) {
-        panic!("Unauthorized");
-    }
     let mut data = notification.data.split('|');
     let id: u64 = data
         .next()
@@ -193,6 +207,16 @@ async fn funds_sent(notification: ShardedTransferNotification) {
         .expect("invalid message body fundsSent")
         .parse()
         .expect("cannot parse user_shard_to_retrieve");
+    if !is_valid_token_shard(
+        &STATE
+            .with(|s| s.borrow().pending_transfers.get_token_for_first_part(id))
+            .expect("id not found"),
+        ic_cdk::caller(),
+    )
+    .await
+    {
+        panic!("Unauthorized notification from {}", ic_cdk::caller());
+    }
     let TransferPair {
         waiting_on,
         next_transfer,
@@ -222,7 +246,7 @@ async fn funds_sent(notification: ShardedTransferNotification) {
         (
             user_shard_to_retrieve,
             next_transfer.to,
-            next_transfer.amount,
+            next_transfer.amount.to_nat(),
         ),
     )
     .await

@@ -10,6 +10,13 @@ type CounterpartyInfo = record {
   price : nat64;
 };
 type EnokiToken = variant { TokenA; TokenB };
+type FirstTransfer = record {
+  to : principal;
+  token : EnokiToken;
+  to_shard : principal;
+  amount : nat;
+  user_for_shard_id_to_retrieve : principal;
+};
 type InitBrokerParams = record {
   liquidity_location : principal;
   other_brokers : vec principal;
@@ -50,11 +57,6 @@ type OrderStatus = variant {
   Completed;
   Expired;
   Pending;
-};
-type PendingTransfer = record {
-  to : principal;
-  token : EnokiToken;
-  amount : nat;
 };
 type RequestForNewLiquidityTarget = record {
   extra_liquidity_available : LiquidityAmount;
@@ -109,7 +111,7 @@ service : () -> {
   receiveMarketMakerRewards : (ShardedTransferNotification) -> ();
   register : (principal) -> ();
   retrieveOrders : () -> (vec OrderInfo, vec OrderInfo);
-  sendFunds : (text, PendingTransfer) -> ();
+  sendFunds : (text, FirstTransfer) -> ();
   setFees : (TradingFees) -> ();
   setManager : (principal) -> ();
   setOwner : (principal) -> ();
