@@ -9,11 +9,13 @@ use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 use enoki_exchange_shared::types::*;
 
+use crate::orders::add_accrued_extra_reward;
 use crate::other_brokers::assert_is_broker;
-use crate::payoffs::{
-    get_broker_assigned_shard, with_pending_market_maker_rewards,
-};
+use crate::payoffs;
 use crate::payoffs::fees::use_fee_for_transfer;
+use crate::payoffs::{fees, with_pending_market_maker_rewards};
+
+const MIN_AMOUNT_TO_SEND_WITH_RESPECT_TO_FEE: u64 = 10;
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct MarketMakerAccruedExtraRewards {
@@ -74,11 +76,25 @@ impl UserRewards {
 }
 
 pub async fn distribute_market_maker_rewards() {
-    distribute_local_rewards().await;
-    distribute_other_broker_rewards().await;
+    let transfer_fee_a = if let Some(fee) = fees::try_get_fee_for_transfer(&EnokiToken::TokenA) {
+        fee
+    } else {
+        fees::get_fee_for_transfer(&EnokiToken::TokenA)
+            .await
+            .unwrap()
+    };
+    let transfer_fee_b = if let Some(fee) = fees::try_get_fee_for_transfer(&EnokiToken::TokenB) {
+        fee
+    } else {
+        fees::get_fee_for_transfer(&EnokiToken::TokenB)
+            .await
+            .unwrap()
+    };
+    distribute_local_rewards(transfer_fee_a.clone(), transfer_fee_b.clone()).await;
+    distribute_other_broker_rewards(transfer_fee_a, transfer_fee_b).await;
 }
 
-async fn distribute_other_broker_rewards() {
+async fn distribute_other_broker_rewards(transfer_fee_a: Nat, transfer_fee_b: Nat) {
     let rewards = with_pending_market_maker_rewards(|rewards| {
         std::mem::take(&mut rewards.other_broker_rewards)
     });
@@ -86,21 +102,29 @@ async fn distribute_other_broker_rewards() {
 
     for token in [EnokiToken::TokenA, EnokiToken::TokenB] {
         let shard_address = has_token_info::get_assigned_shard(&token);
+        let transfer_fee = match token {
+            EnokiToken::TokenA => transfer_fee_a.clone(),
+            EnokiToken::TokenB => transfer_fee_b.clone(),
+        };
         for (&broker, reward) in rewards.iter() {
             async fn transfer_to_broker(
                 shard_address: Principal,
                 broker: Principal,
                 token: &EnokiToken,
                 reward: &HashMap<Principal, LiquidityAmount>,
+                transfer_fee: &Nat,
             ) -> Result<()> {
-                let fee = use_fee_for_transfer(&token).await?;
                 let user_rewards = UserRewards::new(reward, &token);
                 let rewards_total: StableNat = user_rewards.0.values().cloned().sum();
                 let mut value: Nat = rewards_total.into();
+                if transfer_fee.clone() * MIN_AMOUNT_TO_SEND_WITH_RESPECT_TO_FEE > value {
+                    return Err(TxError::QuantityTooLow.into());
+                }
+                let fee = use_fee_for_transfer(&token).await?;
                 value += fee;
                 let user_rewards_str = serde_json::to_string(&user_rewards)
                     .map_err(|e| TxError::ParsingError(format!("{:?}", e)))?;
-                let broker_shard = get_broker_assigned_shard(broker, token.clone()).await?;
+                let broker_shard = payoffs::get_broker_assigned_shard(broker, token.clone()).await?;
                 let result: Result<()> = ic_cdk::call(
                     shard_address,
                     "shardTransferAndCall",
@@ -113,12 +137,14 @@ async fn distribute_other_broker_rewards() {
                         user_rewards_str,
                     ),
                 )
-                    .await
-                    .map_err(|e| e.into_tx_error());
+                .await
+                .map_err(|e| e.into_tx_error());
 
                 result
             }
-            if let Err(error) = transfer_to_broker(shard_address, broker, &token, reward).await {
+            if let Err(error) =
+                transfer_to_broker(shard_address, broker, &token, reward, &transfer_fee).await
+            {
                 ic_cdk::api::print(format!(
                     "could not transfer market maker rewards to other broker: {:?}",
                     error
@@ -146,31 +172,54 @@ async fn distribute_other_broker_rewards() {
     })
 }
 
-async fn distribute_local_rewards() {
+async fn distribute_local_rewards(transfer_fee_a: Nat, transfer_fee_b: Nat) {
     let local_rewards =
         with_pending_market_maker_rewards(|rewards| std::mem::take(&mut rewards.local_rewards));
     let mut failed: HashMap<Principal, LiquidityAmount> = HashMap::new();
     for token in [EnokiToken::TokenA, EnokiToken::TokenB] {
+        let transfer_fee = match token {
+            EnokiToken::TokenA => transfer_fee_a.clone(),
+            EnokiToken::TokenB => transfer_fee_b.clone(),
+        };
         let token_address = has_token_info::get_token_address(&token);
         let shard_address = has_token_info::get_assigned_shard(&token);
         for (&user, reward) in local_rewards.iter() {
             let token_reward: Nat = reward.get(&token).clone().into();
+            if transfer_fee.clone() * MIN_AMOUNT_TO_SEND_WITH_RESPECT_TO_FEE > token_reward {
+                failed
+                    .entry(user)
+                    .or_default()
+                    .get_mut(&token)
+                    .add_assign(token_reward.into());
+                continue;
+            }
             match get_user_shard(user, token_address) {
                 Ok(user_shard) => {
+                    ic_cdk::api::print(format!(
+                        "[broker] rewarding market maker {} with {:?} {:?}",
+                        user,
+                        token,
+                        reward.get(&token)
+                    ));
                     let result: Result<()> = ic_cdk::call(
                         shard_address,
                         "shardTransfer",
                         (user_shard, user, token_reward.clone()),
                     )
-                        .await
-                        .map_err(|e| e.into_tx_error());
+                    .await
+                    .map_err(|e| e.into_tx_error());
                     if let Err(err) = result {
-                        ic_cdk::api::print(format!("error distributing extra reward: {:?}", err));
+                        ic_cdk::api::print(format!(
+                            "[broker] error distributing extra reward: {:?}",
+                            err
+                        ));
                         failed
                             .entry(user)
                             .or_default()
                             .get_mut(&token)
                             .add_assign(token_reward.into());
+                    } else {
+                        add_accrued_extra_reward(user, token_reward.clone().into(), &token);
                     }
                 }
                 Err(_) => {

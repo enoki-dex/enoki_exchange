@@ -9,24 +9,33 @@ use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::nat_div_float;
 
 use crate::payoffs::{
-    get_broker_assigned_shard, PendingTransfer, TokenExchangeInfo,
-    TransferInfo, TransferPair, with_failed_exchanges_mut, with_pending_transfers_mut,
+    with_failed_exchanges_mut, with_pending_transfers_mut,
+    PendingTransfer, TokenExchangeInfo, TransferInfo, TransferPair,
 };
 
-async fn send_funds_from(id: String, broker: Principal, info: PendingTransfer) -> Result<()> {
+async fn send_funds_from(id: String, broker: Principal, info: PendingTransfer, user_shard_id_to_retrieve: Principal) -> Result<()> {
     if broker == ic_cdk::id() {
-        send_funds_internal(id, info).await
+        let shard_id_to_retrieve = get_user_shard(user_shard_id_to_retrieve, get_token_address(&info.token.opposite()))?;
+        send_funds_internal(id, info, ic_cdk::id(), shard_id_to_retrieve).await
     } else {
-        ic_cdk::call(broker, "sendFunds", (id, info))
+        ic_cdk::println!("[broker] sending exchange id {} to broker {}", id, broker);
+        ic_cdk::call(broker, "sendFunds", (id, info, user_shard_id_to_retrieve))
             .await
             .map_err(|e| e.into_tx_error())
     }
 }
 
-pub async fn send_funds_internal(id: String, info: PendingTransfer) -> Result<()> {
+pub async fn send_funds_internal(
+    id: String,
+    info: PendingTransfer,
+    notify_principal: Principal,
+    shard_id_to_retrieve: Principal,
+) -> Result<()> {
     let assigned_token_shard = has_token_info::get_assigned_shard(&info.token);
     let token_address = get_token_address(&info.token);
     let to_shard = get_user_shard(info.to, token_address)?;
+    let message = format!("{}|{}", id, shard_id_to_retrieve.to_string());
+    ic_cdk::println!("[broker] executing first half of exchange id {}", id);
     ic_cdk::call(
         assigned_token_shard,
         "shardTransferAndCall",
@@ -34,13 +43,13 @@ pub async fn send_funds_internal(id: String, info: PendingTransfer) -> Result<()
             to_shard,
             info.to,
             info.amount,
-            ic_cdk::caller(),
+            notify_principal,
             "fundsSent",
-            id,
+            message,
         ),
     )
-        .await
-        .map_err(|e| e.into_tx_error())
+    .await
+    .map_err(|e| e.into_tx_error())
 }
 
 pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {
@@ -61,33 +70,35 @@ pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {
                 .map(move |market_maker| match &order_info.side {
                     Side::Buy => Ok(TokenExchangeInfo {
                         local_user: TransferInfo {
-                            broker: ic_cdk::id(),
+                            broker: market_maker.broker, // should be paid by
                             token: EnokiToken::TokenA,
                             to: order_info.user,
                             amount: market_maker.quantity.clone(),
                         },
                         other_user: TransferInfo {
-                            broker: market_maker.broker,
+                            broker: ic_cdk::id(), // should be paid by
                             token: EnokiToken::TokenB,
                             to: market_maker.user,
                             amount: plus_fees(has_token_info::quantity_a_to_b(
                                 market_maker.quantity.clone().into(),
                                 market_maker.price,
-                            )?)?.into(),
+                            )?)?
+                            .into(),
                         },
                     }),
                     Side::Sell => Ok(TokenExchangeInfo {
                         other_user: TransferInfo {
-                            broker: market_maker.broker,
+                            broker: ic_cdk::id(), // should be paid by
                             token: EnokiToken::TokenA,
                             to: market_maker.user,
                             amount: plus_fees(has_token_info::quantity_b_to_a(
                                 market_maker.quantity.clone().into(),
                                 market_maker.price,
-                            )?)?.into(),
+                            )?)?
+                            .into(),
                         },
                         local_user: TransferInfo {
-                            broker: ic_cdk::id(),
+                            broker: market_maker.broker, // should be paid by
                             token: EnokiToken::TokenB,
                             to: order_info.user,
                             amount: market_maker.quantity.clone(),
@@ -112,14 +123,14 @@ async fn execute_exchanges(mut exchanges: Vec<TokenExchangeInfo>) {
         futures::future::join_all(exchanges.into_iter().map(|exchange| {
             execute_exchange(exchange.clone()).map(|res: Result<()>| {
                 if let Err(err) = res {
-                    ic_cdk::api::print(format!("error exchanging tokens: {:?}", err));
+                    ic_cdk::api::print(format!("[broker] error exchanging tokens: {:?}. Input: {:?}", err, exchange));
                     Some(exchange)
                 } else {
                     None
                 }
             })
         }))
-            .await;
+        .await;
     let mut failed: Vec<_> = results.into_iter().filter_map(|r| r).collect();
     if !failed.is_empty() {
         with_failed_exchanges_mut(|f| f.append(&mut failed));
@@ -127,27 +138,30 @@ async fn execute_exchanges(mut exchanges: Vec<TokenExchangeInfo>) {
 }
 
 async fn execute_exchange(exchange: TokenExchangeInfo) -> Result<()> {
+    ic_cdk::api::print(format!("[broker] executing token exchange: {:?}", exchange));
+
     let TokenExchangeInfo {
         local_user,
         other_user,
     } = exchange;
 
-    get_broker_assigned_shard(other_user.broker, other_user.token.clone()).await?;
+    let user_shard_id_to_retrieve = other_user.to;
     let id = with_pending_transfers_mut(|pending_transfers| {
         pending_transfers.create_new(TransferPair {
-            waiting_on: other_user.clone(),
-            next_transfer: local_user,
+            waiting_on: local_user.clone(),
+            next_transfer: other_user,
         })
     });
 
     send_funds_from(
         id.to_string(),
-        other_user.broker,
+        local_user.broker,
         PendingTransfer {
-            to: other_user.to,
-            token: other_user.token,
-            amount: other_user.amount.into(),
+            to: local_user.to,
+            token: local_user.token,
+            amount: local_user.amount.into(),
         },
+        user_shard_id_to_retrieve
     )
-        .await
+    .await
 }

@@ -104,7 +104,7 @@ pub struct OrderInput {
     pub expiration_time: Option<u64>,
 }
 
-#[derive(CandidType, Debug, Clone)]
+#[derive(CandidType, Clone)]
 pub struct ProcessedOrderInput {
     pub user: Principal,
     pub side: Side,
@@ -112,6 +112,21 @@ pub struct ProcessedOrderInput {
     pub maker_taker: MakerTaker,
     pub limit_price_in_b: u64,
     pub expiration_time: Option<u64>,
+}
+
+impl Debug for ProcessedOrderInput {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let ProcessedOrderInput {
+            user,
+            side,
+            quantity,
+            maker_taker,
+            limit_price_in_b,
+            expiration_time,
+        } = self;
+        write!(f, "ProcessedOrderInput {{user: {}, side: {:?}, quantity: {:?}, {:?}, limit_price_in_b: {}, expiration_time: {:?}}}",
+               user, side, quantity, maker_taker, limit_price_in_b, expiration_time)
+    }
 }
 
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]

@@ -9,11 +9,13 @@ use enoki_exchange_shared::liquidity::{
     RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
 };
 use enoki_exchange_shared::types::*;
+use enoki_exchange_shared::{has_sharded_users, has_token_info};
+use enoki_exchange_shared::has_sharded_users::register_user;
 
-use crate::{liquidity, payoffs};
 use crate::orders::order_book::OrderBook;
 use crate::orders::order_history::OrderHistory;
 use crate::payoffs::distribute_market_maker_rewards;
+use crate::{liquidity, payoffs};
 
 mod order_book;
 mod order_history;
@@ -103,6 +105,34 @@ fn get_open_orders(user: Principal) -> OpenOrderStatus {
 #[candid_method(query, rename = "getPastOrders")]
 fn get_past_orders(user: Principal) -> Vec<Order> {
     STATE.with(|s| s.borrow().order_history.get_past_orders(user))
+}
+
+#[query(name = "getAccruedExtraRewards")]
+#[candid_method(query, rename = "getAccruedExtraRewards")]
+fn get_accrued_extra_rewards(user: Principal) -> LiquidityAmountNat {
+    STATE.with(|s| s.borrow().order_history.get_accrued_extra_rewards(user).into())
+}
+
+pub fn add_accrued_extra_reward(user: Principal, amount: StableNat, token: &EnokiToken) {
+    STATE.with(|s| s.borrow_mut().order_history.add_accrued_extra_reward(user, amount, token));
+}
+
+#[query(name = "isUserRegistered")]
+#[candid_method(query, rename = "isUserRegistered")]
+pub fn is_user_registered(user: Principal) -> bool {
+    has_sharded_users::get_user_shard(user, has_token_info::get_token_address(&EnokiToken::TokenA))
+        .is_ok()
+        && has_sharded_users::get_user_shard(
+            user,
+            has_token_info::get_token_address(&EnokiToken::TokenB),
+        )
+        .is_ok()
+}
+
+#[update(name = "register")]
+#[candid_method(update)]
+async fn register(user: Principal) {
+    register_user(user).await.unwrap();
 }
 
 pub fn export_stable_storage() -> OrdersState {

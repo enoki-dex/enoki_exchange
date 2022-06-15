@@ -1,10 +1,17 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
-use std::ops::{AddAssign, SubAssign};
+use std::ops::AddAssign;
+use std::str::FromStr;
 
-use candid::{CandidType, Principal};
+use candid::{CandidType, Nat, Principal};
+use lazy_static::lazy_static;
 
 use crate::types::*;
+
+lazy_static! {
+    //TODO: make it based on fee
+    static ref MIN_AMOUNT_TO_WITHDRAW: StableNat = Nat::from_str("30_000_000").unwrap().into();
+}
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct LiquidityPool {
@@ -57,10 +64,13 @@ impl LiquidityPool {
         let existing = self
             .liquidity
             .get(&user)
-            .ok_or(TxError::UserNotRegistered)?;
+            .ok_or(TxError::UserNotRegistered {
+                user: user.to_string(),
+                registry: ic_cdk::id().to_string(),
+            })?;
         let amount_a = amount.token_a.min(existing.token_a.clone());
         let amount_b = amount.token_b.min(existing.token_b.clone());
-        if amount_a.is_nonzero() {
+        if amount_a >= *MIN_AMOUNT_TO_WITHDRAW {
             ic_cdk::println!(
                 "[worker] decreased user {} pending liquidity A by {:?}",
                 user,
@@ -74,7 +84,7 @@ impl LiquidityPool {
                 },
             ));
         }
-        if amount_b.is_nonzero() {
+        if amount_b >= *MIN_AMOUNT_TO_WITHDRAW {
             ic_cdk::println!(
                 "[worker] decreased user {} pending liquidity B by {:?}",
                 user,
@@ -169,7 +179,7 @@ impl LiquidityPool {
         for (user, liquidity) in self.liquidity.iter_mut() {
             if let Some(traded) = traded.get(user) {
                 liquidity.add_assign(traded.increased.clone());
-                liquidity.sub_assign(traded.decreased.clone());
+                liquidity.safe_sub_assign(traded.decreased.clone()).unwrap();
             }
         }
     }

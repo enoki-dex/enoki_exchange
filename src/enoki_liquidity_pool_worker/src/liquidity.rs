@@ -1,11 +1,9 @@
 use std::cell::RefCell;
-use std::ops::{AddAssign, Div, Mul, SubAssign};
+use std::ops::{AddAssign, Div, Mul};
 
 use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
-use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::has_token_info::{
     get_assigned_shard, get_assigned_shards, AssignedShards,
 };
@@ -13,6 +11,7 @@ use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotif
 use enoki_exchange_shared::is_managed::get_manager;
 use enoki_exchange_shared::liquidity::liquidity_pool::{LiquidityPool, LiquidityPoolTotalBalance};
 use enoki_exchange_shared::types::*;
+use enoki_exchange_shared::{has_sharded_users, has_token_info};
 
 thread_local! {
     static STATE: RefCell<LiquidityState> = RefCell::new(LiquidityState::default());
@@ -160,7 +159,7 @@ fn apply_traded(traded: LiquidityTrades, pool: &mut LiquidityPool) -> LiquidityT
     );
 
     let mut rounding_error = traded;
-    rounding_error.sub_assign(aggr_changes_for_users);
+    rounding_error.safe_sub_assign(aggr_changes_for_users).unwrap();
 
     if rounding_error.decreased.token_a.is_nonzero()
         || rounding_error.decreased.token_b.is_nonzero()
@@ -190,8 +189,8 @@ fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut LiquidityPool) {
         let amount_left = amount.get_mut(&token);
         if amount_left.is_nonzero() {
             let diff = amount_left.clone().min(item.1.amount.clone());
-            amount_left.sub_assign(diff.clone());
-            item.1.amount.sub_assign(diff.clone());
+            amount_left.safe_sub_assign(diff.clone()).unwrap();
+            item.1.amount.safe_sub_assign(diff.clone()).unwrap();
             let addr = item.0;
             ic_cdk::println!(
                 "[worker] liquidity for user {} was successfully added: {:?} {:?}",
@@ -224,10 +223,10 @@ fn calculate_withdrawals(
             let item = pool.get_locked_remove_item(i).unwrap();
             item.1.amount = item.1.amount.clone().min(amount_in_lp.clone());
             let diff = amount_left.clone().min(item.1.amount.clone());
-            amount_left.sub_assign(diff.clone());
-            item.1.amount.sub_assign(diff.clone());
+            amount_left.safe_sub_assign(diff.clone()).unwrap();
+            item.1.amount.safe_sub_assign(diff.clone()).unwrap();
             pool.get_user_liquidity_mut(addr, &token)
-                .sub_assign(diff.clone());
+                .safe_sub_assign(diff.clone()).unwrap();
             ic_cdk::println!(
                 "[worker] liquidity for user {} is successfully being removed: {:?} {:?}",
                 addr,
@@ -269,11 +268,15 @@ async fn withdraw_for_user(
     withdrawal: TokenAmount,
 ) -> Option<(Principal, TokenAmount)> {
     let error;
-    match get_user_shard(user, has_token_info::get_token_address(&withdrawal.token)) {
+    match has_sharded_users::get_user_shard(
+        user,
+        has_token_info::get_token_address(&withdrawal.token),
+    ) {
         Ok(user_shard) => {
             let TokenAmount { token, amount } = withdrawal.clone();
             let amount: Nat = amount.into();
             let my_shard = get_assigned_shard(&token);
+            ic_cdk::println!("executing shardTransfer to {} with args ({}, {}, {})", my_shard, user_shard, user, amount);
             let result: Result<()> = ic_cdk::call(
                 my_shard,
                 "shardTransfer",
@@ -319,17 +322,39 @@ async fn get_shards_to_add_liquidity() -> AssignedShards {
     get_assigned_shards()
 }
 
+#[query(name = "isUserRegistered")]
+#[candid_method(query, rename = "isUserRegistered")]
+pub fn is_user_registered(user: Principal) -> bool {
+    has_sharded_users::get_user_shard(user, has_token_info::get_token_address(&EnokiToken::TokenA))
+        .is_ok()
+        && has_sharded_users::get_user_shard(
+            user,
+            has_token_info::get_token_address(&EnokiToken::TokenB),
+        )
+        .is_ok()
+}
+
+#[update(name = "register")]
+#[candid_method(update)]
+async fn register(user: Principal) {
+    has_sharded_users::register_user(user).await.unwrap();
+}
+
 #[update(name = "addLiquidity")]
 #[candid_method(update, rename = "addLiquidity")]
 async fn add_liquidity(notification: ShardedTransferNotification) {
     assert_eq!(notification.to, ic_cdk::id());
     let token = has_token_info::parse_from().unwrap();
     let from = notification.from;
-    register_user(
-        from,
-        has_token_info::get_token_address(&token),
-        notification.from_shard,
-    );
+    if !is_user_registered(from) {
+        panic!(
+            "{:?}",
+            TxError::UserNotRegistered {
+                user: from.to_string(),
+                registry: ic_cdk::id().to_string()
+            }
+        );
+    }
     let amount = TokenAmount {
         token,
         amount: notification.value.into(),

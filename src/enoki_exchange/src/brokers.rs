@@ -5,7 +5,7 @@ use candid::utils::{ArgumentDecoder, ArgumentEncoder};
 use candid::{candid_method, CandidType, Nat, Principal};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user};
+use enoki_exchange_shared::has_sharded_users::{get_user_shard, register_user_with};
 use enoki_exchange_shared::has_token_info::AssignedShards;
 use enoki_exchange_shared::has_trading_fees::TradingFees;
 use enoki_exchange_shared::is_owned;
@@ -26,6 +26,7 @@ pub fn assert_is_broker_contract() -> Result<()> {
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct BrokerState {
     pub brokers: HashSet<Principal>,
+    pub current_broker_index: usize,
 }
 
 thread_local! {
@@ -72,6 +73,19 @@ pub async fn foreach_broker_map<
         .collect())
 }
 
+#[update(name = "getRandomBroker")]
+#[candid_method(update, rename = "getRandomBroker")]
+pub fn get_random_broker() -> Principal {
+    STATE.with(|s| {
+        let mut s = s.borrow_mut();
+        let i = s.current_broker_index;
+        s.current_broker_index += 1;
+        let mut brokers: Vec<_> = s.brokers.iter().copied().collect();
+        brokers.sort();
+        brokers[i % brokers.len()]
+    })
+}
+
 #[query(name = "getBrokerIds")]
 #[candid_method(query, rename = "getBrokerIds")]
 pub fn get_broker_ids() -> Vec<Principal> {
@@ -105,8 +119,8 @@ async fn add_broker(broker: Principal) {
     let assigned = response.unwrap().0;
     let _result: Vec<()> = foreach_broker("addBroker", |_| (broker,)).await.unwrap();
     STATE.with(|s| s.borrow_mut().brokers.insert(broker));
-    register_user(broker, token_a, assigned.token_a);
-    register_user(broker, token_b, assigned.token_b);
+    register_user_with(broker, token_a, assigned.token_a);
+    register_user_with(broker, token_b, assigned.token_b);
     init_broker_lp(broker);
 
     let result: Result<()> = ic_cdk::call(liquidity::get_pool_contract(), "addBroker", (broker,))

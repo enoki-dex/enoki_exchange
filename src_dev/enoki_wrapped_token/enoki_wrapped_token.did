@@ -20,7 +20,7 @@ type TxError = variant {
   InsufficientBalance;
   TransferValueTooSmall;
   Unauthorized;
-  AccountDoesNotExist;
+  AccountDoesNotExist : record { user : text; shard : text };
   ShardDoesNotExist;
   AccountAlreadyExists;
   Other : text;

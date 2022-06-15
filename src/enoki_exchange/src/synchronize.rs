@@ -74,9 +74,9 @@ pub async fn do_run() -> Result<()> {
         flat_map_vecs(foreach_broker("retrieveOrders", |_| ()).await?);
 
     ic_cdk::println!(
-        "[exchange] got new orders: {:?} / {:?}",
-        new_orders,
-        orders_to_cancel
+        "[exchange] got {} new orders and {} to cancel",
+        new_orders.len(),
+        orders_to_cancel.len()
     );
 
     let (mut completed_orders, aggregate_bid_ask) = match_orders(new_orders, orders_to_cancel);

@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
-use std::ops::{AddAssign, Sub, SubAssign};
+use std::ops::{AddAssign, Sub};
 
 use candid::{CandidType, Nat};
 use num_traits::cast::ToPrimitive;
@@ -46,17 +46,21 @@ pub fn update_liquidity_target(
         added.token_b = added.token_b.min(target.extra_liquidity_available.token_b);
 
         s.available_liquidity.add_assign(added.clone());
-        s.available_liquidity.sub_assign(removed.clone());
+        s.available_liquidity
+            .safe_sub_assign(removed.clone())
+            .unwrap();
 
         ic_cdk::println!(
-            "[broker] current available liquidity: {:?}",
-            s.available_liquidity
+            "[broker] current available liquidity: {:?}. added: {:?}, removed: {:?}",
+            s.available_liquidity,
+            added,
+            removed
         );
 
         ResponseAboutLiquidityChanges {
             added,
             removed,
-            traded: s.liquidity_traded.clone(),
+            traded: std::mem::take(&mut s.liquidity_traded),
         }
     })
 }
@@ -107,7 +111,9 @@ pub async fn swap(mut order: ProcessedOrderInput) {
             .decreased
             .get_mut(&token_supplier)
             .add_assign(quantity_supplier);
-        s.available_liquidity.sub_assign(traded.decreased.clone());
+        s.available_liquidity
+            .safe_sub_assign(traded.decreased.clone())
+            .unwrap();
         traded
     });
     if let Err(error) = payoffs::send_swap_tokens(
@@ -122,21 +128,23 @@ pub async fn swap(mut order: ProcessedOrderInput) {
                 .available_liquidity
                 .add_assign(traded.decreased)
         });
-        panic!("{:?}", error);
+        panic!("[broker] error with swap: {:?}", error);
     }
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         s.available_liquidity.add_assign(traded.increased.clone());
         s.liquidity_traded.add_assign(traded);
     });
-    pay_rewards_to_market_makers(
-        market_maker_reward,
-        match &order.side {
-            Side::Buy => &EnokiToken::TokenB,
-            Side::Sell => &EnokiToken::TokenA,
-        },
-        swap,
-    );
+    if market_maker_reward != 0u32 {
+        pay_rewards_to_market_makers(
+            market_maker_reward,
+            match &order.side {
+                Side::Buy => &EnokiToken::TokenB,
+                Side::Sell => &EnokiToken::TokenA,
+            },
+            swap,
+        );
+    }
 }
 
 fn pay_rewards_to_market_makers(
@@ -239,7 +247,7 @@ impl SwapLiquidity for AggregateBidAsk {
                         trade(&mut party_quantity, &mut quantity_remaining, price);
                     party.quantity = party_quantity.into();
                     let mut reference = party.clone();
-                    reference.quantity = original_party_quantity.sub(reference.quantity);
+                    reference.quantity = original_party_quantity.sub(reference.quantity).unwrap();
                     liquidity_reference
                         .prices
                         .entry(price)

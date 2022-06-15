@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::ops::{AddAssign, SubAssign};
+use std::ops::AddAssign;
 
 use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
@@ -50,8 +50,8 @@ async fn init_pool(pool: Principal) {
     if STATE.with(|s| s.borrow().pool_address != Principal::anonymous()) {
         panic!("pool already init");
     }
-    let response: Result<(Principal, )> =
-        ic_cdk::call(pool, "initLiquidityPool", (get_token_info(), ))
+    let response: Result<(Principal,)> =
+        ic_cdk::call(pool, "initLiquidityPool", (get_token_info(),))
             .await
             .map_err(|e| e.into_tx_error());
     let worker = response.unwrap().0;
@@ -144,13 +144,13 @@ pub async fn update_committed_broker_liquidity(
 
     let proposed_by_lp = STATE.with(|s| std::mem::take(&mut s.borrow_mut().lp_proposed_changes));
     let excess_added = added.sub_or_zero(&proposed_by_lp.to_add);
-    added.sub_assign(excess_added.clone());
+    added.safe_sub_assign(excess_added.clone()).unwrap();
     let excess_removed = removed.sub_or_zero(&proposed_by_lp.to_remove);
-    removed.sub_assign(excess_removed.clone());
+    removed.safe_sub_assign(excess_removed.clone()).unwrap();
     STATE.with(|s| {
         let mut s = s.borrow_mut();
-        s.excess_liquidity.add_assign(excess_added);
-        s.excess_liquidity.sub_assign(excess_removed);
+        s.excess_liquidity.add_assign(excess_removed);
+        s.excess_liquidity.safe_sub_assign(excess_added).unwrap();
     });
 
     let result: Result<()> = ic_cdk::call(
@@ -158,8 +158,8 @@ pub async fn update_committed_broker_liquidity(
         "resolveLiquidity",
         (added, removed, traded),
     )
-        .await
-        .map_err(|e| e.into_tx_error());
+    .await
+    .map_err(|e| e.into_tx_error());
     result
 }
 
@@ -167,10 +167,23 @@ fn apply_changes(changes: &HashMap<Principal, ResponseAboutLiquidityChanges>) {
     STATE.with(|s| {
         for (broker_id, liquidity) in s.borrow_mut().broker_liquidity.iter_mut() {
             if let Some(changes) = changes.get(broker_id) {
-                liquidity.add_assign(changes.traded.increased.clone());
-                liquidity.sub_assign(changes.traded.decreased.clone());
+                ic_cdk::println!(
+                    "[exchange] updating broker liquidity for {}. Currently available: {:?}. added: {:?}. removed: {:?}. traded: {:?}",
+                    broker_id,
+                    liquidity,
+                    changes.added,
+                    changes.removed,
+                    changes.traded
+                );
                 liquidity.add_assign(changes.added.clone());
-                liquidity.sub_assign(changes.removed.clone());
+                liquidity.add_assign(changes.traded.increased.clone());
+                liquidity.safe_sub_assign(changes.traded.decreased.clone()).unwrap();
+                liquidity.safe_sub_assign(changes.removed.clone()).unwrap();
+                ic_cdk::println!(
+                    "[exchange] updated broker liquidity for {}: {:?}",
+                    broker_id,
+                    liquidity
+                );
             }
         }
     })

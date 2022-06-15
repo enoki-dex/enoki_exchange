@@ -11,6 +11,10 @@ pub async fn send_swap_tokens(
     token: &EnokiToken,
     amount_to_send: Nat,
 ) -> Result<()> {
+    ic_cdk::api::print(format!(
+        "[broker] swap -> sending user {} {:?} {:?}",
+        user, token, amount_to_send
+    ));
     let lp_location = get_lp_worker_location();
     let lp_shard = get_lp_worker_assigned_shard(token);
     let user_shard = get_user_shard(user, has_token_info::get_token_address(token))?;
@@ -19,7 +23,7 @@ pub async fn send_swap_tokens(
         "shardSpend",
         (lp_location, user_shard, user, amount_to_send),
     )
-        .await
-        .map_err(|e| e.into_tx_error());
+    .await
+    .map_err(|e| e.into_tx_error());
     result
 }

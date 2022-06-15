@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, Div, Sub, SubAssign};
+use std::ops::{AddAssign, Div, Sub};
 
 use crate::types::*;
 
@@ -40,12 +40,12 @@ impl LiquidityAmount {
     }
     pub fn sub_assign_or_zero(&mut self, other: Self) {
         if self.token_a > other.token_a {
-            self.token_a.sub_assign(other.token_a);
+            self.token_a.safe_sub_assign(other.token_a).unwrap();
         } else {
             self.token_a = StableNat::zero();
         }
         if self.token_b > other.token_b {
-            self.token_b.sub_assign(other.token_b);
+            self.token_b.safe_sub_assign(other.token_b).unwrap();
         } else {
             self.token_b = StableNat::zero();
         }
@@ -53,16 +53,21 @@ impl LiquidityAmount {
     pub fn sub_or_zero(&self, other: &Self) -> Self {
         Self {
             token_a: if self.token_a > other.token_a {
-                self.token_a.clone().sub(other.token_a.clone())
+                self.token_a.clone().sub(other.token_a.clone()).unwrap()
             } else {
                 StableNat::zero()
             },
             token_b: if self.token_b > other.token_b {
-                self.token_b.clone().sub(other.token_b.clone())
+                self.token_b.clone().sub(other.token_b.clone()).unwrap()
             } else {
                 StableNat::zero()
             },
         }
+    }
+    pub fn safe_sub_assign(&mut self, rhs: Self) -> Result<()> {
+        self.token_a.safe_sub_assign(rhs.token_a)?;
+        self.token_b.safe_sub_assign(rhs.token_b)?;
+        Ok(())
     }
 }
 
@@ -73,10 +78,11 @@ impl AddAssign for LiquidityAmount {
     }
 }
 
-impl SubAssign for LiquidityAmount {
-    fn sub_assign(&mut self, rhs: Self) {
-        self.token_a.sub_assign(rhs.token_a);
-        self.token_b.sub_assign(rhs.token_b);
+impl LiquidityTrades {
+    pub fn safe_sub_assign(&mut self, rhs: Self) -> Result<()> {
+        self.increased.safe_sub_assign(rhs.increased)?;
+        self.decreased.safe_sub_assign(rhs.decreased)?;
+        Ok(())
     }
 }
 
@@ -84,13 +90,6 @@ impl AddAssign for LiquidityTrades {
     fn add_assign(&mut self, rhs: Self) {
         self.increased.add_assign(rhs.increased);
         self.decreased.add_assign(rhs.decreased);
-    }
-}
-
-impl SubAssign for LiquidityTrades {
-    fn sub_assign(&mut self, rhs: Self) {
-        self.increased.sub_assign(rhs.increased);
-        self.decreased.sub_assign(rhs.decreased);
     }
 }
 
@@ -140,6 +139,15 @@ impl From<LiquidityAmount> for LiquidityAmountNat {
         Self {
             token_a: val.token_a.into(),
             token_b: val.token_b.into(),
+        }
+    }
+}
+
+impl EnokiToken {
+    pub fn opposite(&self) -> Self {
+        match self {
+            EnokiToken::TokenA => EnokiToken::TokenB,
+            EnokiToken::TokenB => EnokiToken::TokenA,
         }
     }
 }

@@ -127,7 +127,7 @@ pub fn get_assigned_shard_b() -> Principal {
 pub fn get_assigned_shard(for_token: &EnokiToken) -> Principal {
     STATE.with(|s| match for_token {
         EnokiToken::TokenA => s.borrow().assigned_shards.token_a,
-        EnokiToken::TokenB => s.borrow().assigned_shards.token_a,
+        EnokiToken::TokenB => s.borrow().assigned_shards.token_b,
     })
 }
 

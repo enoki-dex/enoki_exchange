@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::cmp::Ordering;
-use std::ops::{AddAssign, SubAssign};
+use std::ops::AddAssign;
 
 use candid::{candid_method, CandidType, Nat};
 use ic_cdk_macros::*;
@@ -38,8 +38,11 @@ impl AccruedFees {
     }
 }
 
-pub fn charge_deposit_fee(token: &EnokiToken, deposit_amount: Nat) -> Nat {
+pub fn charge_deposit_fee(token: &EnokiToken, deposit_amount: Nat) -> Result<Nat> {
     let fee = get_deposit_fee(token);
+    if deposit_amount <= fee {
+        return Err(TxError::QuantityTooLow.into());
+    }
     let remaining = deposit_amount - fee.clone();
     STATE.with(|s| {
         s.borrow_mut()
@@ -47,26 +50,44 @@ pub fn charge_deposit_fee(token: &EnokiToken, deposit_amount: Nat) -> Nat {
             .get_mut(&token)
             .add_assign(fee.into())
     });
-    remaining
+    Ok(remaining)
+}
+
+pub fn try_get_fee_for_transfer(token: &EnokiToken) -> Option<Nat> {
+    STATE.with(|s| s.borrow().get_token_fee(token))
+}
+
+pub async fn get_fee_for_transfer(token: &EnokiToken) -> Result<Nat> {
+    if let Some(fee) = try_get_fee_for_transfer(token) {
+        Ok(fee)
+    } else {
+        update_upstream_token_fee(token).await?;
+        try_get_fee_for_transfer(token).ok_or(
+            TxError::Other("cannot calculate upstream token transfer fee".to_string()).into(),
+        )
+    }
 }
 
 pub async fn use_fee_for_transfer(token: &EnokiToken) -> Result<Nat> {
-    let mut transfer_fee = STATE.with(|s| s.borrow().get_token_fee(token));
-    if transfer_fee.is_none() {
-        update_upstream_token_fee(token).await?;
-        transfer_fee = STATE.with(|s| s.borrow().get_token_fee(token));
-    }
-    let transfer_fee = transfer_fee.ok_or(TxError::Other(
-        "cannot calculate upstream token transfer fee".to_string(),
-    ))?;
+    let transfer_fee = if let Some(fee) = try_get_fee_for_transfer(token) {
+        fee
+    } else {
+        get_fee_for_transfer(token).await?
+    };
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         if s.deposit_fees.get(token).compare_with(&transfer_fee) == Ordering::Less {
-            Err(TxError::InsufficientFunds.into())
+            Err(TxError::InsufficientFunds {
+                token: token.clone(),
+                funds: s.deposit_fees.get(token).clone().to_nat().to_string(),
+                needed: transfer_fee.to_string(),
+            }
+            .into())
         } else {
             s.deposit_fees
                 .get_mut(token)
-                .sub_assign(transfer_fee.clone().into());
+                .safe_sub_assign(transfer_fee.clone().into())
+                .unwrap();
             Ok(transfer_fee)
         }
     })
@@ -92,9 +113,10 @@ async fn update_upstream_fees() {
 }
 
 async fn update_upstream_token_fee(token: &EnokiToken) -> Result<()> {
-    let result: Result<(Nat, )> = ic_cdk::call(has_token_info::get_token_address(token), "getFee", ())
-        .await
-        .map_err(|e| e.into_tx_error());
+    let result: Result<(Nat,)> =
+        ic_cdk::call(has_token_info::get_token_address(token), "getFee", ())
+            .await
+            .map_err(|e| e.into_tx_error());
     let fee = result?.0;
     STATE.with(|s| *s.borrow_mut().get_token_fee_mut(token) = Some(fee.into()));
     Ok(())

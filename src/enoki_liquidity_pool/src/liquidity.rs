@@ -74,11 +74,23 @@ fn resolve_liquidity(added: LiquidityAmount, removed: LiquidityAmount, traded: L
         traded
     );
     STATE.with(|s| {
+        ic_cdk::println!(
+            "[lp] previous total liquidity: {:?}",
+            s.borrow().worker_pool.get_liquidity()
+        );
+    });
+    STATE.with(|s| {
         let mut s = s.borrow_mut();
+        s.worker_pool.apply_changes(&added, &removed, &traded);
         s.added.add_assign(added);
         s.removed.add_assign(removed);
-        s.worker_pool.apply_traded(&traded);
         s.traded.add_assign(traded);
+    });
+    STATE.with(|s| {
+        ic_cdk::println!(
+            "[lp] current total liquidity: {:?}",
+            s.borrow().worker_pool.get_liquidity()
+        );
     });
 }
 

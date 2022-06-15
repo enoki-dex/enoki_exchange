@@ -61,7 +61,7 @@ impl OrderMatching for Order {
                     broker: executor.info.broker,
                     user: executor.info.user,
                     quantity: market_maker_original_quantity
-                        .sub(executor.state.quantity_remaining.clone()),
+                        .sub(executor.state.quantity_remaining.clone()).unwrap(),
                     price: executor.info.limit_price,
                 });
             }

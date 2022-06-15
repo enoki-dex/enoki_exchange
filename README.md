@@ -43,6 +43,7 @@ Once the job completes, your application will be available at `http://localhost:
 
 - move order_matcher and order_history states to distributed big-maps to allow more scaling
 - keep history of swaps
+- simplify LP withdrawals. Currently it might take a few `removeAllLiquidity` calls to fully withdraw all liquidity.
 - make the token balances states easier to follow
 - bulk transfer liquidity from LP worker to broker canisters to decentralize liquidity location among subnets
 - upgrade `swap` calls with insufficient liquidity to market orders on the main exchange? Or just keep it as it is,

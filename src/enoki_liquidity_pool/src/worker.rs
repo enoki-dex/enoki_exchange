@@ -59,12 +59,12 @@ pub async fn init_worker_token_data() -> Result<()> {
             .await
             .map_err(|e| e.into_tx_error());
     let worker_shards = response?.0;
-    has_sharded_users::register_user(
+    has_sharded_users::register_user_with(
         worker,
         has_token_info::get_token_address(&EnokiToken::TokenA),
         worker_shards.token_a,
     );
-    has_sharded_users::register_user(
+    has_sharded_users::register_user_with(
         worker,
         has_token_info::get_token_address(&EnokiToken::TokenB),
         worker_shards.token_b,

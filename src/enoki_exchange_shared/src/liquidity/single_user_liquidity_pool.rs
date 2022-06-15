@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, SubAssign};
+use std::ops::{AddAssign};
 
 use candid::CandidType;
 
@@ -76,8 +76,10 @@ impl SingleUserLiquidityPool {
         self.pending_remove_locked
             .retain(|amount| amount.amount.is_nonzero());
     }
-    pub fn apply_traded(&mut self, traded: &LiquidityTrades) {
+    pub fn apply_changes(&mut self, added: &LiquidityAmount, removed: &LiquidityAmount, traded: &LiquidityTrades) {
         self.liquidity.add_assign(traded.increased.clone());
-        self.liquidity.sub_assign(traded.decreased.clone());
+        self.liquidity.safe_sub_assign(traded.decreased.clone()).unwrap();
+        self.liquidity.add_assign(added.clone());
+        self.liquidity.safe_sub_assign(removed.clone()).unwrap();
     }
 }

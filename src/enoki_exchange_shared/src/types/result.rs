@@ -3,22 +3,32 @@ use candid::{CandidType, Deserialize};
 use ic_cdk::api::call::RejectionCode;
 use thiserror::Error;
 
+use crate::types::EnokiToken;
+
 #[derive(CandidType, Debug, Deserialize, Error)]
 pub enum TxError {
-    #[error("Insufficient Funds")]
-    InsufficientFunds,
+    #[error("Insufficient Funds in {token:?}: funds={funds} vs needed={needed}")]
+    InsufficientFunds {
+        token: EnokiToken,
+        funds: String,
+        needed: String,
+    },
     #[error("Insufficient Liquidity Available")]
     InsufficientLiquidityAvailable,
     #[error("Slippage Exceeded: swap was cancelled")]
     SlippageExceeded,
     #[error("Unauthorized")]
     Unauthorized,
-    #[error("User Not Registered")]
-    UserNotRegistered,
+    #[error("User {user} Not Registered at {registry}")]
+    UserNotRegistered { user: String, registry: String },
     #[error("Internal error: int overflow")]
     IntOverflow,
     #[error("Internal error: int underflow")]
     IntUnderflow,
+    #[error("Quantity too low")]
+    QuantityTooLow,
+    #[error("Cannot subtract a larger uint from a smaller one.")]
+    UIntSubtractError,
     #[error("Parsing error: {0}")]
     ParsingError(String),
     #[error("Callback error: {0}")]

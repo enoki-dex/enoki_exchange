@@ -28,6 +28,8 @@ service : () -> {
   getShardsToAddLiquidity : () -> (AssignedShards) query;
   getTokenInfo : () -> (TokenPairInfo) query;
   initWorker : (TokenPairInfo) -> (AssignedShards);
+  isUserRegistered : (principal) -> (bool) query;
+  register : (principal) -> ();
   removeAllLiquidity : () -> ();
   removeLiquidity : (LiquidityAmount) -> ();
   setManager : (principal) -> ();

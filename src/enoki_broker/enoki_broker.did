@@ -17,6 +17,7 @@ type InitBrokerParams = record {
   trading_fees : TradingFees;
 };
 type LiquidityAmount = record { token_a : vec nat8; token_b : vec nat8 };
+type LiquidityAmountNat = record { token_a : nat; token_b : nat };
 type LiquidityTrades = record {
   decreased : LiquidityAmount;
   increased : LiquidityAmount;
@@ -90,8 +91,8 @@ service : () -> {
   addBroker : (principal) -> ();
   finishInit : (principal) -> ();
   fundsSent : (ShardedTransferNotification) -> ();
+  getAccruedExtraRewards : (principal) -> (LiquidityAmountNat) query;
   getAccruedFees : () -> (LiquidityAmount) query;
-  getAssignedShard : (EnokiToken) -> (principal) query;
   getAssignedShardA : () -> (principal) query;
   getAssignedShardB : () -> (principal) query;
   getAssignedShards : () -> (AssignedShards) query;
@@ -103,8 +104,10 @@ service : () -> {
   getTokenInfo : () -> (TokenPairInfo) query;
   getTradingFees : () -> (TradingFees) query;
   initBroker : (InitBrokerParams) -> (AssignedShards);
+  isUserRegistered : (principal) -> (bool) query;
   limitOrder : (ShardedTransferNotification) -> ();
   receiveMarketMakerRewards : (ShardedTransferNotification) -> ();
+  register : (principal) -> ();
   retrieveOrders : () -> (vec OrderInfo, vec OrderInfo);
   sendFunds : (text, PendingTransfer) -> ();
   setFees : (TradingFees) -> ();
