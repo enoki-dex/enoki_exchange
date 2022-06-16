@@ -8,7 +8,7 @@ let shortenPrincipal = principal => {
   return principal;
 }
 
-const Wallet = ({toggleShowWallet}) => {
+const Wallet = ({showWallet, toggleShowWallet}) => {
   let {isLoggedIn, getIdentity, login, logout} = useLogin();
   let principal = isLoggedIn ? shortenPrincipal(getIdentity().getPrincipal().toString()) : null;
   const [walletShow, setWalletShow] = React.useState(false)
@@ -18,9 +18,9 @@ const Wallet = ({toggleShowWallet}) => {
       {
         isLoggedIn ? (
           <a style={{cursor: "pointer"}} className="wallet" onClick={() => toggleShowWallet()}>
-            <img src="img/i8.png" alt=""/>
+            <img className="connect-icon" src="img/internet-computer-logo.svg" alt=""/>
             <span>{principal}</span>
-            <img className="arrow" src="img/bottom-arrow.png" alt=""/>
+            <img className={`arrow${showWallet ? " active" : ""}`} src="img/dropdown.svg" alt=""/>
           </a>
         ) : (
           <a className="connect" onClick={() => login()}>CONNECT WALLET</a>

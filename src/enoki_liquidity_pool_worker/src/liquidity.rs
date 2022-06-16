@@ -25,11 +25,6 @@ pub struct LiquidityState {
     rounding_error: LiquidityTrades, //TODO: send these to the accrued fees / use fees to pay for these
 }
 
-#[query]
-fn get_state() -> LiquidityState {
-    STATE.with(|s| s.borrow().clone())
-}
-
 pub async fn update_liquidity_with_manager() {
     if STATE.with(|s| {
         let s = s.borrow();
@@ -159,7 +154,9 @@ fn apply_traded(traded: LiquidityTrades, pool: &mut LiquidityPool) -> LiquidityT
     );
 
     let mut rounding_error = traded;
-    rounding_error.safe_sub_assign(aggr_changes_for_users).unwrap();
+    rounding_error
+        .safe_sub_assign(aggr_changes_for_users)
+        .unwrap();
 
     if rounding_error.decreased.token_a.is_nonzero()
         || rounding_error.decreased.token_b.is_nonzero()
@@ -198,7 +195,9 @@ fn apply_new_liquidity(mut amount: LiquidityAmount, pool: &mut LiquidityPool) {
                 diff,
                 token
             );
-            pool.get_user_liquidity_mut(addr, &token).add_assign(diff);
+            pool.get_user_liquidity_mut(addr, &token)
+                .add_assign(diff.clone());
+            pool.update_user_net_deposits(addr, &token, true, diff);
         }
         i += 1;
     }
@@ -226,7 +225,9 @@ fn calculate_withdrawals(
             amount_left.safe_sub_assign(diff.clone()).unwrap();
             item.1.amount.safe_sub_assign(diff.clone()).unwrap();
             pool.get_user_liquidity_mut(addr, &token)
-                .safe_sub_assign(diff.clone()).unwrap();
+                .safe_sub_assign(diff.clone())
+                .unwrap();
+            pool.update_user_net_deposits(addr, &token, false, diff.clone());
             ic_cdk::println!(
                 "[worker] liquidity for user {} is successfully being removed: {:?} {:?}",
                 addr,
@@ -276,7 +277,13 @@ async fn withdraw_for_user(
             let TokenAmount { token, amount } = withdrawal.clone();
             let amount: Nat = amount.into();
             let my_shard = get_assigned_shard(&token);
-            ic_cdk::println!("executing shardTransfer to {} with args ({}, {}, {})", my_shard, user_shard, user, amount);
+            ic_cdk::println!(
+                "executing shardTransfer to {} with args ({}, {}, {})",
+                my_shard,
+                user_shard,
+                user,
+                amount
+            );
             let result: Result<()> = ic_cdk::call(
                 my_shard,
                 "shardTransfer",
@@ -314,6 +321,19 @@ fn get_liquidity(user: Principal) -> LiquidityAmountNat {
         .with(|s| s.borrow().pool.get_user_liquidity(user))
         .unwrap_or_default()
         .into()
+}
+
+#[query(name = "getNetDeposits")]
+#[candid_method(query, rename = "getNetDeposits")]
+fn get_net_deposits(user: Principal) -> LiquidityTradesNat {
+    STATE
+        .with(|s| {
+            s.borrow()
+                .pool
+                .get_user_net_deposits(user)
+                .map(|d| d.into())
+        })
+        .unwrap_or_default()
 }
 
 #[query(name = "getShardsToAddLiquidity")]

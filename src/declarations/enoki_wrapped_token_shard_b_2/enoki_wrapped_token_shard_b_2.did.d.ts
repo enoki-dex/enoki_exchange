@@ -22,7 +22,7 @@ export type TxError = { 'UnderlyingTransferFailure' : null } |
   { 'InsufficientBalance' : null } |
   { 'TransferValueTooSmall' : null } |
   { 'Unauthorized' : null } |
-  { 'AccountDoesNotExist' : null } |
+  { 'AccountDoesNotExist' : { 'user' : string, 'shard' : string } } |
   { 'ShardDoesNotExist' : null } |
   { 'AccountAlreadyExists' : null } |
   { 'Other' : string };

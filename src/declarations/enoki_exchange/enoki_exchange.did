@@ -21,6 +21,7 @@ service : () -> {
   getBrokerIds : () -> (vec principal) query;
   getLiquidityLocation : () -> (principal);
   getOwner : () -> (principal) query;
+  getRandomBroker : () -> (principal);
   getTokenInfo : () -> (TokenPairInfo) query;
   getTradingFees : () -> (TradingFees) query;
   initPool : (principal) -> ();

@@ -5,6 +5,10 @@ export interface LiquidityAmount {
   'token_b' : Array<number>,
 }
 export interface LiquidityAmountNat { 'token_a' : bigint, 'token_b' : bigint }
+export interface LiquidityTradesNat {
+  'decreased' : LiquidityAmountNat,
+  'increased' : LiquidityAmountNat,
+}
 export interface ShardedTransferNotification {
   'to' : Principal,
   'value' : bigint,
@@ -28,10 +32,13 @@ export interface _SERVICE {
   'getAssignedShards' : () => Promise<AssignedShards>,
   'getLiquidity' : (arg_0: Principal) => Promise<LiquidityAmountNat>,
   'getManager' : () => Promise<Principal>,
+  'getNetDeposits' : (arg_0: Principal) => Promise<LiquidityTradesNat>,
   'getOwner' : () => Promise<Principal>,
   'getShardsToAddLiquidity' : () => Promise<AssignedShards>,
   'getTokenInfo' : () => Promise<TokenPairInfo>,
   'initWorker' : (arg_0: TokenPairInfo) => Promise<AssignedShards>,
+  'isUserRegistered' : (arg_0: Principal) => Promise<boolean>,
+  'register' : (arg_0: Principal) => Promise<undefined>,
   'removeAllLiquidity' : () => Promise<undefined>,
   'removeLiquidity' : (arg_0: LiquidityAmount) => Promise<undefined>,
   'setManager' : (arg_0: Principal) => Promise<undefined>,

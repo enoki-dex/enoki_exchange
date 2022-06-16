@@ -66,7 +66,7 @@ const SwapConfig = () => {
       <div className="text-end position-relative">
         <a className="setting" onClick={() => {
           toggleShow()
-        }}><img src="img/i1.png" alt=""/></a>
+        }}><img style={{width: 24}} src="img/settings.svg" alt=""/></a>
       </div>
       <div className={"slippage_popup" + (show ? " current" : "")}>
         <div className="overly" onClick={() => toggleShow()}></div>
@@ -74,7 +74,7 @@ const SwapConfig = () => {
           <h4>Slippage <br/> Tolerance
             <Tooltip style={{display: "inline"}}
                      text={"if your swap cannot be executed at a price within this percentage, it will be cancelled."}>
-              <img style={{marginLeft: 7}} src="img/i6.png" alt=""/>
+              <img className="info-icon" style={{marginLeft: 7}} src="img/i.svg" alt=""/>
             </Tooltip>
           </h4>
           <div className="mode-switch">

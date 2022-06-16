@@ -21,7 +21,7 @@ export type TxError = { 'UnderlyingTransferFailure' : null } |
   { 'InsufficientBalance' : null } |
   { 'TransferValueTooSmall' : null } |
   { 'Unauthorized' : null } |
-  { 'AccountDoesNotExist' : null } |
+  { 'AccountDoesNotExist' : { 'user' : string, 'shard' : string } } |
   { 'ShardDoesNotExist' : null } |
   { 'AccountAlreadyExists' : null } |
   { 'Other' : string };
@@ -35,6 +35,7 @@ export interface _SERVICE {
   'getLogo' : () => Promise<string>,
   'getMetadata' : () => Promise<Metadata>,
   'getShardIds' : () => Promise<Array<Principal>>,
+  'getShardIdsUpdate' : () => Promise<Array<Principal>>,
   'getShardsInfo' : () => Promise<Array<Shard>>,
   'name' : () => Promise<string>,
   'owner' : () => Promise<Principal>,

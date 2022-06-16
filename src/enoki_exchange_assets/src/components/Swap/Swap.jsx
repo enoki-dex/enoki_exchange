@@ -173,7 +173,9 @@ const Swap = () => {
             </div>
           </div>
           <div className="match_box">
-            <a className="top_icon_before" onClick={() => switchPair()}></a>
+            <a className="top_icon_before" onClick={() => switchPair()}>
+              {/*<img src="img/swap_icon.svg" alt=""/>*/}
+            </a>
             <div className="select_wrap">
               <div className="input_wrap">
                 {/*<select name="" id="">*/}
@@ -197,16 +199,16 @@ const Swap = () => {
             <p>Fee: 0.03%
               <Tooltip style={{display: "inline"}}
                        text={"Enoki pays for all of your gas, but this small fee is given to Liquidity Providers and Market Makers."}>
-                <img style={{marginLeft: 5}} src="img/i6.png" alt=""/>
+                <img className="info-icon" style={{marginLeft: 5, marginTop: -3}} src="img/i.svg" alt=""/>
               </Tooltip>
             </p>
           </div>
           <div className="text-center">
             {
               isLoggedIn ? (
-                <a className="btn connect btn-black" onClick={() => swap()}>SWAP</a>
+                <a className="btn connect btn-black btn-big" onClick={() => swap()}>SWAP</a>
               ) : (
-                <a className="btn connect btn-black" onClick={() => login()}>CONNECT WALLET</a>
+                <a className="btn connect btn-black-disabled btn-big">CONNECT WALLET</a>
               )
             }
           </div>

@@ -56,6 +56,12 @@ pub struct LiquidityTrades {
     pub decreased: LiquidityAmount,
 }
 
+#[derive(CandidType, Debug, Clone, candid::Deserialize, Default)]
+pub struct LiquidityTradesNat {
+    pub increased: LiquidityAmountNat,
+    pub decreased: LiquidityAmountNat,
+}
+
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Side {
     Buy,

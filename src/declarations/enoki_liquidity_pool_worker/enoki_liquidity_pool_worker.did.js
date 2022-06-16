@@ -15,6 +15,10 @@ export const idlFactory = ({ IDL }) => {
     'token_a' : IDL.Nat,
     'token_b' : IDL.Nat,
   });
+  const LiquidityTradesNat = IDL.Record({
+    'decreased' : LiquidityAmountNat,
+    'increased' : LiquidityAmountNat,
+  });
   const TokenInfo = IDL.Record({ 'principal' : IDL.Principal });
   const TokenPairInfo = IDL.Record({
     'token_a' : TokenInfo,
@@ -34,10 +38,17 @@ export const idlFactory = ({ IDL }) => {
     'getAssignedShards' : IDL.Func([], [AssignedShards], ['query']),
     'getLiquidity' : IDL.Func([IDL.Principal], [LiquidityAmountNat], ['query']),
     'getManager' : IDL.Func([], [IDL.Principal], ['query']),
+    'getNetDeposits' : IDL.Func(
+        [IDL.Principal],
+        [LiquidityTradesNat],
+        ['query'],
+      ),
     'getOwner' : IDL.Func([], [IDL.Principal], ['query']),
     'getShardsToAddLiquidity' : IDL.Func([], [AssignedShards], ['query']),
     'getTokenInfo' : IDL.Func([], [TokenPairInfo], ['query']),
     'initWorker' : IDL.Func([TokenPairInfo], [AssignedShards], []),
+    'isUserRegistered' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
+    'register' : IDL.Func([IDL.Principal], [], []),
     'removeAllLiquidity' : IDL.Func([], [], []),
     'removeLiquidity' : IDL.Func([LiquidityAmount], [], []),
     'setManager' : IDL.Func([IDL.Principal], [], []),

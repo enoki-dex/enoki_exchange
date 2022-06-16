@@ -172,7 +172,6 @@ header .nav-tabs .nav-link {
     margin: 0;
     border: none;
     border-radius: 3rem;
-    border: none;
 }
 
 header .nav-tabs .nav-item.show .nav-link,
@@ -187,12 +186,12 @@ header .connect {
     font-size: 1.8rem;
     font-weight: 500;
     color: var(--text-color);
-    text-decoration: underline;
+    text-decoration: none;
     transition: .2s;
 }
 
 header .connect:hover {
-    text-decoration: none;
+    text-decoration: underline;
 }
 
 header .wallet {
@@ -217,9 +216,14 @@ header .wallet span {
 
 header .wallet .arrow {
     width: 1.5rem;
-    height: .8rem;
-    margin-top: .6rem;
-    margin-left: 1.5rem;
+    height: 0.8rem;
+    margin-top: 0.02rem;
+    margin-left: 0.5rem;
+}
+
+header .wallet .arrow.active {
+    --webkit-transform: scaleY(-1);
+    transform: scaleY(-1);
 }
 
 /*====================== swap area start ========================*/
@@ -300,7 +304,7 @@ header .wallet .arrow {
     top: -3.4rem;
     width: 5rem;
     height: 5rem;
-    background: url(../img/i11.png) no-repeat center;
+    background: url(../img/swap_icon.svg) no-repeat center;
 }
 
 .top_icon_before {
@@ -312,7 +316,15 @@ header .wallet .arrow {
     top: -3.4rem;
     width: 5rem;
     height: 5rem;
-    background: url(../img/i11.png) no-repeat center;
+    background: url(../img/swap_icon.svg) no-repeat center;
+
+    border-radius: 50%;
+    border-color: #E7EBEF;
+    border-style: solid;
+    border-width: 4px;
+}
+.top_icon_before:hover {
+    border-color: white;
 }
 
 .nice-select.open .list {
@@ -485,14 +497,14 @@ header .wallet .arrow {
 }
 
 .pool_body2 .top_icon::before {
-    background: url(../img/i12.png) no-repeat center;
+    background: url(../img/plus.svg) no-repeat center;
     width: 5rem;
     height: 5rem;
 }
 
 .pool_body2 .top_icon_before {
     cursor: pointer;
-    background: url(../img/i12.png) no-repeat center;
+    background: url(../img/plus.svg) no-repeat center;
     width: 5rem;
     height: 5rem;
 }
@@ -1062,6 +1074,9 @@ th:last-child {
 .wallet-modal .modal-header a {
     font-size: 1.4rem;
     color: var(--text-color);
+    text-decoration: none;
+}
+.wallet-modal .modal-header a:hover {
     text-decoration: underline;
 }
 
@@ -1075,12 +1090,12 @@ th:last-child {
     width: 50%;
 }
 
-.wallet-modal .box:nth-child(1) {
+.wallet-modal .box:nth-child(2) {
     background: #F3F5F7;
-    margin-right: 1rem;
+    margin-left: 1rem;
 }
 
-.wallet-modal .box:nth-child(2) {
+.wallet-modal .box:nth-child(1) {
     background: #FFF5F1;
 }
 
@@ -1105,13 +1120,8 @@ th:last-child {
     margin-top: 6px;
 }
 
-.wallet-modal .box:nth-child(2) .icon {
+.wallet-modal .box:nth-child(1) .icon {
     width: 4rem;
-}
-
-.wallet-modal .box:nth-child(2) .btn {
-    color: var(--text-color);
-    background: var(--secondary-color);
 }
 
 /* ================ boosting modal CSS ================ */
@@ -1507,17 +1517,22 @@ th:last-child {
     border-style: solid !important;
 }
 
-.btn-black {
+.btn-big {
     font-size: 18px;
-    background: #000;
     display: inline-block;
     line-height: 1;
     padding: 16px 36px;
-    color: #fff;
-    font-weight: 700;
-    text-transform: uppercase;
     border-radius: 35px;
+}
+.btn-small {
+    padding: 5px 16px !important;
+}
+
+.btn-black {
+    text-transform: uppercase;
     letter-spacing: 2px;
+    background: #000;
+    color: #fff;
 }
 .btn-black:hover {
     background: #333;
@@ -1528,17 +1543,11 @@ th:last-child {
     transition-duration: 50ms;
 }
 .btn-black-disabled {
-    font-size: 18px;
     cursor: not-allowed;
-    background: #969696;
-    display: inline-block;
-    line-height: 1;
-    padding: 16px 36px;
-    color: #fff;
-    font-weight: 700;
     text-transform: uppercase;
-    border-radius: 35px;
     letter-spacing: 2px;
+    background: #969696;
+    color: #fff;
 }
 .btn-black-disabled:hover {
     background: #969696;
@@ -1554,4 +1563,12 @@ input::-webkit-inner-spin-button {
 input[type=number] {
     -moz-appearance: textfield;
     /* Firefox */
+}
+
+.info-icon {
+    width: 18px;
+}
+
+.connect-icon {
+    width: 42px;
 }

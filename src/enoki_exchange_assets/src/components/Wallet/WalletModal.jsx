@@ -11,7 +11,7 @@ import getTokenShard from "../../actors/getTokenShard";
 import {setTradeOccurred} from "../../state/lastTradeSlice";
 import LoadingText from "../shared/LoadingText";
 
-const Wallet = ({toggleShowWallet}) => {
+const WalletModal = ({toggleShowWallet}) => {
   let {logout, getIdentity} = useLogin();
   const dispatch = useDispatch();
 
@@ -65,16 +65,53 @@ const Wallet = ({toggleShowWallet}) => {
           </div>
           <div className="modal-body">
             <div className="box">
+              <h5>Enoki-Boosted Tokens</h5>
+              <div className="icon_box">
+                <img className="icon" src="img/icp_test.svg" alt=""/>
+                <div className="content">
+                  <p><b>{balanceEIcpStr !== null ? balanceEIcpStr : "--"}</b> eICP</p>
+                  {
+                    mintingA ? (
+                      <div>
+                        <img style={{width: 20, margin: 8}} src="img/spinner.svg"/>
+                        <LoadingText text="Minting" speed={200}/>
+                      </div>
+                    ) : (
+                      <button onClick={() => mintA()} className="btn btn-small btn-black" data-bs-toggle="modal"
+                              data-bs-target="#unboost-modal">MINT</button>
+                    )
+                  }
+                </div>
+              </div>
+              <div className="icon_box">
+                <img className="icon" src="img/xtc_test.svg" alt=""/>
+                <div className="content">
+                  <p><b>{balanceEXtcStr !== null ? balanceEXtcStr : "--"}</b> eXTC</p>
+                  {
+                    mintingB ? (
+                      <div>
+                        <img style={{width: 20, margin: 8}} src="img/spinner.svg"/>
+                        <LoadingText text="Minting" speed={200}/>
+                      </div>
+                    ) : (
+                      <button onClick={() => mintB()} className="btn btn-small btn-black" data-bs-toggle="modal"
+                              data-bs-target="#unboost-modal">MINT</button>
+                    )
+                  }
+                </div>
+              </div>
+            </div>
+            <div className="box">
               <h5>Tokens</h5>
               <div className="icon_box">
-                <img className="icon" src="img/i15.png" alt=""/>
+                <img className="icon" src="img/icp_1.svg" alt=""/>
                 <div className="content">
                   <p><b>0.0</b> ICP</p>
                   <button className="btn"><img src="img/i17.png" alt=""/> BOOST</button>
                 </div>
               </div>
               <div className="icon_box">
-                <img className="icon" src="img/i16.png" alt=""/>
+                <img className="icon" src="img/xtc_1.svg" alt=""/>
                 <div className="content">
                   <p><b>0.0</b> XTC</p>
                   <button className="btn" data-bs-toggle="modal" data-bs-target="#boost-modal"><img
@@ -82,41 +119,13 @@ const Wallet = ({toggleShowWallet}) => {
                   </button>
                 </div>
               </div>
-              <ComingSoon customStyle={{width: "50%"}}/>
-            </div>
-            <div className="box">
-              <h5>Enoki-Boosted Tokens</h5>
-              <div className="icon_box">
-                <img className="icon" src="img/i13.png" alt=""/>
-                <div className="content">
-                  <p><b>{balanceEIcpStr !== null ? balanceEIcpStr : "--"}</b> eICP</p>
-                  {
-                    mintingA ? (
-                      <button className="btn" data-bs-toggle="modal" data-bs-target="#unboost-modal"><LoadingText text="MINTING"/></button>
-                    ) : (
-                      <button onClick={() => mintA()} className="btn" data-bs-toggle="modal" data-bs-target="#unboost-modal">MINT</button>
-                    )
-                  }
-                </div>
-              </div>
-              <div className="icon_box">
-                <img className="icon" src="img/i14.png" alt=""/>
-                <div className="content">
-                  <p><b>{balanceEXtcStr !== null ? balanceEXtcStr : "--"}</b> eXTC</p>
-                  {
-                    mintingB ? (
-                      <button className="btn" data-bs-toggle="modal" data-bs-target="#unboost-modal"><LoadingText text="MINTING"/></button>
-                    ) : (
-                      <button onClick={() => mintB()} className="btn" data-bs-toggle="modal" data-bs-target="#unboost-modal">MINT</button>
-                    )
-                  }
-                </div>
-              </div>
+              <ComingSoon customStyle={{width: "50%", left: "50%"}}/>
             </div>
           </div>
           <div className="modal-footer">
-            <a className="btn btn-black-disabled" data-bs-toggle="modal" data-bs-target="#deposit-modal">+ DEPOSIT</a>
-            <a className="btn btn-black-disabled" data-bs-toggle="modal" data-bs-target="#send-modal">SEND</a>
+            <a className="btn btn-big btn-black-disabled" data-bs-toggle="modal" data-bs-target="#deposit-modal">+
+              DEPOSIT</a>
+            <a className="btn btn-big btn-black-disabled" data-bs-toggle="modal" data-bs-target="#send-modal">SEND</a>
           </div>
         </div>
       </div>
@@ -124,4 +133,4 @@ const Wallet = ({toggleShowWallet}) => {
   );
 }
 
-export default Wallet;
+export default WalletModal;

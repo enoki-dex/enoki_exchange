@@ -1,6 +1,10 @@
 type AssignedShards = record { token_a : principal; token_b : principal };
 type LiquidityAmount = record { token_a : vec nat8; token_b : vec nat8 };
 type LiquidityAmountNat = record { token_a : nat; token_b : nat };
+type LiquidityTradesNat = record {
+  decreased : LiquidityAmountNat;
+  increased : LiquidityAmountNat;
+};
 type ShardedTransferNotification = record {
   to : principal;
   value : nat;
@@ -24,10 +28,13 @@ service : () -> {
   getAssignedShards : () -> (AssignedShards) query;
   getLiquidity : (principal) -> (LiquidityAmountNat) query;
   getManager : () -> (principal) query;
+  getNetDeposits : (principal) -> (LiquidityTradesNat) query;
   getOwner : () -> (principal) query;
   getShardsToAddLiquidity : () -> (AssignedShards) query;
   getTokenInfo : () -> (TokenPairInfo) query;
   initWorker : (TokenPairInfo) -> (AssignedShards);
+  isUserRegistered : (principal) -> (bool) query;
+  register : (principal) -> ();
   removeAllLiquidity : () -> ();
   removeLiquidity : (LiquidityAmount) -> ();
   setManager : (principal) -> ();

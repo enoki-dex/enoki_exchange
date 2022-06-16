@@ -5,7 +5,10 @@ export const idlFactory = ({ IDL }) => {
     'InsufficientBalance' : IDL.Null,
     'TransferValueTooSmall' : IDL.Null,
     'Unauthorized' : IDL.Null,
-    'AccountDoesNotExist' : IDL.Null,
+    'AccountDoesNotExist' : IDL.Record({
+      'user' : IDL.Text,
+      'shard' : IDL.Text,
+    }),
     'ShardDoesNotExist' : IDL.Null,
     'AccountAlreadyExists' : IDL.Null,
     'Other' : IDL.Text,

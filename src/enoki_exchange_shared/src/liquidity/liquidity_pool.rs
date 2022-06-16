@@ -20,6 +20,7 @@ pub struct LiquidityPool {
     pending_remove: Vec<(Principal, TokenAmount)>,
     pending_add_locked: Vec<(Principal, TokenAmount)>,
     pending_remove_locked: Vec<(Principal, TokenAmount)>,
+    user_net_deposits: HashMap<Principal, LiquidityTrades>,
 }
 
 pub struct LiquidityPoolTotalBalance<'a>(&'a LiquidityPool);
@@ -42,6 +43,9 @@ impl<'a> Debug for LiquidityPoolTotalBalance<'a> {
 impl LiquidityPool {
     pub fn get_user_liquidity(&self, user: Principal) -> Option<LiquidityAmount> {
         self.liquidity.get(&user).cloned()
+    }
+    pub fn get_user_net_deposits(&self, user: Principal) -> Option<LiquidityTrades> {
+        self.user_net_deposits.get(&user).cloned()
     }
     pub fn nothing_pending(&self) -> bool {
         self.pending_add.is_empty() && self.pending_remove.is_empty()
@@ -174,6 +178,38 @@ impl LiquidityPool {
             self.pending_add_locked.len(),
             self.pending_remove_locked.len()
         );
+    }
+    pub fn update_user_net_deposits(
+        &mut self,
+        user: Principal,
+        token: &EnokiToken,
+        adding: bool,
+        mut amount: StableNat,
+    ) {
+        let deposits = self.user_net_deposits.entry(user).or_default();
+        if adding {
+            let diff = amount.clone().min(deposits.decreased.get(token).clone());
+            if diff.is_nonzero() {
+                amount.safe_sub_assign(diff.clone()).unwrap();
+                deposits
+                    .decreased
+                    .get_mut(token)
+                    .safe_sub_assign(diff)
+                    .unwrap();
+            }
+            deposits.increased.get_mut(token).add_assign(amount);
+        } else {
+            let diff = amount.clone().min(deposits.increased.get(token).clone());
+            if diff.is_nonzero() {
+                amount.safe_sub_assign(diff.clone()).unwrap();
+                deposits
+                    .increased
+                    .get_mut(token)
+                    .safe_sub_assign(diff)
+                    .unwrap();
+            }
+            deposits.decreased.get_mut(token).add_assign(amount);
+        }
     }
     pub fn apply_traded(&mut self, traded: &HashMap<Principal, LiquidityTrades>) {
         for (user, liquidity) in self.liquidity.iter_mut() {

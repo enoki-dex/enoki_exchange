@@ -36,7 +36,7 @@ const Nav = () => {
               </li>
             </ul>
           </div>
-          <Wallet toggleShowWallet={toggleShowWallet} />
+          <Wallet showWallet={showWallet} toggleShowWallet={toggleShowWallet} />
         </div>
 
         {showWallet && <WalletModal toggleShowWallet={toggleShowWallet} />}

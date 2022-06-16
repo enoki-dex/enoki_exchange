@@ -12,6 +12,13 @@ export interface CounterpartyInfo {
 }
 export type EnokiToken = { 'TokenA' : null } |
   { 'TokenB' : null };
+export interface FirstTransfer {
+  'to' : Principal,
+  'token' : EnokiToken,
+  'to_shard' : Principal,
+  'amount' : bigint,
+  'user_for_shard_id_to_retrieve' : Principal,
+}
 export interface InitBrokerParams {
   'liquidity_location' : Principal,
   'other_brokers' : Array<Principal>,
@@ -22,6 +29,7 @@ export interface LiquidityAmount {
   'token_a' : Array<number>,
   'token_b' : Array<number>,
 }
+export interface LiquidityAmountNat { 'token_a' : bigint, 'token_b' : bigint }
 export interface LiquidityTrades {
   'decreased' : LiquidityAmount,
   'increased' : LiquidityAmount,
@@ -55,11 +63,6 @@ export type OrderStatus = { 'InvalidPrice' : null } |
   { 'Completed' : null } |
   { 'Expired' : null } |
   { 'Pending' : null };
-export interface PendingTransfer {
-  'to' : Principal,
-  'token' : EnokiToken,
-  'amount' : bigint,
-}
 export interface RequestForNewLiquidityTarget {
   'extra_liquidity_available' : LiquidityAmount,
   'target' : LiquidityAmount,
@@ -96,8 +99,8 @@ export interface _SERVICE {
   'addBroker' : (arg_0: Principal) => Promise<undefined>,
   'finishInit' : (arg_0: Principal) => Promise<undefined>,
   'fundsSent' : (arg_0: ShardedTransferNotification) => Promise<undefined>,
+  'getAccruedExtraRewards' : (arg_0: Principal) => Promise<LiquidityAmountNat>,
   'getAccruedFees' : () => Promise<LiquidityAmount>,
-  'getAssignedShard' : (arg_0: EnokiToken) => Promise<Principal>,
   'getAssignedShardA' : () => Promise<Principal>,
   'getAssignedShardB' : () => Promise<Principal>,
   'getAssignedShards' : () => Promise<AssignedShards>,
@@ -109,12 +112,14 @@ export interface _SERVICE {
   'getTokenInfo' : () => Promise<TokenPairInfo>,
   'getTradingFees' : () => Promise<TradingFees>,
   'initBroker' : (arg_0: InitBrokerParams) => Promise<AssignedShards>,
+  'isUserRegistered' : (arg_0: Principal) => Promise<boolean>,
   'limitOrder' : (arg_0: ShardedTransferNotification) => Promise<undefined>,
   'receiveMarketMakerRewards' : (arg_0: ShardedTransferNotification) => Promise<
       undefined
     >,
+  'register' : (arg_0: Principal) => Promise<undefined>,
   'retrieveOrders' : () => Promise<[Array<OrderInfo>, Array<OrderInfo>]>,
-  'sendFunds' : (arg_0: string, arg_1: PendingTransfer) => Promise<undefined>,
+  'sendFunds' : (arg_0: string, arg_1: FirstTransfer) => Promise<undefined>,
   'setFees' : (arg_0: TradingFees) => Promise<undefined>,
   'setManager' : (arg_0: Principal) => Promise<undefined>,
   'setOwner' : (arg_0: Principal) => Promise<undefined>,

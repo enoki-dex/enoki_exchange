@@ -3,7 +3,7 @@ use std::ops::{AddAssign, Div, Sub};
 use crate::types::*;
 
 impl FromIterator<TokenAmount> for LiquidityAmount {
-    fn from_iter<T: IntoIterator<Item=TokenAmount>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item = TokenAmount>>(iter: T) -> Self {
         let mut result = Self::default();
         for item in iter {
             match item.token {
@@ -139,6 +139,15 @@ impl From<LiquidityAmount> for LiquidityAmountNat {
         Self {
             token_a: val.token_a.into(),
             token_b: val.token_b.into(),
+        }
+    }
+}
+
+impl From<LiquidityTrades> for LiquidityTradesNat {
+    fn from(val: LiquidityTrades) -> Self {
+        Self {
+            increased: val.increased.into(),
+            decreased: val.decreased.into(),
         }
     }
 }

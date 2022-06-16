@@ -7,11 +7,14 @@ export const idlFactory = ({ IDL }) => {
     'fee_charged' : IDL.Nat,
     'from_shard' : IDL.Principal,
   });
+  const LiquidityAmountNat = IDL.Record({
+    'token_a' : IDL.Nat,
+    'token_b' : IDL.Nat,
+  });
   const LiquidityAmount = IDL.Record({
     'token_a' : IDL.Vec(IDL.Nat8),
     'token_b' : IDL.Vec(IDL.Nat8),
   });
-  const EnokiToken = IDL.Variant({ 'TokenA' : IDL.Null, 'TokenB' : IDL.Null });
   const AssignedShards = IDL.Record({
     'token_a' : IDL.Principal,
     'token_b' : IDL.Principal,
@@ -75,10 +78,13 @@ export const idlFactory = ({ IDL }) => {
     'supply_token_info' : TokenPairInfo,
     'trading_fees' : TradingFees,
   });
-  const PendingTransfer = IDL.Record({
+  const EnokiToken = IDL.Variant({ 'TokenA' : IDL.Null, 'TokenB' : IDL.Null });
+  const FirstTransfer = IDL.Record({
     'to' : IDL.Principal,
     'token' : EnokiToken,
+    'to_shard' : IDL.Principal,
     'amount' : IDL.Nat,
+    'user_for_shard_id_to_retrieve' : IDL.Principal,
   });
   const AggregateBidAsk = IDL.Record({
     'asks' : IDL.Vec(IDL.Tuple(IDL.Nat64, IDL.Vec(CounterpartyInfo))),
@@ -101,8 +107,12 @@ export const idlFactory = ({ IDL }) => {
     'addBroker' : IDL.Func([IDL.Principal], [], []),
     'finishInit' : IDL.Func([IDL.Principal], [], []),
     'fundsSent' : IDL.Func([ShardedTransferNotification], [], []),
+    'getAccruedExtraRewards' : IDL.Func(
+        [IDL.Principal],
+        [LiquidityAmountNat],
+        ['query'],
+      ),
     'getAccruedFees' : IDL.Func([], [LiquidityAmount], ['query']),
-    'getAssignedShard' : IDL.Func([EnokiToken], [IDL.Principal], ['query']),
     'getAssignedShardA' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShardB' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShards' : IDL.Func([], [AssignedShards], ['query']),
@@ -114,18 +124,20 @@ export const idlFactory = ({ IDL }) => {
     'getTokenInfo' : IDL.Func([], [TokenPairInfo], ['query']),
     'getTradingFees' : IDL.Func([], [TradingFees], ['query']),
     'initBroker' : IDL.Func([InitBrokerParams], [AssignedShards], []),
+    'isUserRegistered' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'limitOrder' : IDL.Func([ShardedTransferNotification], [], []),
     'receiveMarketMakerRewards' : IDL.Func(
         [ShardedTransferNotification],
         [],
         [],
       ),
+    'register' : IDL.Func([IDL.Principal], [], []),
     'retrieveOrders' : IDL.Func(
         [],
         [IDL.Vec(OrderInfo), IDL.Vec(OrderInfo)],
         [],
       ),
-    'sendFunds' : IDL.Func([IDL.Text, PendingTransfer], [], []),
+    'sendFunds' : IDL.Func([IDL.Text, FirstTransfer], [], []),
     'setFees' : IDL.Func([TradingFees], [], []),
     'setManager' : IDL.Func([IDL.Principal], [], []),
     'setOwner' : IDL.Func([IDL.Principal], [], []),

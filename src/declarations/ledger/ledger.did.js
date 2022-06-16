@@ -1,33 +1,66 @@
 export const idlFactory = ({ IDL }) => {
-  const AccountIdentifier = IDL.Vec(IDL.Nat8);
+  const AccountIdentifier = IDL.Text;
+  const Duration = IDL.Record({ 'secs' : IDL.Nat64, 'nanos' : IDL.Nat32 });
+  const ArchiveOptions = IDL.Record({
+    'num_blocks_to_archive' : IDL.Nat64,
+    'trigger_threshold' : IDL.Nat64,
+    'max_message_size_bytes' : IDL.Opt(IDL.Nat64),
+    'node_max_memory_size_bytes' : IDL.Opt(IDL.Nat64),
+    'controller_id' : IDL.Principal,
+  });
+  const ICPTs = IDL.Record({ 'e8s' : IDL.Nat64 });
+  const LedgerCanisterInitPayload = IDL.Record({
+    'send_whitelist' : IDL.Vec(IDL.Principal),
+    'minting_account' : AccountIdentifier,
+    'transaction_window' : IDL.Opt(Duration),
+    'max_message_size_bytes' : IDL.Opt(IDL.Nat64),
+    'archive_options' : IDL.Opt(ArchiveOptions),
+    'initial_values' : IDL.Vec(IDL.Tuple(AccountIdentifier, ICPTs)),
+  });
   const AccountBalanceArgs = IDL.Record({ 'account' : AccountIdentifier });
-  const Tokens = IDL.Record({ 'e8s' : IDL.Nat64 });
-  const Memo = IDL.Nat64;
   const SubAccount = IDL.Vec(IDL.Nat8);
+  const BlockHeight = IDL.Nat64;
+  const NotifyCanisterArgs = IDL.Record({
+    'to_subaccount' : IDL.Opt(SubAccount),
+    'from_subaccount' : IDL.Opt(SubAccount),
+    'to_canister' : IDL.Principal,
+    'max_fee' : ICPTs,
+    'block_height' : BlockHeight,
+  });
+  const Memo = IDL.Nat64;
   const TimeStamp = IDL.Record({ 'timestamp_nanos' : IDL.Nat64 });
-  const TransferArgs = IDL.Record({
+  const SendArgs = IDL.Record({
     'to' : AccountIdentifier,
-    'fee' : Tokens,
+    'fee' : ICPTs,
     'memo' : Memo,
     'from_subaccount' : IDL.Opt(SubAccount),
     'created_at_time' : IDL.Opt(TimeStamp),
-    'amount' : Tokens,
-  });
-  const BlockIndex = IDL.Nat64;
-  const TransferError = IDL.Variant({
-    'TxTooOld' : IDL.Record({ 'allowed_window_nanos' : IDL.Nat64 }),
-    'BadFee' : IDL.Record({ 'expected_fee' : Tokens }),
-    'TxDuplicate' : IDL.Record({ 'duplicate_of' : BlockIndex }),
-    'TxCreatedInFuture' : IDL.Null,
-    'InsufficientFunds' : IDL.Record({ 'balance' : Tokens }),
-  });
-  const TransferResult = IDL.Variant({
-    'Ok' : BlockIndex,
-    'Err' : TransferError,
+    'amount' : ICPTs,
   });
   return IDL.Service({
-    'account_balance' : IDL.Func([AccountBalanceArgs], [Tokens], ['query']),
-    'transfer' : IDL.Func([TransferArgs], [TransferResult], []),
+    'account_balance_dfx' : IDL.Func([AccountBalanceArgs], [ICPTs], ['query']),
+    'notify_dfx' : IDL.Func([NotifyCanisterArgs], [], []),
+    'send_dfx' : IDL.Func([SendArgs], [BlockHeight], []),
   });
 };
-export const init = ({ IDL }) => { return []; };
+export const init = ({ IDL }) => {
+  const AccountIdentifier = IDL.Text;
+  const Duration = IDL.Record({ 'secs' : IDL.Nat64, 'nanos' : IDL.Nat32 });
+  const ArchiveOptions = IDL.Record({
+    'num_blocks_to_archive' : IDL.Nat64,
+    'trigger_threshold' : IDL.Nat64,
+    'max_message_size_bytes' : IDL.Opt(IDL.Nat64),
+    'node_max_memory_size_bytes' : IDL.Opt(IDL.Nat64),
+    'controller_id' : IDL.Principal,
+  });
+  const ICPTs = IDL.Record({ 'e8s' : IDL.Nat64 });
+  const LedgerCanisterInitPayload = IDL.Record({
+    'send_whitelist' : IDL.Vec(IDL.Principal),
+    'minting_account' : AccountIdentifier,
+    'transaction_window' : IDL.Opt(Duration),
+    'max_message_size_bytes' : IDL.Opt(IDL.Nat64),
+    'archive_options' : IDL.Opt(ArchiveOptions),
+    'initial_values' : IDL.Vec(IDL.Tuple(AccountIdentifier, ICPTs)),
+  });
+  return [LedgerCanisterInitPayload];
+};

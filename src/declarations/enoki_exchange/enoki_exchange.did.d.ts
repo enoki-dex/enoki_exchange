@@ -24,6 +24,7 @@ export interface _SERVICE {
   'getBrokerIds' : () => Promise<Array<Principal>>,
   'getLiquidityLocation' : () => Promise<Principal>,
   'getOwner' : () => Promise<Principal>,
+  'getRandomBroker' : () => Promise<Principal>,
   'getTokenInfo' : () => Promise<TokenPairInfo>,
   'getTradingFees' : () => Promise<TradingFees>,
   'initPool' : (arg_0: Principal) => Promise<undefined>,

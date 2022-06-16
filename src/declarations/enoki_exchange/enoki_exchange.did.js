@@ -25,6 +25,7 @@ export const idlFactory = ({ IDL }) => {
     'getBrokerIds' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getLiquidityLocation' : IDL.Func([], [IDL.Principal], []),
     'getOwner' : IDL.Func([], [IDL.Principal], ['query']),
+    'getRandomBroker' : IDL.Func([], [IDL.Principal], []),
     'getTokenInfo' : IDL.Func([], [TokenPairInfo], ['query']),
     'getTradingFees' : IDL.Func([], [TradingFees], ['query']),
     'initPool' : IDL.Func([IDL.Principal], [], []),
