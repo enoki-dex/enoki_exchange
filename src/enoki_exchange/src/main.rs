@@ -10,7 +10,7 @@ use enoki_exchange_shared::has_token_info::{self, TokenInfo, TokenPairInfo};
 use enoki_exchange_shared::has_trading_fees::TradingFees;
 use enoki_exchange_shared::is_owned::{self, assert_is_owner, OwnershipData};
 #[allow(unused_imports)]
-use enoki_exchange_shared::types::Result;
+use enoki_exchange_shared::types::{Result, BidAskCurve};
 
 #[allow(unused_imports)]
 use crate::brokers::BrokerState;

@@ -193,6 +193,9 @@ header .connect {
 header .connect:hover {
     text-decoration: underline;
 }
+header .connect.active {
+    text-decoration: underline;
+}
 
 header .wallet {
     padding: 1.3rem 2.6rem;
@@ -246,7 +249,6 @@ header .wallet .arrow.active {
 
 .setting {
     display: inline-block;
-    transform: translateX(4px);
     cursor: pointer;
     margin-bottom: .8rem;
 }
@@ -312,18 +314,18 @@ header .wallet .arrow.active {
     content: '';
     position: absolute;
     left: 50%;
-    transform: translateX(-50%);
-    top: -3.4rem;
-    width: 5rem;
-    height: 5rem;
-    background: url(../img/swap_icon.svg) no-repeat center;
-
+    top: -4.2rem;
+}
+.top_icon_before img {
+    transform: translateX(-46%);
+    width: 6rem;
+    height: 6rem;
     border-radius: 50%;
-    border-color: #E7EBEF;
+    border-color: rgba(231, 235, 239, 0);
     border-style: solid;
     border-width: 4px;
 }
-.top_icon_before:hover {
+.top_icon_before img:hover {
     border-color: white;
 }
 
@@ -363,7 +365,7 @@ header .wallet .arrow.active {
 }
 
 .match_box .select_wrap h3 {
-    padding-top: 4px;
+    padding-top: 6px;
     margin-left: 60px;
     font-size: 3.2rem;
     font-weight: 700;
@@ -403,35 +405,39 @@ header .wallet .arrow.active {
     margin-top: 3rem;
 }
 
-.swap_content .right_links {
+.right_links {
     position: absolute;
-    top: 0;
-    right: 3rem;
+    right: 7rem;
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
 }
 
-.swap_content .right_links a {
+.right_links a {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 12.6rem;
-    height: 4.8rem;
+    width: 7.6rem;
+    height: 3.2rem;
     border: 1px solid var(--border-color);
     border-radius: 3rem;
-    font-family: 'Myriad Pro';
     color: #000000;
     font-size: 1.8rem;
     margin-top: 2rem;
+    margin-left: 0.5rem;
     transition: .2s;
+    cursor: pointer;
 }
 
-.swap_content .right_links a:hover {
+.right_links a:hover {
     border-color: transparent;
     background: var(--secondary-color);
-    transform: scale(.93);
+    transform: scale(.97);
 }
 
-.swap_content .right_links a img {
-    margin-right: .9rem;
+.right_links a img {
+    max-height: 26px;
+    max-width: 38px;
 }
 
 .fade:not(.show) {
@@ -1386,7 +1392,7 @@ th:last-child {
     opacity: 1;
 }
 
-.slippage_popup .overly {
+.overly {
     position: fixed;
     top: 0;
     left: 0;
@@ -1402,7 +1408,7 @@ th:last-child {
     background: #FFFFFF;
     position: absolute;
     top: 3rem;
-    right: 6px;
+    right: 18px;
     z-index: 111;
     transition: .3s;
 }
@@ -1451,13 +1457,12 @@ th:last-child {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 1.3rem 0 2rem;
+    margin: 1.5rem 0 2rem;
     padding: 0 1rem;
 }
 
 .mode-switch p {
     font-weight: 400;
-    margin-top: 1.3rem;
 }
 
 .mode-switch p.active {
@@ -1465,7 +1470,7 @@ th:last-child {
     color: #000000;
 }
 
-.mode-switch #switch[type=checkbox] {
+.mode-switch input[type=checkbox] {
     height: 0;
     width: 0;
     visibility: hidden;
@@ -1476,7 +1481,7 @@ th:last-child {
     text-indent: -9999px;
     width: 50px;
     height: 26px;
-    background: #5E5FD6;
+    background: #424242;
     display: block;
     border-radius: 100px;
     position: relative;
@@ -1494,11 +1499,11 @@ th:last-child {
     transition: 0.3s;
 }
 
-.mode-switch #switch:checked + label {
-    background: #424242;
+.mode-switch label.input-checked{
+    /*background: #424242;*/
 }
 
-.mode-switch #switch:checked + label:after {
+.mode-switch label.input-checked:after {
     left: calc(100% - 3px);
     transform: translateX(-100%);
 }
@@ -1537,6 +1542,7 @@ th:last-child {
 .btn-black:hover {
     background: #333;
     color: #fff;
+    border-color: rgba(0,0,0,0);
 }
 .btn-black:active {
     transform: translateY(2px);
@@ -1552,6 +1558,7 @@ th:last-child {
 .btn-black-disabled:hover {
     background: #969696;
     color: #fff;
+    border-color: rgba(0,0,0,0);
 }
 
 input::-webkit-outer-spin-button,
@@ -1571,4 +1578,8 @@ input[type=number] {
 
 .connect-icon {
     width: 42px;
+}
+
+.color-gray {
+    color: #a3a3a3 !important;
 }

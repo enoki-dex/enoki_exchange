@@ -1,14 +1,14 @@
 import {createSlice} from '@reduxjs/toolkit'
 
-const AUTO_VALUE = 1.0;
+const AUTO_VALUE = 0.1;
 
 export const swapSlice = createSlice({
   name: 'swap',
   initialState: {
     slippage: {
       auto: true,
-      manualValue: 1.0,
-      currentValue: 1.0,
+      manualValue: AUTO_VALUE,
+      currentValue: AUTO_VALUE,
     }
   },
   reducers: {

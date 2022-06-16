@@ -1,7 +1,9 @@
 use std::cell::RefCell;
 
-use candid::CandidType;
+use candid::{candid_method, CandidType, Nat};
+use ic_cdk_macros::*;
 
+use enoki_exchange_shared::has_token_info;
 use enoki_exchange_shared::liquidity::ResponseAboutLiquidityChanges;
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::flat_map_vecs;
@@ -111,6 +113,30 @@ pub async fn do_run() -> Result<()> {
     ic_cdk::println!("[exchange] end exchange sync");
 
     Ok(())
+}
+
+#[query(name = "getBidAskCurve")]
+#[candid_method(update, rename = "getBidAskCurve")]
+pub fn get_bid_ask_curve() -> BidAskCurve {
+    let num_decimals = has_token_info::get_number_of_price_decimals();
+    let bid_ask = STATE.with(|s| s.borrow().aggregate_bid_ask.clone());
+    fn sum(info: Vec<CounterpartyInfo>) -> Nat {
+        info.into_iter()
+            .fold(Nat::from(0u32), |sum, next| sum + next.quantity.to_nat())
+    }
+    BidAskCurve {
+        num_decimals,
+        bids: bid_ask
+            .bids
+            .into_iter()
+            .map(|(price, bids)| (price, sum(bids)))
+            .collect(),
+        asks: bid_ask
+            .asks
+            .into_iter()
+            .map(|(price, asks)| (price, sum(asks)))
+            .collect(),
+    }
 }
 
 pub fn export_stable_storage() -> RunningState {

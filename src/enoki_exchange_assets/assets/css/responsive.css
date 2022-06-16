@@ -51,7 +51,7 @@
         padding-top: 0;
     }
     #page_main_tab .content_wrap {
-        padding: 5rem 0;
+        padding: 4rem 0;
     }
 }
 
@@ -83,7 +83,7 @@
 
 @media (max-width: 767px) {
     header .nav-tabs {
-        margin-top: 3rem;
+        margin-top: 5rem;
     }
 
     header {

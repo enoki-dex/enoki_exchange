@@ -108,6 +108,10 @@ pub fn get_token_address(token: &EnokiToken) -> Principal {
     STATE.with(|s| s.borrow().token_info.get(token).principal)
 }
 
+pub fn get_number_of_price_decimals() -> u64 {
+    STATE.with(|s| s.borrow().token_info.price_number_of_decimals)
+}
+
 pub fn get_token_info() -> TokenPairInfo {
     STATE.with(|s| s.borrow().token_info.clone())
 }

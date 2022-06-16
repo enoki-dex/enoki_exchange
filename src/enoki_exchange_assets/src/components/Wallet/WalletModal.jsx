@@ -6,7 +6,7 @@ import {canisterId as canisterIdB} from "../../../../declarations/enoki_wrapped_
 import useTokenBalance from "../../hooks/useTokenBalance";
 import {bigIntToStr} from "../../utils/utils";
 import ComingSoon from "../shared/ComingSoon";
-import getMainToken from "../../actors/getMainToken";
+import {getAssignedTokenShard} from "../../actors/getMainToken";
 import getTokenShard from "../../actors/getTokenShard";
 import {setTradeOccurred} from "../../state/lastTradeSlice";
 import LoadingText from "../shared/LoadingText";
@@ -17,10 +17,8 @@ const WalletModal = ({toggleShowWallet}) => {
 
   const balanceEIcp = useTokenBalance({principal: canisterIdA});
   const balanceEXtc = useTokenBalance({principal: canisterIdB});
-  console.log({balanceEIcp, balanceEXtc});
   const balanceEIcpStr = balanceEIcp !== null && bigIntToStr(balanceEIcp, 'eICP', 6, null);
   const balanceEXtcStr = balanceEXtc !== null && bigIntToStr(balanceEXtc, 'eXTC', 4, null);
-  console.log({balanceEIcpStr, balanceEXtcStr});
 
   const [mintingA, setMintingA] = React.useState(false);
   const [mintingB, setMintingB] = React.useState(false);
@@ -36,12 +34,8 @@ const WalletModal = ({toggleShowWallet}) => {
   }
 
   const mint = (principal, cb) => {
-    getMainToken(getIdentity(), principal)
-      .getAssignedShardId(getIdentity().getPrincipal())
-      .catch(() => getMainToken(getIdentity(), principal)
-        .register(getIdentity().getPrincipal())
-      )
-      .then(assignedShard => getTokenShard(getIdentity(), assignedShard).mint(BigInt("1000000000000000")))
+    getAssignedTokenShard(getIdentity(), principal)
+      .then(assignedShard => assignedShard.mint(BigInt("1000000000000000")))
       .catch(e => console.error(e))
       .then(() => {
         cb();

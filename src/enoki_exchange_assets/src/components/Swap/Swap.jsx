@@ -1,18 +1,20 @@
 import React from "react";
 import SwapConfig from "./SwapConfig";
-import {useSelector, useDispatch} from 'react-redux'
 import Tooltip from "../shared/Tooltip";
+import {useDispatch, useSelector} from 'react-redux'
 import {enoki_exchange} from "../../../../declarations/enoki_exchange";
 import getEnokiExchange from "../../actors/getEnokiExchange";
 import useLogin from "../../hooks/useLogin";
 import {canisterId as canisterIdA} from "../../../../declarations/enoki_wrapped_token";
 import {canisterId as canisterIdB} from "../../../../declarations/enoki_wrapped_token_b";
 import useTokenBalance from "../../hooks/useTokenBalance";
-import {bigIntToStr} from "../../utils/utils";
+import {bigIntToStr, floatToBigInt} from "../../utils/utils";
+import LoadingText from "../shared/LoadingText";
+import {getAssignedTokenShard} from "../../actors/getMainToken";
 
 const IMAGES = {
-  "eICP": "i4.png",
-  "eXTC": "i5.png",
+  "eICP": "icp_test.svg",
+  "eXTC": "xtc_test.svg",
 };
 
 const NUM_DECIMALS_QUANTITY = {
@@ -62,6 +64,12 @@ const getPriceAndQuantity = ({
   }
 }
 
+const execute_swap = async (identity, canisterId, quantity, price) => {
+  let shard = await getAssignedTokenShard(identity, canisterId);
+  // shard.shardTransferAndCall()
+  // dfx --identity swapper1 canister call "$assigned_shard_b_3" shardTransferAndCall "(principal \"$deposit_shard_b_3\", principal \"$broker_3\", 50_000_000 : nat, principal \"$broker_3\", \"swap\", \"{\\\"allow_taker\\\": true, \\\"limit_price_in_b\\\": 6.1}\")"
+}
+
 const Swap = () => {
   const [pair, setPair] = React.useState(['eICP', 'eXTC']);
 
@@ -71,6 +79,9 @@ const Swap = () => {
   const [priceDecimals, setPriceDecimals] = React.useState(undefined);
   const [isError, setIsError] = React.useState(null);
   const [errorDetails, setErrorDetails] = React.useState(undefined);
+  const [usingMax, setUsingMax] = React.useState(false);
+  const slippage = useSelector(state => state.swap.slippage.currentValue);
+  const [executingSwap, setExecutingSwap] = React.useState(false);
 
   const balances = {
     'eICP': useTokenBalance({principal: canisterIdA}),
@@ -85,11 +96,19 @@ const Swap = () => {
     }
   });
 
-  let {isLoggedIn, getIdentity, login, logout} = useLogin();
+  let {isLoggedIn, getIdentity} = useLogin();
+
+  const setMax = () => {
+    let value = balancesStr[pair[0]] || '0';
+    setLeftSwapValue(value)
+    updateData(true, value, pair);
+    setUsingMax(true);
+  }
 
   const updateData = (editingLeft, newValue, newPair) => {
     setErrorDetails(undefined);
     let value = parseFloat(newValue);
+    let valueLeft = value;
     if (typeof value !== 'number' || isNaN(value) || value < 0) {
       setIsError(editingLeft ? "left" : "right");
       setPrice(undefined);
@@ -108,12 +127,18 @@ const Swap = () => {
         if (editingLeft) {
           setRightSwapValue(buyQuantity.toFixed(decimalsQuantity));
         } else {
+          valueLeft = sellQuantity;
           setLeftSwapValue(sellQuantity.toFixed(decimalsQuantity));
         }
         setPrice(price);
         setPriceDecimals(decimalsPrice);
+        if (valueLeft > parseFloat(balancesStr[newPair[0]])) {
+          setIsError('left');
+          setErrorDetails("Insufficient balance");
+        }
       } catch (err) {
         console.error(err);
+        setIsError(editingLeft ? "left" : "right");
         setErrorDetails(err.message);
       }
     }
@@ -122,10 +147,12 @@ const Swap = () => {
   const handleLeftChange = e => {
     setLeftSwapValue(e.target.value);
     updateData(true, e.target.value, pair);
+    setUsingMax(false);
   };
   const handleRightChange = e => {
     setRightSwapValue(e.target.value);
     updateData(false, e.target.value, pair);
+    setUsingMax(false);
   };
 
   const switchPair = () => {
@@ -134,17 +161,27 @@ const Swap = () => {
     setLeftSwapValue(left);
     setRightSwapValue(right);
     updateData(true, left, [pair[1], pair[0]]);
+    setUsingMax(false);
   }
 
   const swap = () => {
-    if (isLoggedIn) {
-      let client = getEnokiExchange(getIdentity());
-      client.whoami().then(me => console.log("ME LOGGED IN: " + me.toString()))
-      client.whoisanon().then(me => console.log("ANON: " + me.toString()))
+    let quantity = usingMax ?
+      balances[pair[0]] :
+      floatToBigInt(parseFloat(leftSwapValue), pair[0]);
+    let limit_price = price * (1 + (slippage / 100));
+    let canisterId;
+    if (pair[0] === 'eICP') {
+      canisterId = canisterIdA;
+      limit_price = 1 / limit_price;
     } else {
-      enoki_exchange.whoami().then(me => console.log("ME: " + me.toString()))
-      enoki_exchange.whoisanon().then(me => console.log("ANON: " + me.toString()))
+      canisterId = canisterIdB;
     }
+    setExecutingSwap(true);
+    execute_swap(getIdentity(), canisterId, quantity, limit_price)
+      .catch(err => {
+        console.error(err);
+      })
+      .then(() => setExecutingSwap(false));
   }
 
   return (
@@ -167,14 +204,14 @@ const Swap = () => {
               <input type='number' value={leftSwapValue} onChange={handleLeftChange}/>
             </div>
             <div className="box_footer">
-              <p>Balance: {balancesStr[pair[0]] || "--"} {pair[0]} <a
-                href="#">DEPOSIT</a></p>
+              <p>Balance: {balancesStr[pair[0]] || "--"} {pair[0]} <a style={{cursor: "pointer"}}
+                                                                      onClick={() => setMax()}>MAX</a></p>
               {/*<p>~$149.71</p>*/}
             </div>
           </div>
           <div className="match_box">
             <a className="top_icon_before" onClick={() => switchPair()}>
-              {/*<img src="img/swap_icon.svg" alt=""/>*/}
+              <img src="img/swap_icon.svg" alt=""/>
             </a>
             <div className="select_wrap">
               <div className="input_wrap">
@@ -206,7 +243,14 @@ const Swap = () => {
           <div className="text-center">
             {
               isLoggedIn ? (
-                <a className="btn connect btn-black btn-big" onClick={() => swap()}>SWAP</a>
+                executingSwap ? (
+                  <div style={{position: "absolute", left: "45%"}}>
+                    <img style={{width: 30, margin: 12}} src="img/spinner.svg"/>
+                    <LoadingText style={{fontSize: "large"}} text="Swapping" speed={200}/>
+                  </div>
+                ) : (
+                  <a className="btn connect btn-black btn-big" onClick={() => swap()}>SWAP</a>
+                )
               ) : (
                 <a className="btn connect btn-black-disabled btn-big">CONNECT WALLET</a>
               )

@@ -1,5 +1,10 @@
 import type { Principal } from '@dfinity/principal';
 export interface AssignedShards { 'token_a' : Principal, 'token_b' : Principal }
+export interface BidAskCurve {
+  'asks' : Array<[bigint, bigint]>,
+  'bids' : Array<[bigint, bigint]>,
+  'num_decimals' : bigint,
+}
 export interface TokenInfo { 'principal' : Principal }
 export interface TokenPairInfo {
   'token_a' : TokenInfo,
@@ -21,6 +26,7 @@ export interface _SERVICE {
   'getAssignedShardA' : () => Promise<Principal>,
   'getAssignedShardB' : () => Promise<Principal>,
   'getAssignedShards' : () => Promise<AssignedShards>,
+  'getBidAskCurve' : () => Promise<BidAskCurve>,
   'getBrokerIds' : () => Promise<Array<Principal>>,
   'getLiquidityLocation' : () => Promise<Principal>,
   'getOwner' : () => Promise<Principal>,

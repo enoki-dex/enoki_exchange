@@ -2,6 +2,7 @@ import React from "react";
 import {useSelector, useDispatch} from 'react-redux'
 import {setManual, setAuto, setManualValue} from "../../state/swapSlice";
 import Tooltip from "../shared/Tooltip";
+import SwitchCheckbox from "../shared/SwitchCheckbox";
 
 const MIN_SLIPPAGE = 0.01;
 const MAX_SLIPPAGE = 30;
@@ -44,8 +45,6 @@ const SwapConfig = () => {
     }
   }
 
-  const autoSwitchRef = React.useRef();
-
   const toggleShow = () => {
     if (show) {
       // save now
@@ -60,6 +59,13 @@ const SwapConfig = () => {
     setShow(!show);
   }
 
+  let inputClass = "";
+  if (isError) {
+    inputClass += " error_border";
+  }
+  if (auto) {
+    inputClass += " color-gray"
+  }
 
   return (
     <>
@@ -77,18 +83,11 @@ const SwapConfig = () => {
               <img className="info-icon" style={{marginLeft: 7}} src="img/i.svg" alt=""/>
             </Tooltip>
           </h4>
-          <div className="mode-switch">
-            <p>Auto</p>
-            <div>
-              <input type="checkbox" id="switch" ref={autoSwitchRef}
-                     checked={!auto}
-                     onChange={handleCheckboxChange}/>
-              <label htmlFor="switch"></label>
-            </div>
-            <p className="active">Manual</p>
-          </div>
+          <SwitchCheckbox style={{}} checked={!auto} handleOnChange={handleCheckboxChange} textOff="Auto" textOn="Manual"
+                          styleOff={{width: 34}} styleOn={{width: 53}}/>
           <div className="input_wrap">
-            <input className={isError ? "error_border" : ""} type="number" min={MIN_SLIPPAGE} max={MAX_SLIPPAGE} value={auto ? currentValue : manualValueStr}
+            <input className={inputClass} type="number" min={MIN_SLIPPAGE} max={MAX_SLIPPAGE}
+                   value={auto ? currentValue : manualValueStr}
                    onChange={handleChange} disabled={auto}/>
             <div className="symbol">%</div>
           </div>

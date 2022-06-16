@@ -1,4 +1,9 @@
 type AssignedShards = record { token_a : principal; token_b : principal };
+type BidAskCurve = record {
+  asks : vec record { nat64; nat };
+  bids : vec record { nat64; nat };
+  num_decimals : nat64;
+};
 type TokenInfo = record { "principal" : principal };
 type TokenPairInfo = record {
   token_a : TokenInfo;
@@ -18,6 +23,7 @@ service : () -> {
   getAssignedShardA : () -> (principal) query;
   getAssignedShardB : () -> (principal) query;
   getAssignedShards : () -> (AssignedShards) query;
+  getBidAskCurve : () -> (BidAskCurve);
   getBrokerIds : () -> (vec principal) query;
   getLiquidityLocation : () -> (principal);
   getOwner : () -> (principal) query;

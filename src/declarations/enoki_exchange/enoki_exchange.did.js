@@ -3,6 +3,11 @@ export const idlFactory = ({ IDL }) => {
     'token_a' : IDL.Principal,
     'token_b' : IDL.Principal,
   });
+  const BidAskCurve = IDL.Record({
+    'asks' : IDL.Vec(IDL.Tuple(IDL.Nat64, IDL.Nat)),
+    'bids' : IDL.Vec(IDL.Tuple(IDL.Nat64, IDL.Nat)),
+    'num_decimals' : IDL.Nat64,
+  });
   const TokenInfo = IDL.Record({ 'principal' : IDL.Principal });
   const TokenPairInfo = IDL.Record({
     'token_a' : TokenInfo,
@@ -22,6 +27,7 @@ export const idlFactory = ({ IDL }) => {
     'getAssignedShardA' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShardB' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShards' : IDL.Func([], [AssignedShards], ['query']),
+    'getBidAskCurve' : IDL.Func([], [BidAskCurve], []),
     'getBrokerIds' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getLiquidityLocation' : IDL.Func([], [IDL.Principal], []),
     'getOwner' : IDL.Func([], [IDL.Principal], ['query']),

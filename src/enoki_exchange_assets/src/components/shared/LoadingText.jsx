@@ -1,8 +1,12 @@
 import React from "react";
 
 
-const LoadingText = ({text, speed = 300}) => {
-  let [value, setValue] = React.useState(text);
+const LoadingText = ({text, speed = 300, style = {}}) => {
+  const [value, setValue] = React.useState(text);
+  const defaultStyle = {
+    userSelect: "none",
+  };
+  const appliedStyle = Object.assign(defaultStyle, style);
 
   React.useEffect(() => {
     const handle = window.setInterval(() => {
@@ -13,7 +17,7 @@ const LoadingText = ({text, speed = 300}) => {
     };
   }, [text, speed]);
 
-  return <span>{value}</span>;
+  return <span style={appliedStyle}>{value}</span>;
 }
 
 export default LoadingText;
