@@ -1522,6 +1522,11 @@ th:last-child {
     border-style: solid !important;
 }
 
+.error_text {
+    color: #ee1111 !important;
+    font-weight: bold;
+}
+
 .btn-big {
     font-size: 18px;
     display: inline-block;

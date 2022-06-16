@@ -53,10 +53,10 @@ fi
 end
 
 start "submit limit trades"
-broker_1=$(dfx --identity trader1 canister call enoki_exchange getRandomBroker | grep -oE "$REGEX_PRINCIPAL")
-broker_2=$(dfx --identity trader2 canister call enoki_exchange getRandomBroker | grep -oE "$REGEX_PRINCIPAL")
-broker_3=$(dfx --identity swapper1 canister call enoki_exchange getRandomBroker | grep -oE "$REGEX_PRINCIPAL")
-broker_4=$(dfx --identity swapper2 canister call enoki_exchange getRandomBroker | grep -oE "$REGEX_PRINCIPAL")
+broker_1=$(dfx --identity trader1 canister call enoki_exchange register "(principal \"$trader1\")" | grep -oE "$REGEX_PRINCIPAL")
+broker_2=$(dfx --identity trader2 canister call enoki_exchange register "(principal \"$trader2\")" | grep -oE "$REGEX_PRINCIPAL")
+broker_3=$(dfx --identity swapper1 canister call enoki_exchange register "(principal \"$swapper1\")" | grep -oE "$REGEX_PRINCIPAL")
+broker_4=$(dfx --identity swapper2 canister call enoki_exchange register "(principal \"$swapper2\")" | grep -oE "$REGEX_PRINCIPAL")
 
 deposit_shard_a_1=$(dfx canister call "$broker_1" getAssignedShardA | grep -oE $REGEX_PRINCIPAL)
 deposit_shard_b_1=$(dfx canister call "$broker_1" getAssignedShardB | grep -oE $REGEX_PRINCIPAL)

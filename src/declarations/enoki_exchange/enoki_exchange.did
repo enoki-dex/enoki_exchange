@@ -20,6 +20,7 @@ type TradingFees = record {
 service : () -> {
   addBroker : (principal) -> ();
   finishInit : (principal, principal, nat64) -> ();
+  getAssignedBroker : (principal) -> (principal) query;
   getAssignedShardA : () -> (principal) query;
   getAssignedShardB : () -> (principal) query;
   getAssignedShards : () -> (AssignedShards) query;
@@ -27,10 +28,10 @@ service : () -> {
   getBrokerIds : () -> (vec principal) query;
   getLiquidityLocation : () -> (principal);
   getOwner : () -> (principal) query;
-  getRandomBroker : () -> (principal);
   getTokenInfo : () -> (TokenPairInfo) query;
   getTradingFees : () -> (TradingFees) query;
   initPool : (principal) -> ();
+  register : (principal) -> (principal);
   setFees : (nat, nat, float64, float64, float64) -> ();
   setOwner : (principal) -> ();
   triggerRun : () -> ();

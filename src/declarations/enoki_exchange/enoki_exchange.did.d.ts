@@ -23,6 +23,7 @@ export interface _SERVICE {
   'finishInit' : (arg_0: Principal, arg_1: Principal, arg_2: bigint) => Promise<
       undefined
     >,
+  'getAssignedBroker' : (arg_0: Principal) => Promise<Principal>,
   'getAssignedShardA' : () => Promise<Principal>,
   'getAssignedShardB' : () => Promise<Principal>,
   'getAssignedShards' : () => Promise<AssignedShards>,
@@ -30,10 +31,10 @@ export interface _SERVICE {
   'getBrokerIds' : () => Promise<Array<Principal>>,
   'getLiquidityLocation' : () => Promise<Principal>,
   'getOwner' : () => Promise<Principal>,
-  'getRandomBroker' : () => Promise<Principal>,
   'getTokenInfo' : () => Promise<TokenPairInfo>,
   'getTradingFees' : () => Promise<TradingFees>,
   'initPool' : (arg_0: Principal) => Promise<undefined>,
+  'register' : (arg_0: Principal) => Promise<Principal>,
   'setFees' : (
       arg_0: bigint,
       arg_1: bigint,

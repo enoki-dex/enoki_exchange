@@ -4,6 +4,8 @@ use candid::{candid_method, Principal};
 use ic_cdk_macros::*;
 
 #[allow(unused_imports)]
+use candid::Nat;
+#[allow(unused_imports)]
 use enoki_exchange_shared::has_token_info::{self, AssignedShards, TokenPairInfo};
 #[allow(unused_imports)]
 use enoki_exchange_shared::has_trading_fees::TradingFees;
@@ -25,6 +27,7 @@ mod payoffs;
 mod other_brokers;
 mod upgrade;
 mod shared_candid_methods;
+mod users;
 
 #[init]
 #[candid_method(init)]

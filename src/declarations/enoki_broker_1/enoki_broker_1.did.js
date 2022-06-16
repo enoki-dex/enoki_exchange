@@ -19,12 +19,12 @@ export const idlFactory = ({ IDL }) => {
     'token_a' : IDL.Principal,
     'token_b' : IDL.Principal,
   });
+  const Side = IDL.Variant({ 'Buy' : IDL.Null, 'Sell' : IDL.Null });
   const MakerTaker = IDL.Variant({
     'OnlyMaker' : IDL.Null,
     'OnlyTaker' : IDL.Null,
     'MakerOrTaker' : IDL.Null,
   });
-  const Side = IDL.Variant({ 'Buy' : IDL.Null, 'Sell' : IDL.Null });
   const OrderInfo = IDL.Record({
     'id' : IDL.Nat64,
     'maker_taker' : MakerTaker,
@@ -105,6 +105,7 @@ export const idlFactory = ({ IDL }) => {
   });
   return IDL.Service({
     'addBroker' : IDL.Func([IDL.Principal], [], []),
+    'addUser' : IDL.Func([IDL.Principal], [], []),
     'finishInit' : IDL.Func([IDL.Principal], [], []),
     'fundsSent' : IDL.Func([ShardedTransferNotification], [], []),
     'getAccruedExtraRewards' : IDL.Func(
@@ -116,6 +117,11 @@ export const idlFactory = ({ IDL }) => {
     'getAssignedShardA' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShardB' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShards' : IDL.Func([], [AssignedShards], ['query']),
+    'getExpectedSwapPrice' : IDL.Func(
+        [Side, IDL.Nat],
+        [IDL.Float64],
+        ['query'],
+      ),
     'getFailedOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'getManager' : IDL.Func([], [IDL.Principal], ['query']),
     'getOpenOrders' : IDL.Func([IDL.Principal], [OpenOrderStatus], ['query']),

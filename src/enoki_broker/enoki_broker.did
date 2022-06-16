@@ -91,6 +91,7 @@ type TradingFees = record {
 };
 service : () -> {
   addBroker : (principal) -> ();
+  addUser : (principal) -> ();
   finishInit : (principal) -> ();
   fundsSent : (ShardedTransferNotification) -> ();
   getAccruedExtraRewards : (principal) -> (LiquidityAmountNat) query;
@@ -98,6 +99,7 @@ service : () -> {
   getAssignedShardA : () -> (principal) query;
   getAssignedShardB : () -> (principal) query;
   getAssignedShards : () -> (AssignedShards) query;
+  getExpectedSwapPrice : (Side, nat) -> (float64) query;
   getFailedOrders : () -> (vec Order) query;
   getManager : () -> (principal) query;
   getOpenOrders : (principal) -> (OpenOrderStatus) query;

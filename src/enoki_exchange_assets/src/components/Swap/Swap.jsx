@@ -2,8 +2,7 @@ import React from "react";
 import SwapConfig from "./SwapConfig";
 import Tooltip from "../shared/Tooltip";
 import {useDispatch, useSelector} from 'react-redux'
-import {enoki_exchange} from "../../../../declarations/enoki_exchange";
-import getEnokiExchange from "../../actors/getEnokiExchange";
+import {getAssignedBroker} from "../../actors/getEnokiExchange";
 import useLogin from "../../hooks/useLogin";
 import {canisterId as canisterIdA} from "../../../../declarations/enoki_wrapped_token";
 import {canisterId as canisterIdB} from "../../../../declarations/enoki_wrapped_token_b";
@@ -11,6 +10,8 @@ import useTokenBalance from "../../hooks/useTokenBalance";
 import {bigIntToStr, floatToBigInt} from "../../utils/utils";
 import LoadingText from "../shared/LoadingText";
 import {getAssignedTokenShard} from "../../actors/getMainToken";
+import {Actor} from "@dfinity/agent";
+import {setTradeOccurred} from "../../state/lastTradeSlice";
 
 const IMAGES = {
   "eICP": "icp_test.svg",
@@ -22,57 +23,52 @@ const NUM_DECIMALS_QUANTITY = {
   'eXTC': 2,
 }
 
-//TODO: get from backend
-const prices = {
+const decimal_formatting = {
   "eICP;eXTC": {
-    price: 6.00,
     decimalsPrice: 2,
     decimalsQuantity: NUM_DECIMALS_QUANTITY['eICP'],
   },
   "eXTC;eICP": {
-    price: 0.167,
     decimalsPrice: 4,
     decimalsQuantity: NUM_DECIMALS_QUANTITY['eXTC'],
   },
 }
 
-const getPriceAndQuantity = ({
-                               buy, sell, buyQuantity, sellQuantity
-                             }) => {
+const getPriceAndQuantityDecimals = ({buy, sell}) => {
   let key = [buy, sell].join(';');
   let inverseKey = [sell, buy].join(';');
-  if (!prices[key] || !prices[inverseKey]) {
-    throw new Error("cannot find price");
+  if (!decimal_formatting[key] || !decimal_formatting[inverseKey]) {
+    throw new Error("cannot find decimal_formatting");
   }
-  let decimalsPrice;
-  let decimalsQuantity;
-  let price;
-  if (typeof buyQuantity === 'undefined') {
-    ({decimalsPrice, decimalsQuantity, price} = prices[key]);
-    buyQuantity = sellQuantity / price;
-  } else {
-    ({price, decimalsPrice} = prices[key]);
-    sellQuantity = buyQuantity * price;
-    ({decimalsQuantity} = prices[inverseKey]);
-  }
+  let {decimalsPrice, decimalsQuantity: decimalsQuantityRight} = decimal_formatting[key];
+  let {decimalsQuantity: decimalsQuantityLeft} = decimal_formatting[inverseKey];
   return {
-    price,
-    buyQuantity,
-    sellQuantity,
     decimalsPrice,
-    decimalsQuantity,
+    decimalsQuantityLeft,
+    decimalsQuantityRight,
   }
 }
 
-const execute_swap = async (identity, canisterId, quantity, price) => {
+const execute_swap = async (identity, canisterId, sellingTokenA, quantity, price) => {
   let shard = await getAssignedTokenShard(identity, canisterId);
-  // shard.shardTransferAndCall()
-  // dfx --identity swapper1 canister call "$assigned_shard_b_3" shardTransferAndCall "(principal \"$deposit_shard_b_3\", principal \"$broker_3\", 50_000_000 : nat, principal \"$broker_3\", \"swap\", \"{\\\"allow_taker\\\": true, \\\"limit_price_in_b\\\": 6.1}\")"
+  let broker = await getAssignedBroker(identity);
+  if (!(await broker.isUserRegistered(identity.getPrincipal()))) {
+    await broker.register(identity.getPrincipal());
+  }
+  let broker_shard = sellingTokenA ? await broker.getAssignedShardA() : await broker.getAssignedShardB();
+  await shard.shardTransferAndCall(
+    broker_shard,
+    Actor.canisterIdOf(broker),
+    quantity,
+    Actor.canisterIdOf(broker),
+    "swap",
+    JSON.stringify({allow_taker: true, limit_price_in_b: price})
+  );
 }
 
 const Swap = () => {
+  const {isLoggedIn, getIdentity} = useLogin();
   const [pair, setPair] = React.useState(['eICP', 'eXTC']);
-
   const [leftSwapValue, setLeftSwapValue] = React.useState("0.0");
   const [rightSwapValue, setRightSwapValue] = React.useState("0.0");
   const [price, setPrice] = React.useState(undefined);
@@ -82,6 +78,9 @@ const Swap = () => {
   const [usingMax, setUsingMax] = React.useState(false);
   const slippage = useSelector(state => state.swap.slippage.currentValue);
   const [executingSwap, setExecutingSwap] = React.useState(false);
+  const [lastUpdatedLeft, setLastUpdatedLeft] = React.useState(true);
+  const [isFetching, setIsFetching] = React.useState(false);
+  const dispatch = useDispatch();
 
   const balances = {
     'eICP': useTokenBalance({principal: canisterIdA}),
@@ -96,62 +95,90 @@ const Swap = () => {
     }
   });
 
-  let {isLoggedIn, getIdentity} = useLogin();
 
   const setMax = () => {
     let value = balancesStr[pair[0]] || '0';
     setLeftSwapValue(value)
-    updateData(true, value, pair);
+    setLastUpdatedLeft(true);
     setUsingMax(true);
   }
 
-  const updateData = (editingLeft, newValue, newPair) => {
-    setErrorDetails(undefined);
-    let value = parseFloat(newValue);
-    let valueLeft = value;
+  React.useEffect(() => {
+    // update data
+    let value = parseFloat(lastUpdatedLeft ? leftSwapValue : rightSwapValue);
     if (typeof value !== 'number' || isNaN(value) || value < 0) {
-      setIsError(editingLeft ? "left" : "right");
-      setPrice(undefined);
-    } else {
-      setIsError(null);
-      let input = editingLeft ? {sellQuantity: value} : {buyQuantity: value};
-
-      try {
-        let {
-          price,
-          buyQuantity,
-          sellQuantity,
-          decimalsPrice,
-          decimalsQuantity,
-        } = getPriceAndQuantity(Object.assign(input, {sell: newPair[0], buy: newPair[1]}));
-        if (editingLeft) {
-          setRightSwapValue(buyQuantity.toFixed(decimalsQuantity));
-        } else {
-          valueLeft = sellQuantity;
-          setLeftSwapValue(sellQuantity.toFixed(decimalsQuantity));
-        }
-        setPrice(price);
-        setPriceDecimals(decimalsPrice);
-        if (valueLeft > parseFloat(balancesStr[newPair[0]])) {
-          setIsError('left');
-          setErrorDetails("Insufficient balance");
-        }
-      } catch (err) {
-        console.error(err);
-        setIsError(editingLeft ? "left" : "right");
-        setErrorDetails(err.message);
-      }
+      setIsError(lastUpdatedLeft ? "left" : "right");
+      return;
     }
-  }
+    try {
+      let {
+        decimalsPrice,
+        decimalsQuantityLeft,
+        decimalsQuantityRight,
+      } = getPriceAndQuantityDecimals({sell: pair[0], buy: pair[1]});
+
+      let valueLeft = null;
+      if (lastUpdatedLeft) {
+        valueLeft = value;
+        if (typeof price !== 'undefined' && price !== null) {
+          let valueRight = pair[1] === 'eICP' ? value / price : value * price;
+          setRightSwapValue(valueRight.toFixed(decimalsQuantityRight));
+        }
+      } else {
+        if (typeof price !== 'undefined' && price !== null) {
+          valueLeft = pair[1] === 'eICP' ? value * price : value / price;
+          setLeftSwapValue(valueLeft.toFixed(decimalsQuantityLeft));
+        }
+      }
+      setPriceDecimals(decimalsPrice);
+      if (valueLeft !== null && valueLeft > parseFloat(balancesStr[pair[0]])) {
+        setIsError('left');
+        setErrorDetails("Insufficient balance");
+      } else {
+        setIsError(false);
+        setErrorDetails(undefined);
+      }
+    } catch (err) {
+      console.error(err);
+      setIsError(lastUpdatedLeft ? "left" : "right");
+      setErrorDetails(err.message);
+    }
+
+  }, [lastUpdatedLeft, leftSwapValue, rightSwapValue, pair, price]);
+
+  React.useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+    let stop = false;
+    setIsFetching(true);
+    let quantity = floatToBigInt(parseFloat(leftSwapValue) || 0.001, pair[0]);
+    getAssignedBroker(getIdentity())
+      .then(broker => broker.getExpectedSwapPrice(
+        pair[0] === 'eICP' ? {'Sell': null} : {'Buy': null},
+        quantity
+      ))
+      .then(price => {
+        if (stop) return;
+        setPrice(price);
+      })
+      .catch(err => {
+        console.error(err);
+      })
+      .then(() => {
+        if (stop) return;
+        setIsFetching(false);
+      })
+  }, [isLoggedIn, leftSwapValue, pair])
 
   const handleLeftChange = e => {
     setLeftSwapValue(e.target.value);
-    updateData(true, e.target.value, pair);
+    setLastUpdatedLeft(true);
     setUsingMax(false);
   };
   const handleRightChange = e => {
     setRightSwapValue(e.target.value);
-    updateData(false, e.target.value, pair);
+    setLastUpdatedLeft(false);
     setUsingMax(false);
   };
 
@@ -160,7 +187,7 @@ const Swap = () => {
     let [left, right] = [rightSwapValue, leftSwapValue];
     setLeftSwapValue(left);
     setRightSwapValue(right);
-    updateData(true, left, [pair[1], pair[0]]);
+    setLastUpdatedLeft(true);
     setUsingMax(false);
   }
 
@@ -172,17 +199,23 @@ const Swap = () => {
     let canisterId;
     if (pair[0] === 'eICP') {
       canisterId = canisterIdA;
-      limit_price = 1 / limit_price;
     } else {
       canisterId = canisterIdB;
     }
     setExecutingSwap(true);
-    execute_swap(getIdentity(), canisterId, quantity, limit_price)
+    execute_swap(getIdentity(), canisterId, pair[0] === 'eICP', quantity, limit_price)
       .catch(err => {
         console.error(err);
+        setErrorDetails("swap error");
       })
-      .then(() => setExecutingSwap(false));
+      .then(() => {
+        setExecutingSwap(false);
+        dispatch(setTradeOccurred());
+      });
   }
+
+  const priceInRightToken = pair[1] === 'eICP' ? price : (price && 1 / price);
+  const readyToExecuteSwap = isLoggedIn && !isError && !isFetching && price;
 
   return (
     <div className="container">
@@ -193,11 +226,6 @@ const Swap = () => {
           <div className="match_box">
             <div className={"select_wrap" + (isError === "left" ? " error_border" : "")}>
               <div className="input_wrap">
-                {/*<select name="" id="">*/}
-                {/*  <option value="">eICP</option>*/}
-                {/*  <option value="">eICP</option>*/}
-                {/*  <option value="">eICP</option>*/}
-                {/*</select>*/}
                 <img src={`img/${IMAGES[pair[0]]}`} alt=""/>
                 <h3>{pair[0]}</h3>
               </div>
@@ -213,13 +241,8 @@ const Swap = () => {
             <a className="top_icon_before" onClick={() => switchPair()}>
               <img src="img/swap_icon.svg" alt=""/>
             </a>
-            <div className="select_wrap">
+            <div className={"select_wrap" + (isError === "right" ? " error_border" : "")}>
               <div className="input_wrap">
-                {/*<select name="" id="">*/}
-                {/*  <option value="">eICP</option>*/}
-                {/*  <option value="">eICP</option>*/}
-                {/*  <option value="">eICP</option>*/}
-                {/*</select>*/}
                 <img src={`img/${IMAGES[pair[1]]}`} alt=""/>
                 <h3>{pair[1]}</h3>
               </div>
@@ -231,8 +254,25 @@ const Swap = () => {
             </div>
           </div>
           <div className="cal_details">
-            <p>{typeof price !== 'undefined' && (
-              <span>1 {pair[1]} = {price.toFixed(priceDecimals)} {pair[0]}</span>)}</p>
+            <p>
+              {
+                errorDetails ? (
+                  <span className="error_text">
+                    {errorDetails}
+                    </span>
+                ) : (
+                  <span>
+                    1 {pair[1]} = {
+                    (!isFetching && typeof price !== 'undefined' && price !== null) ? (
+                      priceInRightToken.toFixed(priceDecimals)
+                    ) : (
+                      <img style={{width: 17, margin: "0 3px 3px"}} src="img/spinner.svg"/>
+                    )
+                  } {pair[0]}
+                  </span>
+                )
+              }
+            </p>
             <p>Fee: 0.03%
               <Tooltip style={{display: "inline"}}
                        text={"Enoki pays for all of your gas, but this small fee is given to Liquidity Providers and Market Makers."}>
@@ -249,7 +289,11 @@ const Swap = () => {
                     <LoadingText style={{fontSize: "large"}} text="Swapping" speed={200}/>
                   </div>
                 ) : (
-                  <a className="btn connect btn-black btn-big" onClick={() => swap()}>SWAP</a>
+                  readyToExecuteSwap ? (
+                    <a className="btn connect btn-black btn-big" onClick={() => swap()}>SWAP</a>
+                  ) : (
+                    <a className="btn connect btn-black-disabled btn-big">SWAP</a>
+                  )
                 )
               ) : (
                 <a className="btn connect btn-black-disabled btn-big">CONNECT WALLET</a>

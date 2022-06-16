@@ -24,6 +24,7 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     'addBroker' : IDL.Func([IDL.Principal], [], []),
     'finishInit' : IDL.Func([IDL.Principal, IDL.Principal, IDL.Nat64], [], []),
+    'getAssignedBroker' : IDL.Func([IDL.Principal], [IDL.Principal], ['query']),
     'getAssignedShardA' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShardB' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShards' : IDL.Func([], [AssignedShards], ['query']),
@@ -31,10 +32,10 @@ export const idlFactory = ({ IDL }) => {
     'getBrokerIds' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getLiquidityLocation' : IDL.Func([], [IDL.Principal], []),
     'getOwner' : IDL.Func([], [IDL.Principal], ['query']),
-    'getRandomBroker' : IDL.Func([], [IDL.Principal], []),
     'getTokenInfo' : IDL.Func([], [TokenPairInfo], ['query']),
     'getTradingFees' : IDL.Func([], [TradingFees], ['query']),
     'initPool' : IDL.Func([IDL.Principal], [], []),
+    'register' : IDL.Func([IDL.Principal], [IDL.Principal], []),
     'setFees' : IDL.Func(
         [IDL.Nat, IDL.Nat, IDL.Float64, IDL.Float64, IDL.Float64],
         [],

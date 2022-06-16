@@ -1,11 +1,15 @@
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
-use std::ops::{AddAssign, Sub};
+use std::ops::{AddAssign};
 
-use candid::{CandidType, Nat};
+use candid::{candid_method, CandidType, Nat};
+use ic_cdk_macros::*;
 use num_traits::cast::ToPrimitive;
+use num_traits::Pow;
 
-use enoki_exchange_shared::has_token_info::{quantity_a_to_b, quantity_b_to_a, QuantityTranslator};
+use enoki_exchange_shared::has_token_info::{
+    get_number_of_price_decimals, quantity_a_to_b, quantity_b_to_a, QuantityTranslator,
+};
 use enoki_exchange_shared::has_trading_fees::{get_swap_fee, get_swap_market_maker_reward};
 use enoki_exchange_shared::liquidity::{
     RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
@@ -63,6 +67,15 @@ pub fn update_liquidity_target(
             traded: std::mem::take(&mut s.liquidity_traded),
         }
     })
+}
+
+#[query(name = "getExpectedSwapPrice")]
+#[candid_method(query, rename = "getExpectedSwapPrice")]
+fn get_expected_swap_price(side: Side, quantity: Nat) -> f64 {
+    let price_int = STATE
+        .with(|s| s.borrow().bid_ask.get_avg_price_for(side, quantity))
+        .unwrap();
+    (price_int as f64) / 10f64.pow(get_number_of_price_decimals() as f64)
 }
 
 pub async fn swap(mut order: ProcessedOrderInput) {
@@ -171,22 +184,22 @@ trait SwapLiquidity {
     fn execute_swap(&mut self, action: Side, quantity: Nat) -> LiquidityReference;
 }
 
-fn trade(quantity_a: &mut Nat, quantity_b: &mut Nat, price: u64) -> Nat {
+fn trade(quantity_a: &mut Nat, quantity_b: &mut Nat, price: u64) -> (Nat, Nat) {
     let mut quantity_translator = QuantityTranslator::new(price, quantity_a);
     let quantity_b_traded = quantity_translator
         .get_quantity_b()
         .unwrap()
         .min(quantity_b.clone());
+    let quantity_a_traded = quantity_b_to_a(quantity_b_traded.clone(), price).unwrap();
     *quantity_b -= quantity_b_traded.clone();
     quantity_translator
         .sub_assign(quantity_b_traded.clone())
         .unwrap();
-    quantity_b_traded
+    (quantity_a_traded, quantity_b_traded)
 }
 
 impl SwapLiquidity for AggregateBidAsk {
     fn get_avg_price_for(&self, action: Side, quantity: Nat) -> Result<u64> {
-        let mut quantity_b_traded_total = Nat::from(0u32);
         let mut price_times_quantity = Nat::from(0u32);
         let mut quantity_remaining = quantity.clone();
         match action {
@@ -197,10 +210,9 @@ impl SwapLiquidity for AggregateBidAsk {
                     .flat_map(|(&price, parties)| parties.into_iter().map(move |p| (price, p)))
                 {
                     let mut party_quantity: Nat = party.quantity.clone().into();
-                    let quantity_b_traded =
+                    let (_, quantity_b_traded) =
                         trade(&mut party_quantity, &mut quantity_remaining, price);
                     price_times_quantity.add_assign(quantity_b_traded.clone() * price);
-                    quantity_b_traded_total.add_assign(quantity_b_traded);
                     if quantity_remaining == 0u32 {
                         break;
                     }
@@ -214,10 +226,9 @@ impl SwapLiquidity for AggregateBidAsk {
                     .flat_map(|(&price, parties)| parties.into_iter().map(move |p| (price, p)))
                 {
                     let mut party_quantity: Nat = party.quantity.clone().into();
-                    let quantity_b_traded =
+                    let (quantity_a_traded, _) =
                         trade(&mut quantity_remaining, &mut party_quantity, price);
-                    price_times_quantity.add_assign(quantity_b_traded.clone() * price);
-                    quantity_b_traded_total.add_assign(quantity_b_traded);
+                    price_times_quantity.add_assign(quantity_a_traded * price);
                     if quantity_remaining == 0u32 {
                         break;
                     }
@@ -227,7 +238,7 @@ impl SwapLiquidity for AggregateBidAsk {
         if quantity_remaining != 0u32 {
             return Err(TxError::InsufficientLiquidityAvailable.into());
         }
-        let avg_price = price_times_quantity / quantity_b_traded_total;
+        let avg_price = price_times_quantity / quantity;
         nat_to_u64(avg_price)
     }
 
@@ -241,13 +252,12 @@ impl SwapLiquidity for AggregateBidAsk {
                     .iter_mut()
                     .flat_map(|(&price, parties)| parties.into_iter().map(move |p| (price, p)))
                 {
-                    let original_party_quantity = party.quantity.clone();
                     let mut party_quantity = party.quantity.take_as_nat();
-                    let _quantity_b_traded =
+                    let (quantity_a_traded, _) =
                         trade(&mut party_quantity, &mut quantity_remaining, price);
                     party.quantity = party_quantity.into();
                     let mut reference = party.clone();
-                    reference.quantity = original_party_quantity.sub(reference.quantity).unwrap();
+                    reference.quantity = quantity_a_traded.into();
                     liquidity_reference
                         .prices
                         .entry(price)
@@ -267,7 +277,7 @@ impl SwapLiquidity for AggregateBidAsk {
                     .flat_map(|(&price, parties)| parties.into_iter().map(move |p| (price, p)))
                 {
                     let mut party_quantity = party.quantity.take_as_nat();
-                    let quantity_b_traded =
+                    let (_, quantity_b_traded) =
                         trade(&mut quantity_remaining, &mut party_quantity, price);
                     party.quantity = party_quantity.into();
                     let mut reference = party.clone();

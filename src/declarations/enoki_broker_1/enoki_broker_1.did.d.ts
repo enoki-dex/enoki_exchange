@@ -97,6 +97,7 @@ export interface TradingFees {
 }
 export interface _SERVICE {
   'addBroker' : (arg_0: Principal) => Promise<undefined>,
+  'addUser' : (arg_0: Principal) => Promise<undefined>,
   'finishInit' : (arg_0: Principal) => Promise<undefined>,
   'fundsSent' : (arg_0: ShardedTransferNotification) => Promise<undefined>,
   'getAccruedExtraRewards' : (arg_0: Principal) => Promise<LiquidityAmountNat>,
@@ -104,6 +105,7 @@ export interface _SERVICE {
   'getAssignedShardA' : () => Promise<Principal>,
   'getAssignedShardB' : () => Promise<Principal>,
   'getAssignedShards' : () => Promise<AssignedShards>,
+  'getExpectedSwapPrice' : (arg_0: Side, arg_1: bigint) => Promise<number>,
   'getFailedOrders' : () => Promise<Array<Order>>,
   'getManager' : () => Promise<Principal>,
   'getOpenOrders' : (arg_0: Principal) => Promise<OpenOrderStatus>,

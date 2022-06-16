@@ -27,6 +27,7 @@ pub fn assert_is_broker_contract() -> Result<()> {
 pub struct BrokerState {
     pub brokers: HashSet<Principal>,
     pub current_broker_index: usize,
+    pub users: HashMap<Principal, Principal>,
 }
 
 thread_local! {
@@ -73,17 +74,41 @@ pub async fn foreach_broker_map<
         .collect())
 }
 
-#[update(name = "getRandomBroker")]
-#[candid_method(update, rename = "getRandomBroker")]
-pub fn get_random_broker() -> Principal {
-    STATE.with(|s| {
+#[update(name = "register")]
+#[candid_method(update, rename = "register")]
+pub async fn register(user: Principal) -> Principal {
+    if let Some(broker) = STATE.with(|s| s.borrow().users.get(&user).copied()) {
+        return broker;
+    }
+
+    let assigned_broker = STATE.with(|s| {
         let mut s = s.borrow_mut();
         let i = s.current_broker_index;
         s.current_broker_index += 1;
         let mut brokers: Vec<_> = s.brokers.iter().copied().collect();
         brokers.sort();
         brokers[i % brokers.len()]
-    })
+    });
+    let result: Result<()> = ic_cdk::call(assigned_broker, "addUser", (user,))
+        .await
+        .map_err(|e| e.into_tx_error().into());
+    result.unwrap();
+
+    STATE.with(|s| s.borrow_mut().users.insert(user, assigned_broker));
+
+    assigned_broker
+}
+
+#[query(name = "getAssignedBroker")]
+#[candid_method(query, rename = "getAssignedBroker")]
+pub fn get_assigned_broker(user: Principal) -> Principal {
+    STATE
+        .with(|s| s.borrow().users.get(&user).copied())
+        .ok_or(TxError::UserNotRegistered {
+            user: user.to_string(),
+            registry: ic_cdk::id().to_string(),
+        })
+        .unwrap()
 }
 
 #[query(name = "getBrokerIds")]

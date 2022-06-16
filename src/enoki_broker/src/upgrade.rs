@@ -1,21 +1,22 @@
 use candid::{CandidType, Deserialize};
 use ic_cdk_macros::*;
 
-use enoki_exchange_shared::{
-    has_sharded_users, has_token_info, has_trading_fees, is_managed, is_owned,
-};
 use enoki_exchange_shared::has_sharded_users::ShardedUserState;
 use enoki_exchange_shared::has_token_info::TokenInfoState;
 use enoki_exchange_shared::has_trading_fees::TradingFees;
 use enoki_exchange_shared::is_managed::ManagementData;
 use enoki_exchange_shared::is_owned::OwnershipData;
+use enoki_exchange_shared::{
+    has_sharded_users, has_token_info, has_trading_fees, is_managed, is_owned,
+};
 
-use crate::{liquidity, orders, other_brokers, payoffs, token_liquidity_params};
 use crate::liquidity::LiquidityState;
 use crate::orders::OrdersState;
 use crate::other_brokers::BrokersState;
 use crate::payoffs::{AccruedFees, PayoffsState};
 use crate::token_liquidity_params::TokenLiquidityData;
+use crate::users::UsersState;
+use crate::{liquidity, orders, other_brokers, payoffs, token_liquidity_params, users};
 
 #[derive(Deserialize, CandidType)]
 struct UpgradePayload {
@@ -30,6 +31,7 @@ struct UpgradePayload {
     trading_fees: TradingFees,
     manager: ManagementData,
     owner: OwnershipData,
+    users: UsersState,
 }
 
 #[pre_upgrade]
@@ -45,6 +47,7 @@ fn pre_upgrade() {
     let trading_fees = has_trading_fees::export_stable_storage();
     let manager = is_managed::export_stable_storage();
     let owner = is_owned::export_stable_storage();
+    let users = users::export_stable_storage();
     let payload = UpgradePayload {
         liquidity,
         brokers,
@@ -57,13 +60,14 @@ fn pre_upgrade() {
         trading_fees,
         manager,
         owner,
+        users,
     };
-    ic_cdk::storage::stable_save((payload, )).expect("failed to save to stable storage");
+    ic_cdk::storage::stable_save((payload,)).expect("failed to save to stable storage");
 }
 
 #[post_upgrade]
 fn post_upgrade() {
-    let (payload, ): (UpgradePayload, ) =
+    let (payload,): (UpgradePayload,) =
         ic_cdk::storage::stable_restore().expect("failed to restore from stable storage");
 
     let UpgradePayload {
@@ -78,6 +82,7 @@ fn post_upgrade() {
         trading_fees,
         manager,
         owner,
+        users,
     } = payload;
 
     liquidity::import_stable_storage(liquidity);
@@ -91,4 +96,5 @@ fn post_upgrade() {
     has_trading_fees::import_stable_storage(trading_fees);
     is_managed::import_stable_storage(manager);
     is_owned::import_stable_storage(owner);
+    users::import_stable_storage(users);
 }

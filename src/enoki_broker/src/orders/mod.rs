@@ -16,6 +16,7 @@ use crate::orders::order_book::OrderBook;
 use crate::orders::order_history::OrderHistory;
 use crate::payoffs::distribute_market_maker_rewards;
 use crate::{liquidity, payoffs};
+use crate::users::assert_is_user;
 
 mod order_book;
 mod order_history;
@@ -77,6 +78,7 @@ fn resolve_completed_orders(mut orders: Vec<Order>) {
 #[candid_method(update, rename = "limitOrder")]
 fn submit_limit_order(notification: ShardedTransferNotification) {
     let input = order_parser::validate_order_input(notification, false).unwrap();
+    assert_is_user(input.user).unwrap();
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         let (user, id) = s.order_book.create_limit_order(input);
