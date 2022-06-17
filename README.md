@@ -1,43 +1,57 @@
-# enoki_exchange
+# Enoki Exchange
 
-Welcome to your new enoki_exchange project and to the internet computer development community. By default, creating a
-new project adds this README and some template files to your project directory. You can edit these template files to
-customize your project and to include your own code to speed up the development cycle.
+Enoki Exchange is a fully asynchronous and scalable DEX built on the Internet Computer.
 
-To get started, you might want to explore the project directory structure and the default configuration file. Working
-with this project in your development environment will not affect any production deployment or identity tokens.
+It uses "broker" smart contract canisters to take orders from users. The exchange 
+routinely syncs with the brokers to execute limit orders and create a bid/ask curve that is used to
+execute swaps.
 
-To learn more before you start working with enoki_exchange, see the following documentation available online:
+Swaps are executed directly by the brokers using liquidity from a liquidity pool and with prices obtained from the
+bid/ask curve. Part of the fee goes to the LP providers, and part goes to the market makers who set the limit orders.
 
-- [Quick Start](https://smartcontracts.org/docs/quickstart/quickstart-intro.html)
-- [SDK Developer Tools](https://smartcontracts.org/docs/developers-guide/sdk-guide.html)
-- [Rust Canister Devlopment Guide](https://smartcontracts.org/docs/rust-guide/rust-intro.html)
-- [ic-cdk](https://docs.rs/ic-cdk)
-- [ic-cdk-macros](https://docs.rs/ic-cdk-macros)
-- [Candid Introduction](https://smartcontracts.org/docs/candid-guide/candid-intro.html)
-- [JavaScript API Reference](https://erxue-5aaaa-aaaab-qaagq-cai.raw.ic0.app)
+# Development
 
-If you want to start working on your project right away, you might want to try the following commands:
+## Dependencies
 
-```bash
-cd enoki_exchange/
-dfx help
-dfx config --help
+- [rust](https://rustup.rs)
+- [dfx](https://smartcontracts.org/docs/developers-guide/install-upgrade-remove.html)
+- [cmake](https://cmake.org/)
+
+[//]: # (- [npm]&#40;https://nodejs.org/en/download/&#41;)
+
+Make sure you have wasm as a target:
+```
+rustup target add wasm32-unknown-unknown
 ```
 
-## Running the project locally
+## Local Deploy
 
-If you want to test your project locally, you can use the following commands:
+### Configure
 
 ```bash
-# Starts the replica, running in the background
-dfx start --background
+cp default.env .env
+```
 
-# Deploys your canisters to the replica and generates your candid interface
+### Run
+make sure to use `make deploy` below (instead of simply `dfx deploy`) to initialize the canisters with parameters from `.env`
+```bash
+dfx start --background
+make deps
+make deploy
+```
+
+### Test
+after running the above commands:
+```bash
+make test
+```
+
+### Local Frontend
+to build the frontend:
+```bash
 dfx deploy
 ```
-
-Once the job completes, your application will be available at `http://localhost:8000?canisterId={asset_canister_id}`.
+The app's local URL should be displayed.
 
 # Pending Features
 

@@ -40,7 +40,7 @@ i=1
 num_shards=${NUM_SHARDS:-2}
 while [ $i -le $num_shards ]; do
   dfx canister create "enoki_wrapped_token_shard_$i"
-  dfx install "enoki_wrapped_token_shard_$i"
+  dfx deploy "enoki_wrapped_token_shard_$i"
   dfx canister call "enoki_wrapped_token_shard_$i" finishInit "(principal \"$(dfx canister id enoki_wrapped_token)\", principal \"$(dfx canister id enoki_wrapped_token)\")"
   dfx canister call enoki_wrapped_token "addShard" "(principal \"$(dfx canister id "enoki_wrapped_token_shard_$i")\")"
   true $((i++))
