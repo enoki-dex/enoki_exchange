@@ -13,6 +13,7 @@ import {getAssignedTokenShard} from "../../actors/getMainToken";
 import {Actor} from "@dfinity/agent";
 import {setTradeOccurred} from "../../state/lastTradeSlice";
 import useLogo from "../../hooks/useLogo";
+import useHeartbeat from "../../hooks/useHeartbeat";
 
 const NUM_DECIMALS_QUANTITY = {
   'eICP': 4,
@@ -52,7 +53,7 @@ const execute_swap = async (identity, canisterId, sellingTokenA, quantity, price
     await broker.register(identity.getPrincipal());
   }
   let broker_shard = sellingTokenA ? await broker.getAssignedShardA() : await broker.getAssignedShardB();
-  await shard.shardTransferAndCall(
+  let message = await shard.shardTransferAndCall(
     broker_shard,
     Actor.canisterIdOf(broker),
     quantity,
@@ -60,10 +61,12 @@ const execute_swap = async (identity, canisterId, sellingTokenA, quantity, price
     "swap",
     JSON.stringify({allow_taker: true, limit_price_in_b: price})
   );
+  console.log("swap success: ", message);
 }
 
 const Swap = () => {
   const {isLoggedIn, getIdentity} = useLogin();
+  const lastExchangeUpdate = useHeartbeat();
   const [pair, setPair] = React.useState(['eICP', 'eXTC']);
   const [leftSwapValue, setLeftSwapValue] = React.useState("0.0");
   const [rightSwapValue, setRightSwapValue] = React.useState("0.0");
@@ -107,6 +110,8 @@ const Swap = () => {
   }
 
   React.useEffect(() => {
+    console.log("canisterIdA", canisterIdA);
+    console.log("canisterIdB", canisterIdB);
     // update data
     let value = parseFloat(lastUpdatedLeft ? leftSwapValue : rightSwapValue);
     if (typeof value !== 'number' || isNaN(value) || value < 0) {

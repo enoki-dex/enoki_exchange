@@ -47,7 +47,7 @@ pub fn add_reward(broker: Principal, user: Principal, token: &EnokiToken, amount
 
 #[update(name = "receiveMarketMakerRewards")]
 #[candid_method(update, rename = "receiveMarketMakerRewards")]
-fn receive_market_maker_rewards(notification: ShardedTransferNotification) {
+fn receive_market_maker_rewards(notification: ShardedTransferNotification) -> String {
     let token = has_token_info::parse_from().unwrap();
     let broker = notification.from;
     assert_is_broker(broker).unwrap();
@@ -59,6 +59,7 @@ fn receive_market_maker_rewards(notification: ShardedTransferNotification) {
     for (user, reward) in user_rewards.0 {
         add_reward(ic_cdk::id(), user, &token, reward.into());
     }
+    "OK".to_string()
 }
 
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
@@ -125,7 +126,7 @@ async fn distribute_other_broker_rewards(transfer_fee_a: Nat, transfer_fee_b: Na
                 let user_rewards_str = serde_json::to_string(&user_rewards)
                     .map_err(|e| TxError::ParsingError(format!("{:?}", e)))?;
                 let broker_shard = payoffs::get_broker_assigned_shard(broker, token.clone()).await?;
-                let result: Result<()> = ic_cdk::call(
+                let result: Result<(String,)> = ic_cdk::call(
                     shard_address,
                     "shardTransferAndCall",
                     (
@@ -140,7 +141,7 @@ async fn distribute_other_broker_rewards(transfer_fee_a: Nat, transfer_fee_b: Na
                 .await
                 .map_err(|e| e.into_tx_error());
 
-                result
+                result.map(|_| ())
             }
             if let Err(error) =
                 transfer_to_broker(shard_address, broker, &token, reward, &transfer_fee).await

@@ -7,9 +7,11 @@ import {enoki_liquidity_pool_worker} from "../../../../declarations/enoki_liquid
 import {bigIntToFloat} from "../../utils/utils";
 import ChangePool from "./ChangePool";
 import useLogo from "../../hooks/useLogo";
+import useHeartbeat from "../../hooks/useHeartbeat";
 
 const Pool = () => {
   const {isLoggedIn, getIdentity} = useLogin();
+  const lastExchangeUpdate = useHeartbeat();
   const logoA = useLogo({canisterId: canisterIdA});
   const logoB = useLogo({canisterId: canisterIdB});
   const lastTradeTime = useSelector(state => state.lastTrade.lastTradeTime);

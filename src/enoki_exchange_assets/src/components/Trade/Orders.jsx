@@ -46,7 +46,6 @@ const Orders = () => {
       .then(([open, past]) => {
         if (stop) return;
         let open_orders = open.open_orders;
-        console.log('open', open_orders);
         open_orders.sort((a, b) => {
           if (a.id < b.id) {
             return -1;
@@ -60,7 +59,6 @@ const Orders = () => {
         let pendingCancel = {};
         open.pending_cancel.forEach(id => pendingCancel[id] = true);
         setPendingCancel(pendingCancel);
-        console.log('past', past);
         past.sort((a, b) => {
           if (a.info.id < b.info.id) {
             return 1;

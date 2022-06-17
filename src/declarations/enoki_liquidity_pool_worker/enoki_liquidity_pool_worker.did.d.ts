@@ -21,7 +21,7 @@ export interface TokenPairInfo {
 }
 export interface _SERVICE {
   'addBroker' : (arg_0: Principal) => Promise<undefined>,
-  'addLiquidity' : (arg_0: ShardedTransferNotification) => Promise<undefined>,
+  'addLiquidity' : (arg_0: ShardedTransferNotification) => Promise<string>,
   'finishInit' : (arg_0: Principal) => Promise<undefined>,
   'getAssignedShardA' : () => Promise<Principal>,
   'getAssignedShardB' : () => Promise<Principal>,

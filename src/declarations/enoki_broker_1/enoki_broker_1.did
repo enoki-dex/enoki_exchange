@@ -111,7 +111,7 @@ service : () -> {
   addUser : (principal) -> ();
   cancelOrder : (nat64) -> ();
   finishInit : (principal) -> ();
-  fundsSent : (ShardedTransferNotification) -> ();
+  fundsSent : (ShardedTransferNotification) -> (text);
   getAccruedExtraRewards : (principal) -> (LiquidityAmountNat) query;
   getAccruedFees : () -> (LiquidityAmount) query;
   getAssignedShardA : () -> (principal) query;
@@ -121,14 +121,15 @@ service : () -> {
   getFailedOrders : () -> (vec Order) query;
   getManager : () -> (principal) query;
   getOpenOrders : (principal) -> (OpenOrderStatus) query;
+  getOpenOrdersCount : () -> (nat64) query;
   getOwner : () -> (principal) query;
   getPastOrders : (principal) -> (vec OrderShare) query;
   getTokenInfo : () -> (TokenPairInfo) query;
   getTradingFees : () -> (TradingFees) query;
   initBroker : (InitBrokerParams) -> (AssignedShards);
   isUserRegistered : (principal) -> (bool) query;
-  limitOrder : (ShardedTransferNotification) -> ();
-  receiveMarketMakerRewards : (ShardedTransferNotification) -> ();
+  limitOrder : (ShardedTransferNotification) -> (text);
+  receiveMarketMakerRewards : (ShardedTransferNotification) -> (text);
   register : (principal) -> ();
   retrieveOrders : () -> (vec OrderInfo, vec OrderInfo);
   sendFunds : (text, FirstTransfer) -> ();
@@ -140,6 +141,6 @@ service : () -> {
       AggregateBidAsk,
       RequestForNewLiquidityTarget,
     ) -> (ResponseAboutLiquidityChanges);
-  swap : (ShardedTransferNotification) -> ();
+  swap : (ShardedTransferNotification) -> (text);
   updateUpstreamFees : () -> ();
 }

@@ -1,0 +1,38 @@
+{
+  "enoki_broker_1": {
+    "ic": "5pcqd-zqaaa-aaaag-qaoia-cai"
+  },
+  "enoki_broker_2": {
+    "ic": "5idwx-uiaaa-aaaag-qaoiq-cai"
+  },
+  "enoki_exchange": {
+    "ic": "745td-riaaa-aaaag-qaogq-cai"
+  },
+  "enoki_exchange_assets": {
+    "ic": "5ba5l-caaaa-aaaag-qaoja-cai"
+  },
+  "enoki_liquidity_pool": {
+    "ic": "7v6y7-haaaa-aaaag-qaoha-cai"
+  },
+  "enoki_liquidity_pool_worker": {
+    "ic": "7s76l-kyaaa-aaaag-qaohq-cai"
+  },
+  "enoki_wrapped_token": {
+    "ic": "6kwli-eyaaa-aaaag-qaodq-cai"
+  },
+  "enoki_wrapped_token_b": {
+    "ic": "7j2co-qaaaa-aaaag-qaofa-cai"
+  },
+  "enoki_wrapped_token_shard_1": {
+    "ic": "7hypg-lqaaa-aaaag-qaoea-cai"
+  },
+  "enoki_wrapped_token_shard_2": {
+    "ic": "7azjs-giaaa-aaaag-qaoeq-cai"
+  },
+  "enoki_wrapped_token_shard_b_1": {
+    "ic": "7o3e2-5yaaa-aaaag-qaofq-cai"
+  },
+  "enoki_wrapped_token_shard_b_2": {
+    "ic": "734vx-4qaaa-aaaag-qaoga-cai"
+  }
+}

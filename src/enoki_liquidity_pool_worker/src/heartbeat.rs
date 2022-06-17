@@ -22,7 +22,6 @@ struct AntiSpam {
 
 impl AntiSpam {
     const UPDATE_INTERVAL: u64 = 1 * 1_000_000_000;
-    // 3 seconds
     pub fn try_lock(&mut self) -> bool {
         let now = ic_cdk::api::time();
         if self.last_update < now - Self::UPDATE_INTERVAL {

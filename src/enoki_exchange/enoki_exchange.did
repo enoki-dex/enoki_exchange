@@ -24,7 +24,7 @@ service : () -> {
   getAssignedShardA : () -> (principal) query;
   getAssignedShardB : () -> (principal) query;
   getAssignedShards : () -> (AssignedShards) query;
-  getBidAskCurve : () -> (BidAskCurve);
+  getBidAskCurve : () -> (BidAskCurve) query;
   getBrokerIds : () -> (vec principal) query;
   getLiquidityLocation : () -> (principal);
   getOwner : () -> (principal) query;
@@ -34,6 +34,7 @@ service : () -> {
   register : (principal) -> (principal);
   setFees : (nat, nat, float64, float64, float64) -> ();
   setOwner : (principal) -> ();
+  triggerRun : () -> (opt nat64);
   whoami : () -> (principal) query;
   whoisanon : () -> (principal) query;
 }

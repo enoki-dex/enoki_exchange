@@ -20,7 +20,7 @@ type TokenPairInfo = record {
 };
 service : () -> {
   addBroker : (principal) -> ();
-  addLiquidity : (ShardedTransferNotification) -> ();
+  addLiquidity : (ShardedTransferNotification) -> (text);
   finishInit : (principal) -> ();
   getAssignedShardA : () -> (principal) query;
   getAssignedShardB : () -> (principal) query;

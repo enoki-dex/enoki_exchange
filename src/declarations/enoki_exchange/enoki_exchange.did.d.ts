@@ -43,6 +43,7 @@ export interface _SERVICE {
       arg_4: number,
     ) => Promise<undefined>,
   'setOwner' : (arg_0: Principal) => Promise<undefined>,
+  'triggerRun' : () => Promise<[] | [bigint]>,
   'whoami' : () => Promise<Principal>,
   'whoisanon' : () => Promise<Principal>,
 }

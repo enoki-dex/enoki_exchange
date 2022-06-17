@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use candid::{candid_method, CandidType, Principal};
 use ic_cdk_macros::*;
 
+use enoki_exchange_shared::has_sharded_users::register_user;
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 use enoki_exchange_shared::is_managed::assert_is_manager;
 use enoki_exchange_shared::liquidity::{
@@ -10,13 +11,12 @@ use enoki_exchange_shared::liquidity::{
 };
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::{has_sharded_users, has_token_info};
-use enoki_exchange_shared::has_sharded_users::register_user;
 
 use crate::orders::order_book::OrderBook;
 use crate::orders::order_history::OrderHistory;
 use crate::payoffs::distribute_market_maker_rewards;
-use crate::{liquidity, payoffs};
 use crate::users::assert_is_user;
+use crate::{liquidity, payoffs};
 
 mod order_book;
 mod order_history;
@@ -76,21 +76,23 @@ fn resolve_completed_orders(mut orders: Vec<Order>) {
 
 #[update(name = "limitOrder")]
 #[candid_method(update, rename = "limitOrder")]
-fn submit_limit_order(notification: ShardedTransferNotification) {
+fn submit_limit_order(notification: ShardedTransferNotification) -> String {
     let input = order_parser::validate_order_input(notification, false).unwrap();
     assert_is_user(input.user).unwrap();
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         let (user, id) = s.order_book.create_limit_order(input);
         s.order_history.add_new_order(user, id);
+        id.to_string()
     })
 }
 
 #[update(name = "swap")]
 #[candid_method(update)]
-async fn swap(notification: ShardedTransferNotification) {
+async fn swap(notification: ShardedTransferNotification) -> String {
     let input = order_parser::validate_order_input(notification, true).unwrap();
     liquidity::swap(input).await;
+    "OK".to_string()
 }
 
 #[update(name = "cancelOrder")]
@@ -110,20 +112,45 @@ fn get_open_orders(user: Principal) -> OpenOrderStatus {
     })
 }
 
+#[query(name = "getOpenOrdersCount")]
+#[candid_method(query, rename = "getOpenOrdersCount")]
+fn get_open_orders_count() -> usize {
+    STATE.with(|s| {
+        let s = s.borrow();
+        s.order_history.get_open_orders_count()
+    })
+}
+
 #[query(name = "getPastOrders")]
 #[candid_method(query, rename = "getPastOrders")]
 fn get_past_orders(user: Principal) -> Vec<OrderShare> {
-    STATE.with(|s| s.borrow().order_history.get_past_orders(user).into_iter().map(|o| o.into()).collect())
+    STATE.with(|s| {
+        s.borrow()
+            .order_history
+            .get_past_orders(user)
+            .into_iter()
+            .map(|o| o.into())
+            .collect()
+    })
 }
 
 #[query(name = "getAccruedExtraRewards")]
 #[candid_method(query, rename = "getAccruedExtraRewards")]
 fn get_accrued_extra_rewards(user: Principal) -> LiquidityAmountNat {
-    STATE.with(|s| s.borrow().order_history.get_accrued_extra_rewards(user).into())
+    STATE.with(|s| {
+        s.borrow()
+            .order_history
+            .get_accrued_extra_rewards(user)
+            .into()
+    })
 }
 
 pub fn add_accrued_extra_reward(user: Principal, amount: StableNat, token: &EnokiToken) {
-    STATE.with(|s| s.borrow_mut().order_history.add_accrued_extra_reward(user, amount, token));
+    STATE.with(|s| {
+        s.borrow_mut()
+            .order_history
+            .add_accrued_extra_reward(user, amount, token)
+    });
 }
 
 #[query(name = "isUserRegistered")]

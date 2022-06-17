@@ -20,18 +20,42 @@ impl OrderHistory {
         self.current_orders
             .get_mut(&order.info.user)
             .map(|user_orders| user_orders.retain(|&o| o != order.info.id));
-        self.past_orders.entry(order.info.user).or_default().insert(order.info.id, order);
+        self.past_orders
+            .entry(order.info.user)
+            .or_default()
+            .insert(order.info.id, order);
     }
-    pub fn add_accrued_extra_reward(&mut self, user: Principal, amount: StableNat, token: &EnokiToken) {
-        self.accrued_extra_rewards.entry(user).or_default().get_mut(token).add_assign(amount);
+    pub fn add_accrued_extra_reward(
+        &mut self,
+        user: Principal,
+        amount: StableNat,
+        token: &EnokiToken,
+    ) {
+        self.accrued_extra_rewards
+            .entry(user)
+            .or_default()
+            .get_mut(token)
+            .add_assign(amount);
     }
     pub fn get_open_orders(&self, user: Principal) -> Vec<u64> {
         self.current_orders.get(&user).cloned().unwrap_or_default()
     }
+    pub fn get_open_orders_count(&self) -> usize {
+        self.current_orders
+            .iter()
+            .map(|(_, orders)| orders.len())
+            .sum()
+    }
     pub fn get_past_orders(&self, user: Principal) -> Vec<Order> {
-        self.past_orders.get(&user).map(|past| past.values().cloned().collect()).unwrap_or_default()
+        self.past_orders
+            .get(&user)
+            .map(|past| past.values().cloned().collect())
+            .unwrap_or_default()
     }
     pub fn get_accrued_extra_rewards(&self, user: Principal) -> LiquidityAmount {
-        self.accrued_extra_rewards.get(&user).cloned().unwrap_or_default()
+        self.accrued_extra_rewards
+            .get(&user)
+            .cloned()
+            .unwrap_or_default()
     }
 }

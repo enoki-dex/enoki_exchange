@@ -26,28 +26,29 @@ type TxError = variant {
   AccountAlreadyExists;
   Other : text;
 };
-service : (principal, principal) -> {
-  addSiblingShard : (principal) -> (Result);
+service : () -> {
+  addSiblingShard : (principal) -> ();
   addSpender : (principal) -> ();
-  createAccount : (principal) -> (Result);
+  createAccount : (principal) -> ();
+  finishInit : (principal, principal) -> ();
   getAccruedFees : () -> (nat) query;
   getFee : () -> (nat) query;
   getManagementDetails : () -> (ManagerContractData) query;
   getOwner : () -> (principal) query;
-  initShard : (principal, vec principal, nat) -> (Result);
+  initShard : (principal, vec principal, nat) -> ();
   mint : (nat) -> ();
-  removeSiblingShard : (principal) -> (Result);
+  removeSiblingShard : (principal) -> ();
   removeSpender : (principal) -> ();
   setFee : (nat) -> (Result);
   setOwner : (principal) -> (Result);
   shardBalanceOf : (principal) -> (nat) query;
   shardGetSupply : () -> (nat) query;
-  shardReceiveTransfer : (principal, nat) -> (Result);
+  shardReceiveTransfer : (principal, nat) -> ();
   shardReceiveTransferAndCall : (
       ShardedTransferNotification,
       principal,
       text,
-    ) -> (Result);
+    ) -> (text);
   shardSpend : (principal, principal, principal, nat) -> ();
   shardSpendAndCall : (
       principal,
@@ -57,17 +58,12 @@ service : (principal, principal) -> {
       principal,
       text,
       text,
-    ) -> ();
+    ) -> (text);
   shardTransfer : (principal, principal, nat) -> ();
-  shardTransferAndCall : (
-      principal,
-      principal,
-      nat,
-      principal,
+  shardTransferAndCall : (principal, principal, nat, principal, text, text) -> (
       text,
-      text,
-    ) -> ();
-  transferFromManager : (principal, principal, principal, nat) -> (Result);
+    );
+  transferFromManager : (principal, principal, principal, nat) -> ();
   unwrap : (nat, principal) -> ();
   wrap : (nat) -> ();
 }

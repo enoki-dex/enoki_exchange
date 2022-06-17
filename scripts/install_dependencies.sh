@@ -34,23 +34,27 @@ cp src_dev/ledger/ledger.public.did src_dev/ledger/ledger.did
 ### === DEPLOY enoki test tokens =====
 
 dfx canister create enoki_wrapped_token
-dfx canister install enoki_wrapped_token --argument "(principal \"$(dfx canister id enoki_wrapped_token)\", \"$TOKEN_LOGO_A\", \"$TOKEN_NAME_A\", \"$TOKEN_SYMBOL_A\", $TOKEN_DECIMALS_A:nat8, $TOKEN_FEE_A)"
+dfx deploy enoki_wrapped_token
+dfx canister call enoki_wrapped_token finishInit "(principal \"$(dfx canister id enoki_wrapped_token)\", \"$TOKEN_LOGO_A\", \"$TOKEN_NAME_A\", \"$TOKEN_SYMBOL_A\", $TOKEN_DECIMALS_A:nat8, $TOKEN_FEE_A)"
 i=1
 num_shards=${NUM_SHARDS:-2}
 while [ $i -le $num_shards ]; do
   dfx canister create "enoki_wrapped_token_shard_$i"
-  dfx canister install "enoki_wrapped_token_shard_$i" --argument "(principal \"$(dfx canister id enoki_wrapped_token)\", principal \"$(dfx canister id enoki_wrapped_token)\")"
+  dfx install "enoki_wrapped_token_shard_$i"
+  dfx canister call "enoki_wrapped_token_shard_$i" finishInit "(principal \"$(dfx canister id enoki_wrapped_token)\", principal \"$(dfx canister id enoki_wrapped_token)\")"
   dfx canister call enoki_wrapped_token "addShard" "(principal \"$(dfx canister id "enoki_wrapped_token_shard_$i")\")"
   true $((i++))
 done
 
 dfx canister create enoki_wrapped_token_b
-dfx canister install enoki_wrapped_token_b --argument "(principal \"$(dfx canister id enoki_wrapped_token_b)\", \"$TOKEN_LOGO_B\", \"$TOKEN_NAME_B\", \"$TOKEN_SYMBOL_B\", $TOKEN_DECIMALS_B:nat8, $TOKEN_FEE_B)"
+dfx deploy enoki_wrapped_token_b
+dfx canister call enoki_wrapped_token_b finishInit "(principal \"$(dfx canister id enoki_wrapped_token_b)\", \"$TOKEN_LOGO_B\", \"$TOKEN_NAME_B\", \"$TOKEN_SYMBOL_B\", $TOKEN_DECIMALS_B:nat8, $TOKEN_FEE_B)"
 i=1
 num_shards=${NUM_SHARDS:-2}
 while [ $i -le $num_shards ]; do
   dfx canister create "enoki_wrapped_token_shard_b_$i"
-  dfx canister install "enoki_wrapped_token_shard_b_$i" --argument "(principal \"$(dfx canister id enoki_wrapped_token_b)\", principal \"$(dfx canister id enoki_wrapped_token_b)\")"
+  dfx deploy "enoki_wrapped_token_shard_b_$i"
+  dfx canister call "enoki_wrapped_token_shard_b_$i" finishInit "(principal \"$(dfx canister id enoki_wrapped_token_b)\", principal \"$(dfx canister id enoki_wrapped_token_b)\")"
   dfx canister call enoki_wrapped_token_b "addShard" "(principal \"$(dfx canister id "enoki_wrapped_token_shard_b_$i")\")"
   true $((i++))
 done

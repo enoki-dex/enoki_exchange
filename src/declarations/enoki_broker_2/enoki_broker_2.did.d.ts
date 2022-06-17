@@ -120,7 +120,7 @@ export interface _SERVICE {
   'addUser' : (arg_0: Principal) => Promise<undefined>,
   'cancelOrder' : (arg_0: bigint) => Promise<undefined>,
   'finishInit' : (arg_0: Principal) => Promise<undefined>,
-  'fundsSent' : (arg_0: ShardedTransferNotification) => Promise<undefined>,
+  'fundsSent' : (arg_0: ShardedTransferNotification) => Promise<string>,
   'getAccruedExtraRewards' : (arg_0: Principal) => Promise<LiquidityAmountNat>,
   'getAccruedFees' : () => Promise<LiquidityAmount>,
   'getAssignedShardA' : () => Promise<Principal>,
@@ -130,15 +130,16 @@ export interface _SERVICE {
   'getFailedOrders' : () => Promise<Array<Order>>,
   'getManager' : () => Promise<Principal>,
   'getOpenOrders' : (arg_0: Principal) => Promise<OpenOrderStatus>,
+  'getOpenOrdersCount' : () => Promise<bigint>,
   'getOwner' : () => Promise<Principal>,
   'getPastOrders' : (arg_0: Principal) => Promise<Array<OrderShare>>,
   'getTokenInfo' : () => Promise<TokenPairInfo>,
   'getTradingFees' : () => Promise<TradingFees>,
   'initBroker' : (arg_0: InitBrokerParams) => Promise<AssignedShards>,
   'isUserRegistered' : (arg_0: Principal) => Promise<boolean>,
-  'limitOrder' : (arg_0: ShardedTransferNotification) => Promise<undefined>,
+  'limitOrder' : (arg_0: ShardedTransferNotification) => Promise<string>,
   'receiveMarketMakerRewards' : (arg_0: ShardedTransferNotification) => Promise<
-      undefined
+      string
     >,
   'register' : (arg_0: Principal) => Promise<undefined>,
   'retrieveOrders' : () => Promise<[Array<OrderInfo>, Array<OrderInfo>]>,
@@ -151,6 +152,6 @@ export interface _SERVICE {
       arg_1: AggregateBidAsk,
       arg_2: RequestForNewLiquidityTarget,
     ) => Promise<ResponseAboutLiquidityChanges>,
-  'swap' : (arg_0: ShardedTransferNotification) => Promise<undefined>,
+  'swap' : (arg_0: ShardedTransferNotification) => Promise<string>,
   'updateUpstreamFees' : () => Promise<undefined>,
 }

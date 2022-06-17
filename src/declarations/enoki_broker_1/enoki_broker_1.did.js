@@ -128,7 +128,7 @@ export const idlFactory = ({ IDL }) => {
     'addUser' : IDL.Func([IDL.Principal], [], []),
     'cancelOrder' : IDL.Func([IDL.Nat64], [], []),
     'finishInit' : IDL.Func([IDL.Principal], [], []),
-    'fundsSent' : IDL.Func([ShardedTransferNotification], [], []),
+    'fundsSent' : IDL.Func([ShardedTransferNotification], [IDL.Text], []),
     'getAccruedExtraRewards' : IDL.Func(
         [IDL.Principal],
         [LiquidityAmountNat],
@@ -146,6 +146,7 @@ export const idlFactory = ({ IDL }) => {
     'getFailedOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'getManager' : IDL.Func([], [IDL.Principal], ['query']),
     'getOpenOrders' : IDL.Func([IDL.Principal], [OpenOrderStatus], ['query']),
+    'getOpenOrdersCount' : IDL.Func([], [IDL.Nat64], ['query']),
     'getOwner' : IDL.Func([], [IDL.Principal], ['query']),
     'getPastOrders' : IDL.Func(
         [IDL.Principal],
@@ -156,10 +157,10 @@ export const idlFactory = ({ IDL }) => {
     'getTradingFees' : IDL.Func([], [TradingFees], ['query']),
     'initBroker' : IDL.Func([InitBrokerParams], [AssignedShards], []),
     'isUserRegistered' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
-    'limitOrder' : IDL.Func([ShardedTransferNotification], [], []),
+    'limitOrder' : IDL.Func([ShardedTransferNotification], [IDL.Text], []),
     'receiveMarketMakerRewards' : IDL.Func(
         [ShardedTransferNotification],
-        [],
+        [IDL.Text],
         [],
       ),
     'register' : IDL.Func([IDL.Principal], [], []),
@@ -177,7 +178,7 @@ export const idlFactory = ({ IDL }) => {
         [ResponseAboutLiquidityChanges],
         [],
       ),
-    'swap' : IDL.Func([ShardedTransferNotification], [], []),
+    'swap' : IDL.Func([ShardedTransferNotification], [IDL.Text], []),
     'updateUpstreamFees' : IDL.Func([], [], []),
   });
 };

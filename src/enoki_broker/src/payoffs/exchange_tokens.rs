@@ -9,8 +9,8 @@ use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::nat_div_float;
 
 use crate::payoffs::{
-    with_failed_exchanges_mut, with_pending_transfers_mut,
-    FirstTransfer, TokenExchangeInfo, TransferInfo, TransferPair,
+    with_failed_exchanges_mut, with_pending_transfers_mut, FirstTransfer, TokenExchangeInfo,
+    TransferInfo, TransferPair,
 };
 
 async fn send_funds_from(id: String, broker: Principal, info: FirstTransfer) -> Result<()> {
@@ -38,7 +38,7 @@ pub async fn send_funds_internal(
     let to_shard = info.to_shard;
     let message = format!("{}|{}", id, shard_id_to_retrieve.to_string());
     ic_cdk::println!("[broker] executing first half of exchange id {}", id);
-    ic_cdk::call(
+    let result: Result<(String,)> = ic_cdk::call(
         assigned_token_shard,
         "shardTransferAndCall",
         (
@@ -51,7 +51,8 @@ pub async fn send_funds_internal(
         ),
     )
     .await
-    .map_err(|e| e.into_tx_error())
+    .map_err(|e| e.into_tx_error());
+    result.map(|_| ())
 }
 
 pub fn exchange_tokens(orders: Vec<Order>) -> Vec<Order> {

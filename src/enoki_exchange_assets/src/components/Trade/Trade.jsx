@@ -17,6 +17,7 @@ import {setTradeOccurred} from "../../state/lastTradeSlice";
 import {Actor} from "@dfinity/agent";
 import Orders from "./Orders";
 import OrderBook from "./OrderBook";
+import useHeartbeat from "../../hooks/useHeartbeat";
 
 const NUM_DECIMALS_QUANTITY = {
   'eICP': 4,
@@ -32,7 +33,7 @@ const executeOrder = async (identity, canisterId, sellingTokenA, quantity, price
     await broker.register(identity.getPrincipal());
   }
   let broker_shard = sellingTokenA ? await broker.getAssignedShardA() : await broker.getAssignedShardB();
-  await shard.shardTransferAndCall(
+  let message = await shard.shardTransferAndCall(
     broker_shard,
     Actor.canisterIdOf(broker),
     quantity,
@@ -40,12 +41,14 @@ const executeOrder = async (identity, canisterId, sellingTokenA, quantity, price
     "limitOrder",
     JSON.stringify({allow_taker: allowTaker, limit_price_in_b: price})
   );
+  console.log("trade id: ", message);
 }
 
 const Trade = () => {
   const dispatch = useDispatch();
   const allowTaker = useSelector(state => state.trade.allowTaker);
   const {isLoggedIn, getIdentity} = useLogin();
+  const lastExchangeUpdate = useHeartbeat();
   const logoA = useLogo({canisterId: canisterIdA});
   const logoB = useLogo({canisterId: canisterIdB});
   const [side, setSide] = React.useState('buy');

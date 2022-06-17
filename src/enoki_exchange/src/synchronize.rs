@@ -108,7 +108,7 @@ pub async fn do_run() -> Result<()> {
 }
 
 #[query(name = "getBidAskCurve")]
-#[candid_method(update, rename = "getBidAskCurve")]
+#[candid_method(query, rename = "getBidAskCurve")]
 pub fn get_bid_ask_curve() -> BidAskCurve {
     let num_decimals = has_token_info::get_number_of_price_decimals();
     let bid_ask = STATE.with(|s| s.borrow().aggregate_bid_ask.clone());

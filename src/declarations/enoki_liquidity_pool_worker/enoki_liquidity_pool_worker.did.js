@@ -27,7 +27,7 @@ export const idlFactory = ({ IDL }) => {
   });
   return IDL.Service({
     'addBroker' : IDL.Func([IDL.Principal], [], []),
-    'addLiquidity' : IDL.Func([ShardedTransferNotification], [], []),
+    'addLiquidity' : IDL.Func([ShardedTransferNotification], [IDL.Text], []),
     'finishInit' : IDL.Func([IDL.Principal], [], []),
     'getAssignedShardA' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShardB' : IDL.Func([], [IDL.Principal], ['query']),

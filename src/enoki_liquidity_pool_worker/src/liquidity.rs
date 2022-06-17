@@ -338,7 +338,7 @@ fn get_net_deposits(user: Principal) -> LiquidityTradesNat {
 
 #[query(name = "getShardsToAddLiquidity")]
 #[candid_method(query, rename = "getShardsToAddLiquidity")]
-async fn get_shards_to_add_liquidity() -> AssignedShards {
+fn get_shards_to_add_liquidity() -> AssignedShards {
     get_assigned_shards()
 }
 
@@ -362,7 +362,7 @@ async fn register(user: Principal) {
 
 #[update(name = "addLiquidity")]
 #[candid_method(update, rename = "addLiquidity")]
-async fn add_liquidity(notification: ShardedTransferNotification) {
+async fn add_liquidity(notification: ShardedTransferNotification) -> String {
     assert_eq!(notification.to, ic_cdk::id());
     let token = has_token_info::parse_from().unwrap();
     let from = notification.from;
@@ -380,6 +380,7 @@ async fn add_liquidity(notification: ShardedTransferNotification) {
         amount: notification.value.into(),
     };
     STATE.with(|s| s.borrow_mut().pool.user_add_liquidity(from, amount));
+    "OK".to_string()
 }
 
 #[update(name = "removeLiquidity")]

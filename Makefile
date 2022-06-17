@@ -1,11 +1,5 @@
 SHELL = /bin/zsh
 
-.PHONY: all
-all: clean init deps install test
-
-.PHONY: start
-start: init deps install
-
 .PHONY: init
 .SILENT: init
 init:
@@ -16,16 +10,6 @@ init:
 deps:
 	./scripts/install_dependencies.sh
 
-.PHONY: install
-.SILENT: install
-install:
-	./scripts/install.sh
-
-.PHONY: init-local
-.SILENT: init-local
-init-local:
-	./scripts/initalize_local_balance.sh $(II_PRINCIPAL)
-
 .PHONE: deploy
 .SILENT: deploy
 deploy:
@@ -34,8 +18,7 @@ deploy:
 .PHONY: build
 .SILENT: build
 build:
-	dfx canister create --all
-	dfx build
+	./scripts/build.sh
 
 .PHONY: test
 .SILENT: test

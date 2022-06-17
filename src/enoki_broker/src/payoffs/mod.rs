@@ -195,7 +195,7 @@ async fn send_funds(id: String, info: FirstTransfer) {
 
 #[update(name = "fundsSent")]
 #[candid_method(update, rename = "fundsSent")]
-async fn funds_sent(notification: ShardedTransferNotification) {
+async fn funds_sent(notification: ShardedTransferNotification) -> String {
     let mut data = notification.data.split('|');
     let id: u64 = data
         .next()
@@ -252,6 +252,7 @@ async fn funds_sent(notification: ShardedTransferNotification) {
     .await
     .map_err(|e| e.into_tx_error());
     response.unwrap();
+    "OK".to_string()
 }
 
 pub fn export_stable_storage() -> PayoffsState {

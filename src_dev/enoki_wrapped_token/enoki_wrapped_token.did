@@ -5,7 +5,6 @@ type Metadata = record {
   name : text;
   symbol : text;
 };
-type Result = variant { Ok; Err : TxError };
 type Shard = record { id : principal; num_accounts : nat64 };
 type Stats = record {
   fee : nat;
@@ -14,21 +13,12 @@ type Stats = record {
   cycles : nat64;
   total_supply : nat;
 };
-type TxError = variant {
-  UnderlyingTransferFailure;
-  TransferCallbackError : text;
-  InsufficientBalance;
-  TransferValueTooSmall;
-  Unauthorized;
-  AccountDoesNotExist : record { user : text; shard : text };
-  ShardDoesNotExist;
-  AccountAlreadyExists;
-  Other : text;
-};
-service : (principal, text, text, text, nat8, nat) -> {
-  addShard : (principal) -> (Result);
-  balanceOf : (principal) -> (nat) query;
+service : () -> {
+  addShard : (principal) -> ();
+  balanceOf : (principal) -> (nat);
   decimals : () -> (nat8) query;
+  finishInit : (principal, text, text, text, nat8, nat) -> ();
+  fixSiblings : () -> ();
   getAccruedFees : () -> (nat) query;
   getAssignedShardId : (principal) -> (principal) query;
   getFee : () -> (nat) query;
@@ -40,11 +30,11 @@ service : (principal, text, text, text, nat8, nat) -> {
   name : () -> (text) query;
   owner : () -> (principal) query;
   register : (principal) -> (principal);
-  setFee : (nat) -> (Result);
-  setLogo : (text) -> (Result);
-  setOwner : (principal) -> (Result);
-  stats : () -> (Stats) query;
+  setFee : (nat) -> ();
+  setLogo : (text) -> ();
+  setOwner : (principal) -> ();
+  stats : () -> (Stats);
   symbol : () -> (text) query;
-  totalSupply : () -> (nat) query;
+  totalSupply : () -> (nat);
   transfer : (principal, nat) -> ();
 }

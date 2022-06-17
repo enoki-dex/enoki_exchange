@@ -28,7 +28,7 @@ export const idlFactory = ({ IDL }) => {
     'getAssignedShardA' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShardB' : IDL.Func([], [IDL.Principal], ['query']),
     'getAssignedShards' : IDL.Func([], [AssignedShards], ['query']),
-    'getBidAskCurve' : IDL.Func([], [BidAskCurve], []),
+    'getBidAskCurve' : IDL.Func([], [BidAskCurve], ['query']),
     'getBrokerIds' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getLiquidityLocation' : IDL.Func([], [IDL.Principal], []),
     'getOwner' : IDL.Func([], [IDL.Principal], ['query']),
@@ -42,6 +42,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'setOwner' : IDL.Func([IDL.Principal], [], []),
+    'triggerRun' : IDL.Func([], [IDL.Opt(IDL.Nat64)], []),
     'whoami' : IDL.Func([], [IDL.Principal], ['query']),
     'whoisanon' : IDL.Func([], [IDL.Principal], ['query']),
   });

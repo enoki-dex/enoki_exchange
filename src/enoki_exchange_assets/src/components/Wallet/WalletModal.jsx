@@ -38,7 +38,7 @@ const WalletModal = ({toggleShowWallet}) => {
   const mint = (principal, cb) => {
     getAssignedTokenShard(getIdentity(), principal)
       .then(assignedShard => assignedShard.mint(BigInt("1000000000000000")))
-      .catch(e => console.error(e))
+      .catch(e => console.error('mint error: ', e))
       .then(() => {
         cb();
         dispatch(setTradeOccurred());

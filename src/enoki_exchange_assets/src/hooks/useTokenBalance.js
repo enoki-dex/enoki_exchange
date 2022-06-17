@@ -1,7 +1,7 @@
 import React from "react";
 import {useSelector} from "react-redux";
 import useLogin from "./useLogin";
-import {createActor} from "../../../declarations/enoki_wrapped_token";
+import {getAssignedTokenShard} from "../actors/getMainToken";
 
 /**
  *
@@ -20,8 +20,8 @@ const useTokenBalance = ({principal}) => {
       return;
     }
     let stop = false;
-    let tokenActor = createActor(principal);
-    tokenActor.balanceOf(getIdentity().getPrincipal())
+    getAssignedTokenShard(getIdentity(), principal)
+        .then(shard => shard.shardBalanceOf(getIdentity().getPrincipal()))
       .then(balance => {
         if (stop) return;
         setBalance(balance);

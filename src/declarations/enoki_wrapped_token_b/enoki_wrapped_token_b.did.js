@@ -1,19 +1,4 @@
 export const idlFactory = ({ IDL }) => {
-  const TxError = IDL.Variant({
-    'UnderlyingTransferFailure' : IDL.Null,
-    'TransferCallbackError' : IDL.Text,
-    'InsufficientBalance' : IDL.Null,
-    'TransferValueTooSmall' : IDL.Null,
-    'Unauthorized' : IDL.Null,
-    'AccountDoesNotExist' : IDL.Record({
-      'user' : IDL.Text,
-      'shard' : IDL.Text,
-    }),
-    'ShardDoesNotExist' : IDL.Null,
-    'AccountAlreadyExists' : IDL.Null,
-    'Other' : IDL.Text,
-  });
-  const Result = IDL.Variant({ 'Ok' : IDL.Null, 'Err' : TxError });
   const Metadata = IDL.Record({
     'underlying_token' : IDL.Principal,
     'decimals' : IDL.Nat8,
@@ -33,9 +18,15 @@ export const idlFactory = ({ IDL }) => {
     'total_supply' : IDL.Nat,
   });
   return IDL.Service({
-    'addShard' : IDL.Func([IDL.Principal], [Result], []),
-    'balanceOf' : IDL.Func([IDL.Principal], [IDL.Nat], ['query']),
+    'addShard' : IDL.Func([IDL.Principal], [], []),
+    'balanceOf' : IDL.Func([IDL.Principal], [IDL.Nat], []),
     'decimals' : IDL.Func([], [IDL.Nat8], ['query']),
+    'finishInit' : IDL.Func(
+        [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, IDL.Nat8, IDL.Nat],
+        [],
+        [],
+      ),
+    'fixSiblings' : IDL.Func([], [], []),
     'getAccruedFees' : IDL.Func([], [IDL.Nat], ['query']),
     'getAssignedShardId' : IDL.Func(
         [IDL.Principal],
@@ -51,15 +42,13 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Func([], [IDL.Text], ['query']),
     'owner' : IDL.Func([], [IDL.Principal], ['query']),
     'register' : IDL.Func([IDL.Principal], [IDL.Principal], []),
-    'setFee' : IDL.Func([IDL.Nat], [Result], []),
-    'setLogo' : IDL.Func([IDL.Text], [Result], []),
-    'setOwner' : IDL.Func([IDL.Principal], [Result], []),
-    'stats' : IDL.Func([], [Stats], ['query']),
+    'setFee' : IDL.Func([IDL.Nat], [], []),
+    'setLogo' : IDL.Func([IDL.Text], [], []),
+    'setOwner' : IDL.Func([IDL.Principal], [], []),
+    'stats' : IDL.Func([], [Stats], []),
     'symbol' : IDL.Func([], [IDL.Text], ['query']),
-    'totalSupply' : IDL.Func([], [IDL.Nat], ['query']),
+    'totalSupply' : IDL.Func([], [IDL.Nat], []),
     'transfer' : IDL.Func([IDL.Principal, IDL.Nat], [], []),
   });
 };
-export const init = ({ IDL }) => {
-  return [IDL.Principal, IDL.Text, IDL.Text, IDL.Text, IDL.Nat8, IDL.Nat];
-};
+export const init = ({ IDL }) => { return []; };
