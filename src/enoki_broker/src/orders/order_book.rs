@@ -20,6 +20,7 @@ impl OrderBook {
                 .iter()
                 .filter_map(|id| self.pending_orders.get(id).or(self.orders.get(id)))
                 .cloned()
+                .map(|order| order.into())
                 .collect(),
             pending_cancel: ids
                 .iter()
@@ -70,5 +71,11 @@ impl OrderBook {
     pub fn remove_completed_order(&mut self, id: u64) {
         self.orders.remove(&id);
         self.orders_to_cancel.remove(&id);
+        self.pending_orders_to_cancel.remove(&id);
+    }
+    pub fn try_cancel_order(&mut self, id: u64, user: Principal) {
+        let info = self.orders.get(&id).expect("order not found").clone();
+        assert_eq!(user, info.user, "invalid order id");
+        self.pending_orders_to_cancel.insert(id, info);
     }
 }

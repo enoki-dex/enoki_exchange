@@ -55,9 +55,29 @@ export const idlFactory = ({ IDL }) => {
     'marker_makers' : IDL.Vec(CounterpartyInfo),
   });
   const Order = IDL.Record({ 'info' : OrderInfo, 'state' : OrderState });
+  const OrderInfoShare = IDL.Record({
+    'id' : IDL.Nat64,
+    'maker_taker' : MakerTaker,
+    'broker' : IDL.Principal,
+    'limit_price' : IDL.Float64,
+    'side' : Side,
+    'user' : IDL.Principal,
+    'quantity' : IDL.Nat,
+    'expiration_time' : IDL.Opt(IDL.Nat64),
+  });
   const OpenOrderStatus = IDL.Record({
-    'open_orders' : IDL.Vec(OrderInfo),
+    'open_orders' : IDL.Vec(OrderInfoShare),
     'pending_cancel' : IDL.Vec(IDL.Nat64),
+  });
+  const OrderStateShare = IDL.Record({
+    'status' : OrderStatus,
+    'average_price' : IDL.Float64,
+    'quantity_a_executed' : IDL.Nat,
+    'fraction_executed' : IDL.Float64,
+  });
+  const OrderShare = IDL.Record({
+    'info' : OrderInfoShare,
+    'state' : OrderStateShare,
   });
   const TokenInfo = IDL.Record({ 'principal' : IDL.Principal });
   const TokenPairInfo = IDL.Record({
@@ -106,6 +126,7 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     'addBroker' : IDL.Func([IDL.Principal], [], []),
     'addUser' : IDL.Func([IDL.Principal], [], []),
+    'cancelOrder' : IDL.Func([IDL.Nat64], [], []),
     'finishInit' : IDL.Func([IDL.Principal], [], []),
     'fundsSent' : IDL.Func([ShardedTransferNotification], [], []),
     'getAccruedExtraRewards' : IDL.Func(
@@ -126,7 +147,11 @@ export const idlFactory = ({ IDL }) => {
     'getManager' : IDL.Func([], [IDL.Principal], ['query']),
     'getOpenOrders' : IDL.Func([IDL.Principal], [OpenOrderStatus], ['query']),
     'getOwner' : IDL.Func([], [IDL.Principal], ['query']),
-    'getPastOrders' : IDL.Func([IDL.Principal], [IDL.Vec(Order)], ['query']),
+    'getPastOrders' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(OrderShare)],
+        ['query'],
+      ),
     'getTokenInfo' : IDL.Func([], [TokenPairInfo], ['query']),
     'getTradingFees' : IDL.Func([], [TradingFees], ['query']),
     'initBroker' : IDL.Func([InitBrokerParams], [AssignedShards], []),

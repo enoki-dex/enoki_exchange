@@ -38,7 +38,7 @@ export type MakerTaker = { 'OnlyMaker' : null } |
   { 'OnlyTaker' : null } |
   { 'MakerOrTaker' : null };
 export interface OpenOrderStatus {
-  'open_orders' : Array<OrderInfo>,
+  'open_orders' : Array<OrderInfoShare>,
   'pending_cancel' : Array<bigint>,
 }
 export interface Order { 'info' : OrderInfo, 'state' : OrderState }
@@ -52,10 +52,30 @@ export interface OrderInfo {
   'quantity' : Array<number>,
   'expiration_time' : [] | [bigint],
 }
+export interface OrderInfoShare {
+  'id' : bigint,
+  'maker_taker' : MakerTaker,
+  'broker' : Principal,
+  'limit_price' : number,
+  'side' : Side,
+  'user' : Principal,
+  'quantity' : bigint,
+  'expiration_time' : [] | [bigint],
+}
+export interface OrderShare {
+  'info' : OrderInfoShare,
+  'state' : OrderStateShare,
+}
 export interface OrderState {
   'status' : OrderStatus,
   'quantity_remaining' : Array<number>,
   'marker_makers' : Array<CounterpartyInfo>,
+}
+export interface OrderStateShare {
+  'status' : OrderStatus,
+  'average_price' : number,
+  'quantity_a_executed' : bigint,
+  'fraction_executed' : number,
 }
 export type OrderStatus = { 'InvalidPrice' : null } |
   { 'InsufficientLiquidity' : null } |
@@ -98,6 +118,7 @@ export interface TradingFees {
 export interface _SERVICE {
   'addBroker' : (arg_0: Principal) => Promise<undefined>,
   'addUser' : (arg_0: Principal) => Promise<undefined>,
+  'cancelOrder' : (arg_0: bigint) => Promise<undefined>,
   'finishInit' : (arg_0: Principal) => Promise<undefined>,
   'fundsSent' : (arg_0: ShardedTransferNotification) => Promise<undefined>,
   'getAccruedExtraRewards' : (arg_0: Principal) => Promise<LiquidityAmountNat>,
@@ -110,7 +131,7 @@ export interface _SERVICE {
   'getManager' : () => Promise<Principal>,
   'getOpenOrders' : (arg_0: Principal) => Promise<OpenOrderStatus>,
   'getOwner' : () => Promise<Principal>,
-  'getPastOrders' : (arg_0: Principal) => Promise<Array<Order>>,
+  'getPastOrders' : (arg_0: Principal) => Promise<Array<OrderShare>>,
   'getTokenInfo' : () => Promise<TokenPairInfo>,
   'getTradingFees' : () => Promise<TradingFees>,
   'initBroker' : (arg_0: InitBrokerParams) => Promise<AssignedShards>,

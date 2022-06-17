@@ -158,6 +158,33 @@ pub struct Order {
     pub state: OrderState,
 }
 
+#[derive(CandidType, Debug, Clone, candid::Deserialize)]
+pub struct OrderInfoShare {
+    pub broker: Principal,
+    pub user: Principal,
+    pub id: u64,
+    // only unique with respect to a broker
+    pub side: Side,
+    pub maker_taker: MakerTaker,
+    pub limit_price: f64,
+    pub quantity: Nat,
+    pub expiration_time: Option<u64>,
+}
+
+#[derive(CandidType, Debug, Clone, candid::Deserialize)]
+pub struct OrderStateShare {
+    pub status: OrderStatus,
+    pub quantity_a_executed: Nat,
+    pub fraction_executed: f64,
+    pub average_price: f64,
+}
+
+#[derive(CandidType, Debug, Clone, candid::Deserialize)]
+pub struct OrderShare {
+    pub info: OrderInfoShare,
+    pub state: OrderStateShare,
+}
+
 #[derive(CandidType, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct CounterpartyInfo {
     pub broker: Principal,
@@ -181,7 +208,7 @@ pub struct BidAskCurve {
 
 #[derive(CandidType)]
 pub struct OpenOrderStatus {
-    pub open_orders: Vec<OrderInfo>,
+    pub open_orders: Vec<OrderInfoShare>,
     pub pending_cancel: Vec<u64>,
 }
 

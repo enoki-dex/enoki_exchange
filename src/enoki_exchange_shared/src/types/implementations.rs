@@ -1,5 +1,8 @@
 use std::ops::{AddAssign, Div, Sub};
 
+use num_traits::ToPrimitive;
+
+use crate::has_token_info::price_in_b_u64_to_float;
 use crate::types::*;
 
 impl FromIterator<TokenAmount> for LiquidityAmount {
@@ -138,7 +141,7 @@ impl From<LiquidityAmountNat> for LiquidityAmount {
     fn from(val: LiquidityAmountNat) -> Self {
         Self {
             token_a: val.token_a.into(),
-            token_b: val.token_b.into()
+            token_b: val.token_b.into(),
         }
     }
 }
@@ -166,6 +169,76 @@ impl EnokiToken {
         match self {
             EnokiToken::TokenA => EnokiToken::TokenB,
             EnokiToken::TokenB => EnokiToken::TokenA,
+        }
+    }
+}
+
+impl From<OrderInfo> for OrderInfoShare {
+    fn from(info: OrderInfo) -> Self {
+        Self {
+            broker: info.broker,
+            user: info.user,
+            id: info.id,
+            side: info.side,
+            maker_taker: info.maker_taker,
+            limit_price: price_in_b_u64_to_float(info.limit_price),
+            quantity: info.quantity.into(),
+            expiration_time: info.expiration_time,
+        }
+    }
+}
+
+impl From<Order> for OrderShare {
+    fn from(order: Order) -> Self {
+        let quantity_a_executed: Nat = match order.info.side {
+            Side::Buy => {
+                let sum: StableNat = order
+                    .state
+                    .marker_makers
+                    .iter()
+                    .map(|market_maker| market_maker.quantity.clone())
+                    .sum();
+                sum.into()
+            }
+            Side::Sell => (order.info.quantity.clone() - order.state.quantity_remaining.clone())
+                .unwrap()
+                .into(),
+        };
+        let fraction_executed = 1f64
+            - (((order.state.quantity_remaining.clone().to_nat() * 100u64)
+                / order.info.quantity.clone().to_nat())
+            .0
+            .to_f64()
+            .unwrap()
+                / 100f64);
+        let sum_quantity = order
+            .state
+            .marker_makers
+            .iter()
+            .map(|mm| mm.quantity.clone().to_nat())
+            .fold(Nat::from(0u64), |sum, next| sum + next);
+
+        let average_price_int = if sum_quantity > 0u64 {
+            order
+                .state
+                .marker_makers
+                .iter()
+                .map(|market_marker| market_marker.quantity.clone().to_nat() * market_marker.price)
+                .fold(Nat::from(0u64), |sum, next| sum + next)
+                / sum_quantity
+        } else {
+            Nat::from(0u64)
+        };
+        let average_price = price_in_b_u64_to_float(average_price_int.0.to_u64().unwrap());
+
+        Self {
+            info: order.info.into(),
+            state: OrderStateShare {
+                status: order.state.status,
+                quantity_a_executed,
+                fraction_executed,
+                average_price,
+            },
         }
     }
 }

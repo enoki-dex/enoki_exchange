@@ -31,7 +31,7 @@ type LiquidityTrades = record {
 };
 type MakerTaker = variant { OnlyMaker; OnlyTaker; MakerOrTaker };
 type OpenOrderStatus = record {
-  open_orders : vec OrderInfo;
+  open_orders : vec OrderInfoShare;
   pending_cancel : vec nat64;
 };
 type Order = record { info : OrderInfo; state : OrderState };
@@ -45,10 +45,27 @@ type OrderInfo = record {
   quantity : vec nat8;
   expiration_time : opt nat64;
 };
+type OrderInfoShare = record {
+  id : nat64;
+  maker_taker : MakerTaker;
+  broker : principal;
+  limit_price : float64;
+  side : Side;
+  user : principal;
+  quantity : nat;
+  expiration_time : opt nat64;
+};
+type OrderShare = record { info : OrderInfoShare; state : OrderStateShare };
 type OrderState = record {
   status : OrderStatus;
   quantity_remaining : vec nat8;
   marker_makers : vec CounterpartyInfo;
+};
+type OrderStateShare = record {
+  status : OrderStatus;
+  average_price : float64;
+  quantity_a_executed : nat;
+  fraction_executed : float64;
 };
 type OrderStatus = variant {
   InvalidPrice;
@@ -92,6 +109,7 @@ type TradingFees = record {
 service : () -> {
   addBroker : (principal) -> ();
   addUser : (principal) -> ();
+  cancelOrder : (nat64) -> ();
   finishInit : (principal) -> ();
   fundsSent : (ShardedTransferNotification) -> ();
   getAccruedExtraRewards : (principal) -> (LiquidityAmountNat) query;
@@ -104,7 +122,7 @@ service : () -> {
   getManager : () -> (principal) query;
   getOpenOrders : (principal) -> (OpenOrderStatus) query;
   getOwner : () -> (principal) query;
-  getPastOrders : (principal) -> (vec Order) query;
+  getPastOrders : (principal) -> (vec OrderShare) query;
   getTokenInfo : () -> (TokenPairInfo) query;
   getTradingFees : () -> (TradingFees) query;
   initBroker : (InitBrokerParams) -> (AssignedShards);

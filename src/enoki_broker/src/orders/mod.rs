@@ -93,6 +93,13 @@ async fn swap(notification: ShardedTransferNotification) {
     liquidity::swap(input).await;
 }
 
+#[update(name = "cancelOrder")]
+#[candid_method(update, rename = "cancelOrder")]
+async fn cancel_order(order_id: u64) {
+    let from = ic_cdk::caller();
+    STATE.with(|s| s.borrow_mut().order_book.try_cancel_order(order_id, from));
+}
+
 #[query(name = "getOpenOrders")]
 #[candid_method(query, rename = "getOpenOrders")]
 fn get_open_orders(user: Principal) -> OpenOrderStatus {
@@ -105,8 +112,8 @@ fn get_open_orders(user: Principal) -> OpenOrderStatus {
 
 #[query(name = "getPastOrders")]
 #[candid_method(query, rename = "getPastOrders")]
-fn get_past_orders(user: Principal) -> Vec<Order> {
-    STATE.with(|s| s.borrow().order_history.get_past_orders(user))
+fn get_past_orders(user: Principal) -> Vec<OrderShare> {
+    STATE.with(|s| s.borrow().order_history.get_past_orders(user).into_iter().map(|o| o.into()).collect())
 }
 
 #[query(name = "getAccruedExtraRewards")]
