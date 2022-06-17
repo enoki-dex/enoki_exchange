@@ -1,8 +1,796 @@
 import React from "react";
+import useLogin from "../../hooks/useLogin";
+import {useSelector, useDispatch} from 'react-redux'
+import {setAllowTaker, setOnlyMaker} from "../../state/tradeSlice";
+import {canisterId as canisterIdA} from "../../../../declarations/enoki_wrapped_token";
+import {canisterId as canisterIdB} from "../../../../declarations/enoki_wrapped_token_b";
+import {bigIntToStr, floatToBigInt} from "../../utils/utils";
+import {getAssignedTokenShard} from "../../actors/getMainToken";
+import {getAssignedBroker} from "../../actors/getEnokiExchange";
+import {enoki_liquidity_pool_worker} from "../../../../declarations/enoki_liquidity_pool_worker";
+import {bigIntToFloat} from "../../utils/utils";
+import useLogo from "../../hooks/useLogo";
+import useTokenBalance from "../../hooks/useTokenBalance";
+import SwitchCheckbox from "../shared/SwitchCheckbox";
+import LoadingText from "../shared/LoadingText";
+import {setTradeOccurred} from "../../state/lastTradeSlice";
+import {Actor} from "@dfinity/agent";
+
+const NUM_DECIMALS_QUANTITY = {
+  'eICP': 4,
+  'eXTC': 2,
+}
+
+const MAX_NUMBER_OF_PRICE_DECIMALS = 2; // this is a limitation set by the exchange to reduce the size of the state
+
+const executeOrder = async (identity, canisterId, sellingTokenA, quantity, price, allowTaker) => {
+  let shard = await getAssignedTokenShard(identity, canisterId);
+  let broker = await getAssignedBroker(identity);
+  if (!(await broker.isUserRegistered(identity.getPrincipal()))) {
+    await broker.register(identity.getPrincipal());
+  }
+  let broker_shard = sellingTokenA ? await broker.getAssignedShardA() : await broker.getAssignedShardB();
+  await shard.shardTransferAndCall(
+    broker_shard,
+    Actor.canisterIdOf(broker),
+    quantity,
+    Actor.canisterIdOf(broker),
+    "limitOrder",
+    JSON.stringify({allow_taker: allowTaker, limit_price_in_b: price})
+  );
+}
 
 const Trade = () => {
+  const dispatch = useDispatch();
+  const allowTaker = useSelector(state => state.trade.allowTaker);
+  const {isLoggedIn, getIdentity} = useLogin();
+  const logoA = useLogo({canisterId: canisterIdA});
+  const logoB = useLogo({canisterId: canisterIdB});
+  const [side, setSide] = React.useState('buy');
+  const [price, setPrice] = React.useState('');
+  const [leftQuantity, setLeftQuantity] = React.useState('');
+  const [rightQuantity, setRightQuantity] = React.useState('');
+  const [lastUpdated, setLastUpdated] = React.useState('left');
+  const [usingMax, setUsingMax] = React.useState(null);
+  const [isError, setIsError] = React.useState(null);
+  const [errorDetails, setErrorDetails] = React.useState(undefined);
+  const lastTradeTime = useSelector(state => state.lastTrade.lastTradeTime);
+  const [liquidity, setLiquidity] = React.useState([0, 0]);
+  const [netWithdrawals, setNetWithdrawals] = React.useState([0, 0]);
+  const [show, setShow] = React.useState(null);
+  const [isLoadingBalances, setIsLoadingBalances] = React.useState(true);
+  const [isLoadingNetWithdrawals, setIsLoadingNetWithdrawals] = React.useState(true);
+  const [extraRewards, setExtraRewards] = React.useState([null, null]);
+  const [executing, setExecuting] = React.useState(false);
+
+  const balances = {
+    'eICP': useTokenBalance({principal: canisterIdA}),
+    'eXTC': useTokenBalance({principal: canisterIdB})
+  };
+
+  const balancesStr = {};
+  Object.keys(balances).forEach(token => {
+    let balance = balances[token];
+    if (balance !== null) {
+      balancesStr[token] = bigIntToStr(balance, token, NUM_DECIMALS_QUANTITY[token]);
+    }
+  });
+
+  React.useEffect(() => {
+    // update data
+    let valueStr = lastUpdated === 'right' ? rightQuantity : leftQuantity;
+    if (!valueStr) {
+      return;
+    }
+    let value = parseFloat(valueStr);
+    if (typeof value !== 'number' || isNaN(value) || value < 0) {
+      setIsError(lastUpdated);
+      return;
+    }
+    try {
+      let priceVal = parseFloat(price);
+      let valLeft = parseFloat(leftQuantity);
+      let valRight = parseFloat(rightQuantity);
+      if (priceVal && priceVal > 0) {
+        if (lastUpdated === 'right') {
+          valLeft = valRight / priceVal;
+          setLeftQuantity(valLeft.toFixed(4));
+        } else {
+          valRight = valLeft * priceVal;
+          setRightQuantity(valRight.toFixed(4));
+        }
+      }
+      setIsError(false);
+      setErrorDetails(undefined);
+      if (!usingMax) {
+        if (side === 'buy') {
+          if (valRight > parseFloat(balancesStr['eXTC'])) {
+            setIsError('right');
+            setErrorDetails("Insufficient balance");
+          }
+        } else {
+          if (valLeft > parseFloat(balancesStr['eICP'])) {
+            setIsError('left');
+            setErrorDetails("Insufficient balance");
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setIsError(lastUpdated);
+      setErrorDetails(err.message);
+    }
+
+  }, [lastUpdated, leftQuantity, rightQuantity, price, side]);
+
+  React.useEffect(() => {
+    getAssignedBroker(getIdentity())
+      .then(broker => broker.getAccruedExtraRewards(getIdentity().getPrincipal()))
+      .then(rewards => {
+        setExtraRewards([bigIntToStr(rewards.token_a, 'eICP', 2), bigIntToStr(rewards.token_b, 'eXTC', 2)])
+      })
+      .catch(err => console.error("error retrieving extra rewards"));
+
+  }, [isLoggedIn])
+
+  const handleLeftChange = e => {
+    setLeftQuantity(e.target.value);
+    setLastUpdated('left');
+    setUsingMax(false);
+  };
+  const handleRightChange = e => {
+    setRightQuantity(e.target.value);
+    setLastUpdated('right');
+    setUsingMax(false);
+  };
+  const handlePriceChange = e => {
+    let newVal;
+    if (!e.target.value) {
+      newVal = e.target.value;
+    } else {
+      let val = parseFloat(e.target.value);
+      if (!val) return;
+      if (Math.floor(val * Math.pow(10, MAX_NUMBER_OF_PRICE_DECIMALS)) === val * Math.pow(10, MAX_NUMBER_OF_PRICE_DECIMALS)) {
+        newVal = e.target.value;
+      } else {
+        newVal = val.toFixed(MAX_NUMBER_OF_PRICE_DECIMALS);
+      }
+    }
+    setPrice(newVal);
+    setLastUpdated('price');
+    setUsingMax(false);
+  };
+  const handleSetMax = () => {
+    if (side === 'buy') {
+      setRightQuantity(balancesStr['eXTC']);
+      setLastUpdated('right');
+    } else {
+      setLeftQuantity(balancesStr['eICP']);
+      setLastUpdated('left');
+    }
+    setUsingMax(true);
+  }
+  const changeSide = newSide => {
+    setSide(newSide);
+  }
+  const handleToggleAllowTaker = e => {
+    if (e.target.checked) {
+      dispatch(setAllowTaker())
+    } else {
+      dispatch(setOnlyMaker())
+    }
+  }
+
+  const execute = () => {
+    let quantity;
+    if (usingMax) {
+      if (side === 'buy') {
+        quantity = balances['eXTC'];
+      } else {
+        quantity = balances['eICP'];
+      }
+    } else {
+      if (side === 'buy') {
+        quantity = floatToBigInt(parseFloat(rightQuantity), 'eXTC');
+      } else {
+        quantity = floatToBigInt(parseFloat(leftQuantity), 'eICP');
+      }
+    }
+    let limit_price = parseFloat(price);
+    let canisterId;
+    if (side === 'buy') {
+      canisterId = canisterIdB;
+    } else {
+      canisterId = canisterIdA;
+    }
+
+    setExecuting(true);
+    executeOrder(getIdentity(), canisterId, side === 'sell', quantity, limit_price, allowTaker)
+      .then(() => {
+        setLeftQuantity('');
+        setRightQuantity('');
+      })
+      .catch(err => {
+        console.error(err);
+        setErrorDetails("trade error");
+      })
+      .then(() => {
+        setExecuting(false);
+      })
+  }
+
+  const readyToTrade = !isError && parseFloat(price) && parseFloat(price) > 0 && parseFloat(leftQuantity) && parseFloat(leftQuantity) > 0;
+
   return (
-    <h2>Trade</h2>
+    <div className="container">
+      <div className="trade_content">
+        <div className="content_wrap1">
+          <div className="cal_area">
+            <div className="eicp_box" style={{border: "none", cursor: "default"}}>
+              <div style={{marginRight: 10}}>
+                <img style={{width: 30}} src={logoA} alt=""/>
+                <img style={{width: 30}} src={logoB} alt=""/>
+              </div>
+              <span>eICP/eXTC</span>
+            </div>
+            <div className="price_line">
+              <strong>Current Balance:</strong>{balancesStr['eICP']} eICP / {balancesStr['eXTC']} eXTC<br/><br/>
+              <strong>Accrued Market Maker Rewards:</strong>{extraRewards[0] || '--'} eICP
+              / {extraRewards[1] || '--'} eXTC
+            </div>
+            <div className="cal">
+              <ul className="nav nav-tabs" id="myTab" role="tablist">
+                <li className="nav-item" role="presentation">
+                  <button className={`nav-link buy${side === 'buy' ? ' active' : ''}`} id="buy-tab" data-bs-toggle="tab"
+                          data-bs-target="#buy" type="button"
+                          role="tab"
+                          onClick={() => changeSide('buy')}
+                          aria-controls="buy" aria-selected={side === 'buy' ? 'true' : 'false'}>BUY
+                  </button>
+                </li>
+                <li className="nav-item" role="presentation">
+                  <button className={`nav-link sell${side === 'sell' ? ' active' : ''}`} id="sell-tab"
+                          data-bs-toggle="tab" data-bs-target="#sell"
+                          type="button"
+                          onClick={() => changeSide('sell')}
+                          role="tab" aria-controls="sell" aria-selected={side === 'sell' ? 'true' : 'false'}>SELL
+                  </button>
+                </li>
+              </ul>
+              <div className="tab-content" id="myTabContent">
+                <div className="tab-pane show active" id="sell" role="tabpanel" aria-labelledby="sell-tab">
+                  <form action="">
+                    <div className="form_group">
+                      <label htmlFor="">Amount <a onClick={() => handleSetMax()}>MAX</a> </label>
+                      <div className={"input_wrap" + (isError === "left" ? " error_border" : "")}>
+                        <input value={leftQuantity} onChange={handleLeftChange} type="number" name="" id=""/>
+                        <div className="icon"><img src={logoA} alt=""/><span>eICP</span></div>
+                      </div>
+                    </div>
+                    <div className="form_group">
+                      <label htmlFor="">Limit Price</label>
+                      <div className="input_wrap">
+                        <input value={price} onChange={handlePriceChange} type="number" name="" id=""/>
+                        <div className="icon"><img src={logoB} alt=""/><span>eXTC</span></div>
+                      </div>
+                    </div>
+                    <div className="symbol">=</div>
+                    <div className="form_group mt-0">
+                      <label htmlFor="">Total</label>
+                      <div className={"input_wrap" + (isError === "right" ? " error_border" : "")}>
+                        <input value={rightQuantity} onChange={handleRightChange} type="number" name="" id=""/>
+                        <div className="icon"><img src={logoB} alt=""/><span>eXTC</span></div>
+                      </div>
+                    </div>
+                    <div className="text-end">
+                      <SwitchCheckbox style={{
+                        justifyContent: "space-around", maxWidth: 250,
+                        marginLeft: "auto", marginRight: "auto"
+                      }} checked={allowTaker} handleOnChange={handleToggleAllowTaker} textOff="Only Maker"
+                                      textOn="Allow Taker"
+                                      styleOff={{width: 34}} styleOn={{width: 53}}/>
+                    </div>
+                    <div className="text-end">
+                      {/*<a className="advanced" href="#">Advanced</a>*/}
+                    </div>
+                    <div className="text-center">
+                      {
+                        !isLoggedIn ? (
+                          <a className="btn btn-black-disabled">CONNECT WALLET</a>
+                        ) : (
+                          executing ? (
+                            <div style={{position: "absolute", left: "33%", bottom: "5px"}}>
+                              <img style={{width: 30, margin: 12}} src="img/spinner.svg"/>
+                              <LoadingText style={{fontSize: "large"}} text="Submitting" speed={200}/>
+                            </div>
+                          ) : (
+                            readyToTrade ? (
+                              <button className="btn btn-black" onClick={() => execute()}>SUBMIT ORDER</button>
+                            ) : (
+                              <button className="btn btn-black-disabled">SUBMIT ORDER</button>
+                            )
+                          )
+                        )
+                      }
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="trades_table">
+            <ul className="nav nav-tabs" id="myTab" role="tablist">
+              <li className="nav-item" role="presentation">
+                <button className="nav-link active" id="trades_table_tab" data-bs-toggle="tab"
+                        data-bs-target="#trades_table"
+                        type="button" role="tab" aria-controls="trades_table" aria-selected="true">Trades
+                </button>
+              </li>
+              <li className="nav-item" role="presentation">
+                <button className="nav-link" id="orderbook-tab" data-bs-toggle="tab" data-bs-target="#orderbook_table"
+                        type="button" role="tab" aria-controls="orderbook_table" aria-selected="false">Orderbook
+                </button>
+              </li>
+            </ul>
+            <div className="tab-content" id="myTabContent">
+              <div className="tab-pane show active" id="trades_table" role="tabpanel"
+                   aria-labelledby="trades_table_tab">
+                <div className="trades_table_body" data-simplebar>
+                  <table>
+                    <tbody>
+                    <tr>
+                      <th>Price (eICP)</th>
+                      <th>Size (eXTC)</th>
+                      <th>Time</th>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>1.01</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>2.33</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="tab-pane" id="orderbook_table" role="tabpanel" aria-labelledby="orderbook-tab">
+                <div className="trades_table_body" data-simplebar>
+                  <table>
+                    <tbody>
+                    <tr>
+                      <th>Price (eICP)</th>
+                      <th>Size (eXTC)</th>
+                      <th>Time</th>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>1.01</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>2.33</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="green">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    <tr>
+                      <td className="red">0.000000121342</td>
+                      <td>142</td>
+                      <td>12:05.07 PM</td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="chart" style={{display: "none"}}>
+            <div className="select">
+              <p>eICP/eXTC</p>
+              <select name="" id="">
+                <option value="">1D</option>
+                <option value="">2D</option>
+                <option value="">3D</option>
+              </select>
+            </div>
+            <img src="img/chart.png" width="100%" alt=""/>
+          </div>
+        </div>
+        <div className="content_wrap2" style={{height: 250}}>
+          <div className="openOrder_table">
+            <ul className="nav nav-tabs" id="myTab" role="tablist">
+              <li className="nav-item" role="presentation">
+                <button className="nav-link active" id="open-orders-tab" data-bs-toggle="tab"
+                        data-bs-target="#open-orders" type="button" role="tab" aria-controls="open-orders"
+                        aria-selected="true">Open Orders (3)
+                </button>
+              </li>
+              <li className="nav-item" role="presentation">
+                <button className="nav-link" id="past-orders-tab" data-bs-toggle="tab" data-bs-target="#past-orders"
+                        type="button" role="tab" aria-controls="past-orders" aria-selected="false">Past Orders
+                </button>
+              </li>
+            </ul>
+            <div className="tab-content" id="myTabContent">
+              <div className="tab-pane show active" id="open-orders" role="tabpanel" aria-labelledby="open-orders-tab">
+                <div className="openOrder_table_body">
+                  <div className="wrapper1">
+                    <div className="wrapper2">
+                      <table>
+                        <tbody>
+                        <tr>
+                          <th>Status</th>
+                          <th>Product</th>
+                          <th>Side</th>
+                          <th>Amount</th>
+                          <th>Price</th>
+                          <th>Good till</th>
+                          <th></th>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="tab-pane" id="past-orders" role="tabpanel" aria-labelledby="past-orders-tab">
+                <div className="openOrder_table_body">
+                  <div className="wrapper1">
+                    <div className="wrapper2">
+                      <table>
+                        <tbody>
+                        <tr>
+                          <th>Status</th>
+                          <th>Product</th>
+                          <th>Side</th>
+                          <th>Amount</th>
+                          <th>Price</th>
+                          <th>Good till</th>
+                          <th></th>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        <tr>
+                          <td>Submitted</td>
+                          <td>eICP/eXTC</td>
+                          <td>BUY</td>
+                          <td>4.32</td>
+                          <td>7.43</td>
+                          <td>2022-06-01 15:32 PM</td>
+                          <td><a className="btn" href="#">CANCEL</a></td>
+                        </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

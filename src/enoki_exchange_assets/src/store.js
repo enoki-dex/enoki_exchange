@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit'
 import swapReducer from "./state/swapSlice";
 import internetIdentityReducer from "./state/internetIdentitySlice";
 import lastTradeReducer from "./state/lastTradeSlice";
+import tradeReducer from "./state/tradeSlice";
 
 const DEFAULT_II = {
   isLoggedIn: false
@@ -39,6 +40,7 @@ const store = configureStore({
     swap: swapReducer,
     ii: internetIdentityReducer,
     lastTrade: lastTradeReducer,
+    trade: tradeReducer,
   },
   preloadedState: loadFromLocalStorage()
 });

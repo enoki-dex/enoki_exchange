@@ -10,11 +10,13 @@ import {getAssignedTokenShard} from "../../actors/getMainToken";
 import getTokenShard from "../../actors/getTokenShard";
 import {setTradeOccurred} from "../../state/lastTradeSlice";
 import LoadingText from "../shared/LoadingText";
+import useLogo from "../../hooks/useLogo";
 
 const WalletModal = ({toggleShowWallet}) => {
   let {logout, getIdentity} = useLogin();
+  const logoA = useLogo({canisterId: canisterIdA});
+  const logoB = useLogo({canisterId: canisterIdB});
   const dispatch = useDispatch();
-
   const balanceEIcp = useTokenBalance({principal: canisterIdA});
   const balanceEXtc = useTokenBalance({principal: canisterIdB});
   const balanceEIcpStr = balanceEIcp !== null && bigIntToStr(balanceEIcp, 'eICP', 6, null);
@@ -61,7 +63,7 @@ const WalletModal = ({toggleShowWallet}) => {
             <div className="box">
               <h5>Enoki-Boosted Tokens</h5>
               <div className="icon_box">
-                <img className="icon" src="img/icp_test.svg" alt=""/>
+                <img className="icon" src={logoA} alt=""/>
                 <div className="content">
                   <p><b>{balanceEIcpStr !== null ? balanceEIcpStr : "--"}</b> eICP</p>
                   {
@@ -78,7 +80,7 @@ const WalletModal = ({toggleShowWallet}) => {
                 </div>
               </div>
               <div className="icon_box">
-                <img className="icon" src="img/xtc_test.svg" alt=""/>
+                <img className="icon" src={logoB} alt=""/>
                 <div className="content">
                   <p><b>{balanceEXtcStr !== null ? balanceEXtcStr : "--"}</b> eXTC</p>
                   {

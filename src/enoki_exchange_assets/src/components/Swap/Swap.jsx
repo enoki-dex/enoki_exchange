@@ -12,11 +12,7 @@ import LoadingText from "../shared/LoadingText";
 import {getAssignedTokenShard} from "../../actors/getMainToken";
 import {Actor} from "@dfinity/agent";
 import {setTradeOccurred} from "../../state/lastTradeSlice";
-
-const IMAGES = {
-  "eICP": "icp_test.svg",
-  "eXTC": "xtc_test.svg",
-};
+import useLogo from "../../hooks/useLogo";
 
 const NUM_DECIMALS_QUANTITY = {
   'eICP': 4,
@@ -81,6 +77,13 @@ const Swap = () => {
   const [lastUpdatedLeft, setLastUpdatedLeft] = React.useState(true);
   const [isFetching, setIsFetching] = React.useState(false);
   const dispatch = useDispatch();
+  const logoA = useLogo({canisterId: canisterIdA});
+  const logoB = useLogo({canisterId: canisterIdB});
+
+  const logos = {
+    'eICP': logoA,
+    'eXTC': logoB,
+  }
 
   const balances = {
     'eICP': useTokenBalance({principal: canisterIdA}),
@@ -131,7 +134,7 @@ const Swap = () => {
         }
       }
       setPriceDecimals(decimalsPrice);
-      if (valueLeft !== null && valueLeft > parseFloat(balancesStr[pair[0]])) {
+      if (!usingMax && valueLeft !== null && valueLeft > parseFloat(balancesStr[pair[0]])) {
         setIsError('left');
         setErrorDetails("Insufficient balance");
       } else {
@@ -208,16 +211,18 @@ const Swap = () => {
     }
     setExecutingSwap(true);
     execute_swap(getIdentity(), canisterId, pair[0] === 'eICP', quantity, limit_price)
+      .then(() => {
+        setLeftSwapValue("0");
+        setRightSwapValue("0");
+      })
       .catch(err => {
         console.error(err);
         setErrorDetails("swap error");
       })
       .then(() => {
         setExecutingSwap(false);
-        setLeftSwapValue("0");
-        setRightSwapValue("0");
         dispatch(setTradeOccurred());
-      });
+      })
   }
 
   const priceInRightToken = pair[1] === 'eICP' ? price : (price && 1 / price);
@@ -232,7 +237,7 @@ const Swap = () => {
           <div className="match_box">
             <div className={"select_wrap" + (isError === "left" ? " error_border" : "")}>
               <div className="input_wrap">
-                <img src={`img/${IMAGES[pair[0]]}`} alt=""/>
+                <img src={logos[pair[0]]} alt=""/>
                 <h3>{pair[0]}</h3>
               </div>
               <input type='number' value={leftSwapValue} onChange={handleLeftChange}/>
@@ -249,7 +254,7 @@ const Swap = () => {
             </a>
             <div className={"select_wrap" + (isError === "right" ? " error_border" : "")}>
               <div className="input_wrap">
-                <img src={`img/${IMAGES[pair[1]]}`} alt=""/>
+                <img src={logos[pair[1]]} alt=""/>
                 <h3>{pair[1]}</h3>
               </div>
               <input type='number' value={rightSwapValue} onChange={handleRightChange}/>
@@ -269,10 +274,11 @@ const Swap = () => {
                 ) : (
                   <span>
                     1 {pair[1]} = {
-                    (!isFetching && typeof price !== 'undefined' && price !== null) ? (
-                      priceInRightToken.toFixed(priceDecimals)
-                    ) : (
+                    isFetching ? (
                       <img style={{width: 17, margin: "0 3px 3px"}} src="img/spinner.svg"/>
+                    ) : (
+                      (typeof price !== 'undefined' && price !== null) ? priceInRightToken.toFixed(priceDecimals) :
+                        <span>&nbsp;--</span>
                     )
                   } {pair[0]}
                   </span>

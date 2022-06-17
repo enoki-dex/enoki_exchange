@@ -13,6 +13,7 @@ import {useDispatch} from "react-redux";
 import {getAssignedTokenShard} from "../../actors/getMainToken";
 import {getAssignedBroker} from "../../actors/getEnokiExchange";
 import {Actor} from "@dfinity/agent";
+import useLogo from "../../hooks/useLogo";
 
 const getTokenBalances = async identity => {
   let principal = identity.getPrincipal();
@@ -74,6 +75,8 @@ const ChangePool = ({adding, setDone}) => {
   const {
     isLoggedIn, getIdentity
   } = useLogin();
+  const logoA = useLogo({canisterId: canisterIdA});
+  const logoB = useLogo({canisterId: canisterIdB});
   const [balances, setBalances] = React.useState([0, 0]);
   const [balancesStr, setBalancesStr] = React.useState([null, null]);
   const [isErrorA, setIsErrorA] = React.useState(null);
@@ -196,7 +199,7 @@ const ChangePool = ({adding, setDone}) => {
       <div className="match_box">
         <div className={"select_wrap" + (isErrorA ? " error_border" : "")}>
           <div className="input_wrap">
-            <img src="img/icp_test.svg" alt=""/>
+            <img src={logoA} alt=""/>
             <h3>eICP</h3>
           </div>
           <input type='number' value={leftValue} onChange={handleLeftChange}/>
@@ -213,7 +216,7 @@ const ChangePool = ({adding, setDone}) => {
         </a>
         <div className={"select_wrap" + (isErrorB ? " error_border" : "")}>
           <div className="input_wrap">
-            <img src="img/xtc_test.svg" alt=""/>
+            <img src={logoB} alt=""/>
             <h3>eXTC</h3>
           </div>
           <input type='number' value={rightValue} onChange={handleRightChange}/>

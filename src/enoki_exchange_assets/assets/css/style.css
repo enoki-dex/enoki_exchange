@@ -1,6 +1,140 @@
 /*====================== Google fonts ========================*/
-
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
+/*@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');*/
+/* vietnamese */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hJFQNYuDyP7bh.woff2) format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hJVQNYuDyP7bh.woff2) format('woff2');
+    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hK1QNYuDyPw.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hJFQNYuDyP7bh.woff2) format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hJVQNYuDyP7bh.woff2) format('woff2');
+    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hK1QNYuDyPw.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hJFQNYuDyP7bh.woff2) format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hJVQNYuDyP7bh.woff2) format('woff2');
+    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hK1QNYuDyPw.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hJFQNYuDyP7bh.woff2) format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hJVQNYuDyP7bh.woff2) format('woff2');
+    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hK1QNYuDyPw.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hJFQNYuDyP7bh.woff2) format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hJVQNYuDyP7bh.woff2) format('woff2');
+    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+    font-family: 'Quicksand';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url(../webfonts/6xKtdSZaM9iE8KbpRA_hK1QNYuDyPw.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 @font-face {
     font-family: 'Myriad Pro';
@@ -9,7 +143,7 @@
     url('../webfonts/MyriadPro-Regular.woff2') format('woff2'),
     url('../webfonts/MyriadPro-Regular.woff') format('woff'),
     url('../webfonts/MyriadPro-Regular.ttf') format('truetype'),
-    url('../webfonts/MyriadPro-Regular.svg#MyriadPro-Regular') format('svg');
+    url('../webfonts/MyriadPro-Regular.svg') format('svg');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -193,6 +327,7 @@ header .connect {
 header .connect:hover {
     text-decoration: underline;
 }
+
 header .connect.active {
     text-decoration: underline;
 }
@@ -316,6 +451,7 @@ header .wallet .arrow.active {
     left: 50%;
     top: -4.2rem;
 }
+
 .top_icon_before img {
     transform: translateX(-46%);
     width: 6rem;
@@ -325,6 +461,7 @@ header .wallet .arrow.active {
     border-style: solid;
     border-width: 4px;
 }
+
 .top_icon_before.clickable img:hover {
     border-color: white;
 }
@@ -352,7 +489,7 @@ header .wallet .arrow.active {
 .nice-select::after {
     border-bottom: none;
     border-right: none;
-    background: url(../img/bottom-arrow.png) no-repeat center;
+    background: url(../img/dropdown.svg) no-repeat center;
     background-size: contain;
     width: 1rem;
     right: 2.5rem;
@@ -657,8 +794,14 @@ header .wallet .arrow.active {
     border: none;
 }
 
-.cal .nav-tabs .nav-link.active {
-    background: #FF6473;
+.cal .nav-tabs .nav-link.sell.active {
+    background: #ff6473;
+    color: #000000;
+    font-weight: 700;
+}
+
+.cal .nav-tabs .nav-link.buy.active {
+    background: #00c363;
     color: #000000;
     font-weight: 700;
 }
@@ -675,6 +818,11 @@ header .wallet .arrow.active {
 .cal label a {
     font-weight: 700;
     color: var(--text-color);
+    text-decoration: underline !important;
+    cursor: pointer;
+}
+.cal label a:hover {
+    text-decoration: none !important;
 }
 
 .cal .input_wrap {
@@ -708,6 +856,8 @@ header .wallet .arrow.active {
 
 .cal .icon img {
     margin-right: 5px;
+    width: 30px;
+    margin-top: -5px;
 }
 
 .symbol {
@@ -1078,6 +1228,7 @@ th:last-child {
     color: var(--text-color);
     text-decoration: none;
 }
+
 .wallet-modal .modal-header a:hover {
     text-decoration: underline;
 }
@@ -1495,7 +1646,7 @@ th:last-child {
     transition: 0.3s;
 }
 
-.mode-switch label.input-checked{
+.mode-switch label.input-checked {
     /*background: #424242;*/
 }
 
@@ -1530,6 +1681,7 @@ th:last-child {
     padding: 16px 36px;
     border-radius: 35px;
 }
+
 .btn-small {
     padding: 5px 16px !important;
 }
@@ -1540,15 +1692,18 @@ th:last-child {
     background: #000;
     color: #fff;
 }
+
 .btn-black:hover {
     background: #333;
     color: #fff;
-    border-color: rgba(0,0,0,0);
+    border-color: rgba(0, 0, 0, 0);
 }
+
 .btn-black:active {
     transform: translateY(2px);
     transition-duration: 50ms;
 }
+
 .btn-black-disabled {
     cursor: not-allowed;
     text-transform: uppercase;
@@ -1556,10 +1711,11 @@ th:last-child {
     background: #969696;
     color: #fff;
 }
+
 .btn-black-disabled:hover {
     background: #969696;
     color: #fff;
-    border-color: rgba(0,0,0,0);
+    border-color: rgba(0, 0, 0, 0);
 }
 
 input::-webkit-outer-spin-button,

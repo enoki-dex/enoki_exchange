@@ -3,14 +3,15 @@ import useLogin from "../../hooks/useLogin";
 import {useSelector} from 'react-redux'
 import {canisterId as canisterIdA} from "../../../../declarations/enoki_wrapped_token";
 import {canisterId as canisterIdB} from "../../../../declarations/enoki_wrapped_token_b";
-import {bigIntToStr, floatToBigInt} from "../../utils/utils";
-import {getAssignedTokenShard} from "../../actors/getMainToken";
 import {enoki_liquidity_pool_worker} from "../../../../declarations/enoki_liquidity_pool_worker";
 import {bigIntToFloat} from "../../utils/utils";
 import ChangePool from "./ChangePool";
+import useLogo from "../../hooks/useLogo";
 
 const Pool = () => {
   const {isLoggedIn, getIdentity} = useLogin();
+  const logoA = useLogo({canisterId: canisterIdA});
+  const logoB = useLogo({canisterId: canisterIdB});
   const lastTradeTime = useSelector(state => state.lastTrade.lastTradeTime);
   const [liquidity, setLiquidity] = React.useState([0, 0]);
   const [netWithdrawals, setNetWithdrawals] = React.useState([0, 0]);
@@ -20,11 +21,13 @@ const Pool = () => {
 
   React.useEffect(() => {
     if (!isLoggedIn) {
+      setIsLoadingBalances(false);
+      setIsLoadingNetWithdrawals(false);
       return;
     }
     let stop = false;
 
-    //TODO: remove if/when we switch to canister hearbeat
+    //TODO: remove if/when we switch to canister heartbeat
     enoki_liquidity_pool_worker.triggerHeartbeat().then(() => {
       enoki_liquidity_pool_worker.getLiquidity(getIdentity().getPrincipal())
         .then(liquidity => {
@@ -89,8 +92,8 @@ const Pool = () => {
                       padding: "20px 0"
                     }} className="left_icon">
                       <div style={{marginRight: 10}}>
-                        <img style={{width: 30}} src="img/icp_test.svg" alt=""/>
-                        <img style={{width: 30}} src="img/xtc_test.svg" alt=""/>
+                        <img style={{width: 30}} src={logoA} alt=""/>
+                        <img style={{width: 30}} src={logoB} alt=""/>
                       </div>
                       <span className="name">eICP/eXTC</span>
                     </div>
