@@ -1,5 +1,4 @@
 type AssignedShards = record { token_a : principal; token_b : principal };
-type LiquidityAmount = record { token_a : vec nat8; token_b : vec nat8 };
 type LiquidityAmountNat = record { token_a : nat; token_b : nat };
 type LiquidityTradesNat = record {
   decreased : LiquidityAmountNat;
@@ -36,7 +35,7 @@ service : () -> {
   isUserRegistered : (principal) -> (bool) query;
   register : (principal) -> ();
   removeAllLiquidity : () -> ();
-  removeLiquidity : (LiquidityAmount) -> ();
+  removeLiquidity : (LiquidityAmountNat) -> ();
   setManager : (principal) -> ();
   setOwner : (principal) -> ();
   triggerHeartbeat : () -> (opt nat64);

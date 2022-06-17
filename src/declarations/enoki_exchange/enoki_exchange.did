@@ -34,7 +34,6 @@ service : () -> {
   register : (principal) -> (principal);
   setFees : (nat, nat, float64, float64, float64) -> ();
   setOwner : (principal) -> ();
-  triggerRun : () -> ();
   whoami : () -> (principal) query;
   whoisanon : () -> (principal) query;
 }

@@ -325,7 +325,7 @@ header .wallet .arrow.active {
     border-style: solid;
     border-width: 4px;
 }
-.top_icon_before img:hover {
+.top_icon_before.clickable img:hover {
     border-color: white;
 }
 
@@ -394,7 +394,7 @@ header .wallet .arrow.active {
     text-decoration: underline;
 }
 
-.swap_content .cal_details {
+.cal_details {
     display: flex;
     justify-content: space-between;
     margin-top: 2rem;
@@ -478,10 +478,6 @@ header .wallet .arrow.active {
 }
 
 /* pool body 2 */
-.pool_body2 .cal_details {
-    margin-top: 2rem;
-}
-
 .pool_body2 .btn {
     margin-top: 3rem;
 }
@@ -545,7 +541,7 @@ header .wallet .arrow.active {
     border: none;
 }
 
-.accordion button .name {
+.name {
     display: inline-block;
     font-size: 1.8rem;
     font-weight: 700;

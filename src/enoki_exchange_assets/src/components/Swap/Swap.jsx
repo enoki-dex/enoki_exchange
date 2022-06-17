@@ -168,7 +168,11 @@ const Swap = () => {
       .then(() => {
         if (stop) return;
         setIsFetching(false);
-      })
+      });
+
+    return () => {
+      stop = true;
+    }
   }, [isLoggedIn, leftSwapValue, pair])
 
   const handleLeftChange = e => {
@@ -210,6 +214,8 @@ const Swap = () => {
       })
       .then(() => {
         setExecutingSwap(false);
+        setLeftSwapValue("0");
+        setRightSwapValue("0");
         dispatch(setTradeOccurred());
       });
   }
@@ -238,7 +244,7 @@ const Swap = () => {
             </div>
           </div>
           <div className="match_box">
-            <a className="top_icon_before" onClick={() => switchPair()}>
+            <a className="top_icon_before clickable" onClick={() => switchPair()}>
               <img src="img/swap_icon.svg" alt=""/>
             </a>
             <div className={"select_wrap" + (isError === "right" ? " error_border" : "")}>

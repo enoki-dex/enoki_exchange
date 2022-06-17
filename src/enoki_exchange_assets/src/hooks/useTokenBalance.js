@@ -19,12 +19,17 @@ const useTokenBalance = ({principal}) => {
       setBalance(null);
       return;
     }
+    let stop = false;
     let tokenActor = createActor(principal);
     tokenActor.balanceOf(getIdentity().getPrincipal())
       .then(balance => {
+        if (stop) return;
         setBalance(balance);
       })
 
+    return () => {
+      stop = true;
+    }
   }, [principal, isLoggedIn, lastTradeTime])
 
 

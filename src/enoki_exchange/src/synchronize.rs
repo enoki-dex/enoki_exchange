@@ -43,15 +43,7 @@ pub async fn run() {
         return;
     }
 
-    // ic_cdk::api::print("start exchange run");
     let result = do_run().await;
-    // ic_cdk::api::print(format!(
-    //     "end exchange run {}",
-    //     match result {
-    //         Ok(_) => "OK".to_string(),
-    //         Err(err) => format!("with ERR: {:?}", err),
-    //     }
-    // ));
     if let Err(error) = result {
         ic_cdk::api::print(format!("ERROR during exchange run: {:?}", error));
     }
@@ -67,23 +59,23 @@ pub async fn do_run() -> Result<()> {
     let proposed_liquidity_target_for_brokers =
         liquidity::get_updated_liquidity_from_pool().await?;
 
-    ic_cdk::api::print(format!(
-        "[exchange] got liquidity: {:?}",
-        proposed_liquidity_target_for_brokers
-    ));
+    // ic_cdk::api::print(format!(
+    //     "[exchange] got liquidity: {:?}",
+    //     proposed_liquidity_target_for_brokers
+    // ));
 
     let (new_orders, orders_to_cancel) =
         flat_map_vecs(foreach_broker("retrieveOrders", |_| ()).await?);
 
-    ic_cdk::println!(
-        "[exchange] got {} new orders and {} to cancel",
-        new_orders.len(),
-        orders_to_cancel.len()
-    );
+    // ic_cdk::println!(
+    //     "[exchange] got {} new orders and {} to cancel",
+    //     new_orders.len(),
+    //     orders_to_cancel.len()
+    // );
 
     let (mut completed_orders, aggregate_bid_ask) = match_orders(new_orders, orders_to_cancel);
 
-    ic_cdk::println!("[exchange] completed orders: {:?}", completed_orders);
+    // ic_cdk::println!("[exchange] completed orders: {:?}", completed_orders);
 
     STATE.with(|s| {
         s.borrow_mut()
@@ -91,7 +83,7 @@ pub async fn do_run() -> Result<()> {
             .change_to_next(&aggregate_bid_ask)
     });
 
-    ic_cdk::println!("[exchange] submitting orders to brokers...");
+    // ic_cdk::println!("[exchange] submitting orders to brokers...");
 
     let changes_in_liquidity_by_broker = foreach_broker_map(
         "submitCompletedOrders",
@@ -106,11 +98,11 @@ pub async fn do_run() -> Result<()> {
     )
     .await?;
 
-    ic_cdk::println!("[exchange] updating changes in liquidity...");
+    // ic_cdk::println!("[exchange] updating changes in liquidity...");
 
     update_committed_broker_liquidity(changes_in_liquidity_by_broker).await?;
 
-    ic_cdk::println!("[exchange] end exchange sync");
+    // ic_cdk::println!("[exchange] end exchange sync");
 
     Ok(())
 }

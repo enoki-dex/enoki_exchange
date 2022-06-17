@@ -1,6 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
 import swapReducer from "./state/swapSlice";
-import balancesReducer from "./state/balancesSlice";
 import internetIdentityReducer from "./state/internetIdentitySlice";
 import lastTradeReducer from "./state/lastTradeSlice";
 
@@ -38,7 +37,6 @@ function loadFromLocalStorage() {
 const store = configureStore({
   reducer: {
     swap: swapReducer,
-    balances: balancesReducer,
     ii: internetIdentityReducer,
     lastTrade: lastTradeReducer,
   },

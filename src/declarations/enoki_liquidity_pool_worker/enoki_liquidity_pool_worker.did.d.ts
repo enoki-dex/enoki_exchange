@@ -1,9 +1,5 @@
 import type { Principal } from '@dfinity/principal';
 export interface AssignedShards { 'token_a' : Principal, 'token_b' : Principal }
-export interface LiquidityAmount {
-  'token_a' : Array<number>,
-  'token_b' : Array<number>,
-}
 export interface LiquidityAmountNat { 'token_a' : bigint, 'token_b' : bigint }
 export interface LiquidityTradesNat {
   'decreased' : LiquidityAmountNat,
@@ -40,7 +36,7 @@ export interface _SERVICE {
   'isUserRegistered' : (arg_0: Principal) => Promise<boolean>,
   'register' : (arg_0: Principal) => Promise<undefined>,
   'removeAllLiquidity' : () => Promise<undefined>,
-  'removeLiquidity' : (arg_0: LiquidityAmount) => Promise<undefined>,
+  'removeLiquidity' : (arg_0: LiquidityAmountNat) => Promise<undefined>,
   'setManager' : (arg_0: Principal) => Promise<undefined>,
   'setOwner' : (arg_0: Principal) => Promise<undefined>,
   'triggerHeartbeat' : () => Promise<[] | [bigint]>,

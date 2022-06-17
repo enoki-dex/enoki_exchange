@@ -25,10 +25,6 @@ export const idlFactory = ({ IDL }) => {
     'token_b' : TokenInfo,
     'price_number_of_decimals' : IDL.Nat64,
   });
-  const LiquidityAmount = IDL.Record({
-    'token_a' : IDL.Vec(IDL.Nat8),
-    'token_b' : IDL.Vec(IDL.Nat8),
-  });
   return IDL.Service({
     'addBroker' : IDL.Func([IDL.Principal], [], []),
     'addLiquidity' : IDL.Func([ShardedTransferNotification], [], []),
@@ -50,7 +46,7 @@ export const idlFactory = ({ IDL }) => {
     'isUserRegistered' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'register' : IDL.Func([IDL.Principal], [], []),
     'removeAllLiquidity' : IDL.Func([], [], []),
-    'removeLiquidity' : IDL.Func([LiquidityAmount], [], []),
+    'removeLiquidity' : IDL.Func([LiquidityAmountNat], [], []),
     'setManager' : IDL.Func([IDL.Principal], [], []),
     'setOwner' : IDL.Func([IDL.Principal], [], []),
     'triggerHeartbeat' : IDL.Func([], [IDL.Opt(IDL.Nat64)], []),

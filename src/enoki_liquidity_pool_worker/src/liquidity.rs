@@ -384,11 +384,11 @@ async fn add_liquidity(notification: ShardedTransferNotification) {
 
 #[update(name = "removeLiquidity")]
 #[candid_method(update, rename = "removeLiquidity")]
-async fn remove_liquidity(amount: LiquidityAmount) {
+async fn remove_liquidity(amount: LiquidityAmountNat) {
     let from = ic_cdk::caller();
 
     STATE
-        .with(|s| s.borrow_mut().pool.user_remove_liquidity(from, amount))
+        .with(|s| s.borrow_mut().pool.user_remove_liquidity(from, amount.into()))
         .unwrap();
 }
 
@@ -396,7 +396,7 @@ async fn remove_liquidity(amount: LiquidityAmount) {
 #[candid_method(update, rename = "removeAllLiquidity")]
 async fn remove_all_liquidity() {
     if let Some(liquidity) = STATE.with(|s| s.borrow().pool.get_user_liquidity(ic_cdk::caller())) {
-        remove_liquidity(liquidity).await;
+        remove_liquidity(liquidity.into()).await;
     }
 }
 
