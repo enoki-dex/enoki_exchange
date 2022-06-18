@@ -1041,7 +1041,7 @@ th:last-child {
     color: var(--text-color);
 }
 
-.trades_table table th:nth-child(even), td:nth-child(even) {
+.trades_table table th:nth-child(even),.trades_table table td:nth-child(even) {
     text-align: right;
 }
 

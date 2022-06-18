@@ -83,7 +83,6 @@ const OrderBook = ({lastPrice}) => {
   if (bids.length || asks.length) {
     let max = bids.concat(asks).reduce((max, next) => Math.max(max, next[1]), 0);
     let min = bids.concat(asks).reduce((min, next) => Math.min(min, next[1]), Number.MAX_VALUE);
-    console.log("min", min, "max", max)
     mappingFun = val => {
       if (max - min > 0.01) {
         return 10 + 60 * (val - min) / (max - min);

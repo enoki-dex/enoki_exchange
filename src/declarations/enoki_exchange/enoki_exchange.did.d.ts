@@ -5,6 +5,11 @@ export interface BidAskCurve {
   'bids' : Array<[bigint, bigint]>,
   'num_decimals' : bigint,
 }
+export interface LastPricePoint {
+  'time' : bigint,
+  'price_was_lifted' : boolean,
+  'price' : number,
+}
 export interface TokenInfo { 'principal' : Principal }
 export interface TokenPairInfo {
   'token_a' : TokenInfo,
@@ -31,6 +36,7 @@ export interface _SERVICE {
   'getBrokerIds' : () => Promise<Array<Principal>>,
   'getLiquidityLocation' : () => Promise<Principal>,
   'getOwner' : () => Promise<Principal>,
+  'getPriceHistory' : () => Promise<Array<LastPricePoint>>,
   'getTokenInfo' : () => Promise<TokenPairInfo>,
   'getTradingFees' : () => Promise<TradingFees>,
   'initPool' : (arg_0: Principal) => Promise<undefined>,

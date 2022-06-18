@@ -1,30 +1,75 @@
 import React from "react";
-import useLogin from "../../hooks/useLogin";
-import {useSelector, useDispatch} from 'react-redux'
-import {setAllowTaker, setOnlyMaker} from "../../state/tradeSlice";
-import {canisterId as canisterIdA} from "../../../../declarations/enoki_wrapped_token";
-import {canisterId as canisterIdB} from "../../../../declarations/enoki_wrapped_token_b";
-import {bigIntToStr, floatToBigInt} from "../../utils/utils";
-import {getAssignedTokenShard} from "../../actors/getMainToken";
-import getEnokiExchange, {getAssignedBroker} from "../../actors/getEnokiExchange";
-import {enoki_liquidity_pool_worker} from "../../../../declarations/enoki_liquidity_pool_worker";
-import {bigIntToFloat} from "../../utils/utils";
-import useLogo from "../../hooks/useLogo";
-import useTokenBalance from "../../hooks/useTokenBalance";
-import SwitchCheckbox from "../shared/SwitchCheckbox";
-import LoadingText from "../shared/LoadingText";
-import {setTradeOccurred} from "../../state/lastTradeSlice";
-import {Actor} from "@dfinity/agent";
-import Order from "./Order";
 
-const ORDER_BOOK_LENGTH = 6;
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  TimeScale,
+  TimeSeriesScale,
+} from 'chart.js';
+import {Line} from "react-chartjs-2";
+import 'chartjs-adapter-moment'
 
-const priceToFloat = (priceInt, numDecimals) => {
-  return Number(priceInt) / Math.pow(10, Number(numDecimals));
-}
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  TimeScale,
+  TimeSeriesScale,
+);
+
+export const options = {
+  responsive: true,
+  scales: {
+    x: {
+      type: 'time',
+      time: {
+        unit: "minute",
+        stepSize: 5,
+        tooltipFormat: "hh:mm a",
+        displayFormats: {
+          "minute": "hh:mm a"
+        }
+      }
+    }
+  },
+  plugins: {
+    legend: {
+      position: 'none'
+    },
+  }
+};
 
 const PriceHistory = ({lastPrices}) => {
 
+  console.log(lastPrices);
+
+  const bullish = lastPrices && lastPrices.length && (lastPrices[0].price <= lastPrices[lastPrices.length - 1].price);
+
+  const bigIntToTimestamp = val => {
+    val /= BigInt(1e6);
+    return Number(val);
+  }
+
+  const data = {
+    labels: lastPrices.map(last => bigIntToTimestamp(last.time)) ,
+    datasets: [
+      {
+        data: lastPrices.map(last => last.price),
+        borderColor: bullish ? "#00C363" : "#FF6473",
+        cubicInterpolationMode: "monotone",
+      }
+    ],
+  };
+
+  // price: 5.95
+  // price_was_lifted: true
+  // time: 1655532621059354000n
 
   return (
     <div className="chart">
@@ -36,7 +81,9 @@ const PriceHistory = ({lastPrices}) => {
         {/*  <option value="">3D</option>*/}
         {/*</select>*/}
       </div>
-      <img src="img/chart.png" width="100%" alt=""/>
+      <div className="chart-wrapper">
+        <Line options={options} data={data} />
+      </div>
     </div>
   )
 }

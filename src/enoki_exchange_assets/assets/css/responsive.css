@@ -26,6 +26,9 @@
 }
 
 @media (min-width: 1400px) {
+    .chart-wrapper {
+        margin-top: 130px;
+    }
     .cal_area {
         width: 35%;
         margin-right: 2%;
