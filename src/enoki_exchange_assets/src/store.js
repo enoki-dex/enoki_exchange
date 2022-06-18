@@ -1,4 +1,4 @@
-import { configureStore } from '@reduxjs/toolkit'
+import {configureStore, combineReducers} from '@reduxjs/toolkit'
 import swapReducer from "./state/swapSlice";
 import internetIdentityReducer from "./state/internetIdentitySlice";
 import lastTradeReducer from "./state/lastTradeSlice";
@@ -35,18 +35,29 @@ function loadFromLocalStorage() {
   }
 }
 
+const appReducer = combineReducers({
+  swap: swapReducer,
+  ii: internetIdentityReducer,
+  lastTrade: lastTradeReducer,
+  trade: tradeReducer
+});
+
+const rootReducer = (state, action) => {
+  if (action.type === 'USER_LOGOUT') {
+    localStorage.clear();
+    return appReducer(undefined, action);
+  }
+
+  return appReducer(state, action)
+};
+
 const store = configureStore({
-  reducer: {
-    swap: swapReducer,
-    ii: internetIdentityReducer,
-    lastTrade: lastTradeReducer,
-    trade: tradeReducer,
-  },
+  reducer: rootReducer,
   preloadedState: loadFromLocalStorage()
 });
 
 store.subscribe(() => {
- saveToLocalStorage(store.getState());
+  saveToLocalStorage(store.getState());
 })
 
 export default store;

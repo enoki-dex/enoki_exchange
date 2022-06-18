@@ -20,6 +20,13 @@ const MAX_TIME_TO_LIVE = BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000);
 const APPLICATION_NAME = "Enoki";
 const APPLICATION_LOGO_URL = "https://enoki.ooo/favicon.ico"
 
+const logOutAction = () => {
+  return {
+    type: "USER_LOGOUT",
+    payload: {}
+  }
+}
+
 const useLogin = () => {
   const {isLoggedIn} = useSelector(state => state.ii);
   const dispatch = useDispatch();
@@ -49,6 +56,8 @@ const useLogin = () => {
       console.error("auth client still initializing...");
       return;
     }
+    dispatch(logOutAction());
+
     const url = provider === 'nfid' ?
       `https://nfid.one/authenticate/?applicationName=${encodeURIComponent(APPLICATION_NAME)}&applicationLogo=${encodeURIComponent(APPLICATION_LOGO_URL)}#authorize` :
       iiUrl;
@@ -67,9 +76,11 @@ const useLogin = () => {
     });
   };
   const logout = () => {
-    const _ = authClient.logout();
-    localStorage.clear();
-    dispatch(setLoggedOut())
+    authClient.logout()
+      .catch(e => console.error("error logging out: ", e))
+      .then(() => {
+        dispatch(logOutAction());
+      });
   }
 
   return {

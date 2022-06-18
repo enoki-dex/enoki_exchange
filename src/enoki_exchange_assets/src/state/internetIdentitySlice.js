@@ -9,14 +9,11 @@ export const internetIdentitySlice = createSlice({
     setLoggedIn: (state) => {
       state.isLoggedIn = true;
     },
-    setLoggedOut: (state) => {
-      state.isLoggedIn = false;
-    },
   },
 })
 
 // Action creators are generated for each case reducer function
-export const {setLoggedIn, setLoggedOut} = internetIdentitySlice.actions;
+export const {setLoggedIn} = internetIdentitySlice.actions;
 
 
 export default internetIdentitySlice.reducer
