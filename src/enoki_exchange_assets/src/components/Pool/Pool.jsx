@@ -11,6 +11,7 @@ import useHeartbeat from "../../hooks/useHeartbeat";
 
 const Pool = () => {
   const {isLoggedIn, getIdentity} = useLogin();
+  // noinspection JSUnusedLocalSymbols
   const lastExchangeUpdate = useHeartbeat();
   const logoA = useLogo({canisterId: canisterIdA});
   const logoB = useLogo({canisterId: canisterIdB});

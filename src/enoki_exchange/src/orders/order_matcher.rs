@@ -6,6 +6,8 @@ use enoki_exchange_shared::types::*;
 
 use crate::orders::bid_ask::BidAsk;
 use crate::orders::matching::OrderMatching;
+use crate::price_history;
+use crate::price_history::LastPrice;
 
 #[derive(serde::Deserialize, serde::Serialize, CandidType, Clone, Debug, Default)]
 pub struct OrderMatcher {
@@ -68,11 +70,15 @@ impl OrderMatcher {
             }
         }
 
+        let mut last_price: Option<LastPrice> = None;
+
         // execute or insert maker-taker orders
         for mut order in maker_taker {
             match order.info.side {
                 Side::Buy => {
-                    self.asks.try_match_with_asks(&mut order);
+                    if let Some(last) = self.asks.try_match_with_asks(&mut order) {
+                        last_price = Some(last);
+                    }
                     if order.is_complete() {
                         completed_orders.insert(order);
                     } else {
@@ -80,7 +86,9 @@ impl OrderMatcher {
                     }
                 }
                 Side::Sell => {
-                    self.bids.try_match_with_bids(&mut order);
+                    if let Some(last) = self.bids.try_match_with_bids(&mut order) {
+                        last_price = Some(last);
+                    }
                     if order.is_complete() {
                         completed_orders.insert(order);
                     } else {
@@ -94,14 +102,18 @@ impl OrderMatcher {
         for mut order in only_takers {
             match order.info.side {
                 Side::Buy => {
-                    self.asks.try_match_with_asks(&mut order);
+                    if let Some(last) = self.asks.try_match_with_asks(&mut order) {
+                        last_price = Some(last);
+                    }
                     if !order.is_complete() {
                         order.state.status = OrderStatus::InsufficientLiquidity;
                     }
                     completed_orders.insert(order);
                 }
                 Side::Sell => {
-                    self.bids.try_match_with_bids(&mut order);
+                    if let Some(last) = self.bids.try_match_with_bids(&mut order) {
+                        last_price = Some(last);
+                    }
                     if !order.is_complete() {
                         order.state.status = OrderStatus::InsufficientLiquidity;
                     }
@@ -135,6 +147,10 @@ impl OrderMatcher {
             .chain(self.bids.take_completed())
         {
             completed_orders.insert(completed);
+        }
+
+        if let Some(last) = last_price {
+            price_history::save_last_price(last);
         }
 
         (

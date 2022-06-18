@@ -28,11 +28,6 @@
       ],
       "type": "assets"
     },
-    "ledger": {
-      "type": "custom",
-      "candid": "src_dev/ledger/ledger.did",
-      "wasm": "src_dev/ledger/ledger.wasm"
-    },
     "internet_identity": {
       "type": "custom",
       "candid": "src_dev/internet_identity/internet_identity.did",

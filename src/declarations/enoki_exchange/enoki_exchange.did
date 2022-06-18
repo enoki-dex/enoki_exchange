@@ -4,6 +4,11 @@ type BidAskCurve = record {
   bids : vec record { nat64; nat };
   num_decimals : nat64;
 };
+type LastPricePoint = record {
+  time : nat64;
+  price_was_lifted : bool;
+  price : float64;
+};
 type TokenInfo = record { "principal" : principal };
 type TokenPairInfo = record {
   token_a : TokenInfo;
@@ -28,6 +33,7 @@ service : () -> {
   getBrokerIds : () -> (vec principal) query;
   getLiquidityLocation : () -> (principal);
   getOwner : () -> (principal) query;
+  getPriceHistory : () -> (vec LastPricePoint) query;
   getTokenInfo : () -> (TokenPairInfo) query;
   getTradingFees : () -> (TradingFees) query;
   initPool : (principal) -> ();

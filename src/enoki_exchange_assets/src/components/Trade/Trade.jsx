@@ -6,7 +6,7 @@ import {canisterId as canisterIdA} from "../../../../declarations/enoki_wrapped_
 import {canisterId as canisterIdB} from "../../../../declarations/enoki_wrapped_token_b";
 import {bigIntToStr, floatToBigInt} from "../../utils/utils";
 import {getAssignedTokenShard} from "../../actors/getMainToken";
-import {getAssignedBroker} from "../../actors/getEnokiExchange";
+import getEnokiExchange, {getAssignedBroker} from "../../actors/getEnokiExchange";
 import {enoki_liquidity_pool_worker} from "../../../../declarations/enoki_liquidity_pool_worker";
 import {bigIntToFloat} from "../../utils/utils";
 import useLogo from "../../hooks/useLogo";
@@ -18,6 +18,7 @@ import {Actor} from "@dfinity/agent";
 import Orders from "./Orders";
 import OrderBook from "./OrderBook";
 import useHeartbeat from "../../hooks/useHeartbeat";
+import PriceHistory from "./PriceHistory";
 
 const NUM_DECIMALS_QUANTITY = {
   'eICP': 4,
@@ -48,6 +49,7 @@ const Trade = () => {
   const dispatch = useDispatch();
   const allowTaker = useSelector(state => state.trade.allowTaker);
   const {isLoggedIn, getIdentity} = useLogin();
+  // noinspection JSUnusedLocalSymbols
   const lastExchangeUpdate = useHeartbeat();
   const logoA = useLogo({canisterId: canisterIdA});
   const logoB = useLogo({canisterId: canisterIdB});
@@ -59,14 +61,10 @@ const Trade = () => {
   const [usingMax, setUsingMax] = React.useState(null);
   const [isError, setIsError] = React.useState(null);
   const [errorDetails, setErrorDetails] = React.useState(undefined);
-  const lastTradeTime = useSelector(state => state.lastTrade.lastTradeTime);
-  const [liquidity, setLiquidity] = React.useState([0, 0]);
-  const [netWithdrawals, setNetWithdrawals] = React.useState([0, 0]);
-  const [show, setShow] = React.useState(null);
-  const [isLoadingBalances, setIsLoadingBalances] = React.useState(true);
-  const [isLoadingNetWithdrawals, setIsLoadingNetWithdrawals] = React.useState(true);
   const [extraRewards, setExtraRewards] = React.useState([null, null]);
   const [executing, setExecuting] = React.useState(false);
+  const [lastPrices, setLastPrices] = React.useState([]);
+  const lastPrice = (lastPrices && lastPrices[lastPrices.length - 1]) || null;
 
   const balances = {
     'eICP': useTokenBalance({principal: canisterIdA}),
@@ -144,7 +142,31 @@ const Trade = () => {
     return () => {
       stop = true;
     }
-  }, [isLoggedIn])
+  }, [isLoggedIn]);
+
+  React.useEffect(() => {
+    let stop = false;
+    const fetch = () => getEnokiExchange(undefined).getPriceHistory()
+      .then(prices => {
+        if (stop) return;
+        setLastPrices(prices);
+      })
+      .catch(err => console.error("error retrieving last prices: ", err));
+
+    const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+    const run = async () => {
+      while (!stop) {
+        await fetch();
+        await wait(5000);
+      }
+    }
+
+    let _ = run();
+
+    return () => {
+      stop = true;
+    }
+  }, [])
 
   const handleLeftChange = e => {
     setLeftQuantity(e.target.value);
@@ -303,9 +325,18 @@ const Trade = () => {
                                       textOn="Allow Taker"
                                       styleOff={{width: 34}} styleOn={{width: 53}}/>
                     </div>
-                    <div className="text-end">
-                      {/*<a className="advanced" href="#">Advanced</a>*/}
-                    </div>
+                    {/*<div className="text-end">*/}
+                    {/*<a className="advanced" href="#">Advanced</a>*/}
+                    {/*</div>*/}
+                    {
+                      errorDetails && (
+                        <div className="text-center">
+                          <span className="error_text">
+                            {errorDetails}
+                          </span>
+                        </div>
+                      )
+                    }
                     <div className="text-center">
                       {
                         !isLoggedIn ? (
@@ -331,21 +362,11 @@ const Trade = () => {
               </div>
             </div>
           </div>
-          <OrderBook />
-          <div className="chart" style={{display: "none"}}>
-            <div className="select">
-              <p>eICP/eXTC</p>
-              <select name="" id="">
-                <option value="">1D</option>
-                <option value="">2D</option>
-                <option value="">3D</option>
-              </select>
-            </div>
-            <img src="img/chart.png" width="100%" alt=""/>
-          </div>
+          <OrderBook lastPrice={lastPrice}/>
+          <PriceHistory lastPrices={lastPrices}/>
         </div>
         <div className="content_wrap2" style={{height: 250}}>
-          <Orders />
+          <Orders/>
         </div>
       </div>
     </div>

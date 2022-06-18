@@ -66,6 +66,7 @@ const execute_swap = async (identity, canisterId, sellingTokenA, quantity, price
 
 const Swap = () => {
   const {isLoggedIn, getIdentity} = useLogin();
+  // noinspection JSUnusedLocalSymbols
   const lastExchangeUpdate = useHeartbeat();
   const [pair, setPair] = React.useState(['eICP', 'eXTC']);
   const [leftSwapValue, setLeftSwapValue] = React.useState("0.0");

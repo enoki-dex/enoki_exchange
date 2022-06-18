@@ -23,16 +23,13 @@ const priceToFloat = (priceInt, numDecimals) => {
   return Number(priceInt) / Math.pow(10, Number(numDecimals));
 }
 
-const OrderBook = () => {
-  const {isLoggedIn, getIdentity} = useLogin();
+const OrderBook = ({lastPrice}) => {
   const [bids, setBids] = React.useState([]);
   const [asks, setAsks] = React.useState([]);
 
   React.useEffect(() => {
-    if (!isLoggedIn) return;
-
     let stop = false;
-    const fetch = () => getEnokiExchange(getIdentity()).getBidAskCurve()
+    const fetch = () => getEnokiExchange(undefined).getBidAskCurve()
       .then(bidAsk => {
         if (stop) return;
 
@@ -80,7 +77,21 @@ const OrderBook = () => {
     return () => {
       stop = true;
     }
-  }, [isLoggedIn])
+  }, []);
+
+  let mappingFun;
+  if (bids.length || asks.length) {
+    let max = bids.concat(asks).reduce((max, next) => Math.max(max, next[1]), 0);
+    let min = bids.concat(asks).reduce((min, next) => Math.min(min, next[1]), Number.MAX_VALUE);
+    console.log("min", min, "max", max)
+    mappingFun = val => {
+      if (max - min > 0.01) {
+        return 10 + 60 * (val - min) / (max - min);
+      } else {
+        return 50;
+      }
+    }
+  }
 
   return (
     <div className="trades_table">
@@ -110,20 +121,32 @@ const OrderBook = () => {
               {
                 asks.map(([price, amount]) => (
                   <tr key={price.toString()}>
-                    <td className="red">{price}</td>
-                    <td>{amount.toFixed(0)}</td>
+                    <td className="red"
+                        style={{background: `linear-gradient(to left, var(--red-color) 0%, var(--red-color) ${Math.max(0, mappingFun(amount) - 50).toFixed(0)}%, var(--transparent-color) ${Math.max(0, mappingFun(amount) - 50).toFixed(0)}%, var(--transparent-color) 100%)`}}
+                    >{price}</td>
+                    <td
+                      style={{background: `linear-gradient(to left, var(--red-color) 0%, var(--red-color) ${(2 * Math.min(50, mappingFun(amount))).toFixed(0)}%, var(--transparent-color) ${(2 * Math.min(50, mappingFun(amount))).toFixed(0)}%, var(--transparent-color) 100%)`}}
+                    >{amount.toFixed(0)}
+                    </td>
                   </tr>
                 ))
               }
               <tr>
-                <td></td>
-                <td></td>
+                <td colSpan={2} style={{textAlign: "center"}}>
+                  {lastPrice && (
+                    <span className={lastPrice.price_was_lifted ? "green" : "red"} style={{fontSize: "large"}}><img style={{width: 12, marginRight: 3}} src={lastPrice.price_was_lifted ? "img/dropdown-green.svg" : "img/dropdown-red.svg"} className={lastPrice.price_was_lifted ? "invert-y" : ""}/> {lastPrice.price.toFixed(2)}</span>
+                  )}
+                </td>
               </tr>
               {
                 bids.map(([price, amount]) => (
                   <tr key={price.toString()}>
-                    <td className="green">{price}</td>
-                    <td>{amount.toFixed(0)}</td>
+                    <td className="green"
+                        style={{background: `linear-gradient(to left, var(--green-color) 0%, var(--green-color) ${Math.max(0, mappingFun(amount) - 50).toFixed(0)}%, var(--transparent-color) ${Math.max(0, mappingFun(amount) - 50).toFixed(0)}%, var(--transparent-color) 100%)`}}
+                    >{price}</td>
+                    <td
+                      style={{background: `linear-gradient(to left, var(--green-color) 0%, var(--green-color) ${(2 * Math.min(50, mappingFun(amount))).toFixed(0)}%, var(--transparent-color) ${(2 * Math.min(50, mappingFun(amount))).toFixed(0)}%, var(--transparent-color) 100%)`}}
+                    >{amount.toFixed(0)}</td>
                   </tr>
                 ))
               }

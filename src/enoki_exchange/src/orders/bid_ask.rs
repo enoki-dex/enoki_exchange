@@ -5,6 +5,7 @@ use candid::CandidType;
 use enoki_exchange_shared::types::*;
 
 use crate::orders::matching::OrderMatching;
+use crate::price_history::LastPrice;
 
 #[derive(serde::Deserialize, serde::Serialize, CandidType, Clone, Debug, Default)]
 pub struct BidAsk(BTreeMap<u64, Vec<Order>>);
@@ -59,25 +60,41 @@ impl BidAsk {
         }
         None
     }
-    pub fn try_match_with_asks(&mut self, order: &mut Order) {
+    pub fn try_match_with_asks(&mut self, order: &mut Order) -> Option<LastPrice> {
+        let mut last_price: Option<LastPrice> = None;
         for (&price, market) in self.0.iter_mut() {
             if price > order.info.limit_price {
                 break;
             }
             for executor in market.iter_mut() {
-                order.try_buy_from(executor);
+                if let Some(last) = order.try_buy_from(executor) {
+                    last_price = Some(LastPrice {
+                        price: last,
+                        time: ic_cdk::api::time(),
+                        price_was_lifted: true,
+                    });
+                }
             }
         }
+        last_price
     }
-    pub fn try_match_with_bids(&mut self, order: &mut Order) {
+    pub fn try_match_with_bids(&mut self, order: &mut Order) -> Option<LastPrice> {
+        let mut last_price: Option<LastPrice> = None;
         for (&price, market) in self.0.iter_mut().rev() {
             if price < order.info.limit_price {
                 break;
             }
             for executor in market.iter_mut() {
-                order.try_sell_to(executor);
+                if let Some(last) = order.try_sell_to(executor) {
+                    last_price = Some(LastPrice {
+                        price: last,
+                        time: ic_cdk::api::time(),
+                        price_was_lifted: false,
+                    })
+                }
             }
         }
+        last_price
     }
     pub fn cancel_expired(&mut self) {
         let now = ic_cdk::api::time();

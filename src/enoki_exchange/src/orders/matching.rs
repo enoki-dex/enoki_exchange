@@ -6,20 +6,22 @@ use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::{nat_div_float, nat_x_float};
 
 pub trait OrderMatching {
-    fn try_execute(&mut self, order_quantity_token: &EnokiToken, executor: &mut Self);
-    fn try_buy_from(&mut self, executor: &mut Self) {
+    fn try_execute(&mut self, order_quantity_token: &EnokiToken, executor: &mut Self) -> Option<u64>;
+    fn try_buy_from(&mut self, executor: &mut Self) -> Option<u64>{
         self.try_execute(&EnokiToken::TokenB, executor)
     }
-    fn try_sell_to(&mut self, executor: &mut Self) {
+    fn try_sell_to(&mut self, executor: &mut Self) -> Option<u64> {
         self.try_execute(&EnokiToken::TokenA, executor)
     }
     fn is_complete(&self) -> bool;
 }
 
 impl OrderMatching for Order {
-    fn try_execute(&mut self, order_quantity_token: &EnokiToken, executor: &mut Self) {
+    fn try_execute(&mut self, order_quantity_token: &EnokiToken, executor: &mut Self) -> Option<u64> {
+        let mut last_price: Option<u64> = None;
         if let OrderStatus::Pending = self.state.status {
             if let OrderStatus::Pending = executor.state.status {
+                last_price = Some(executor.info.limit_price);
                 let taker_fee = get_limit_order_taker_fee();
                 let mut quantity_remaining = self.state.quantity_remaining.take_as_nat();
                 quantity_remaining = nat_x_float(quantity_remaining, 1.0 - taker_fee).unwrap();
@@ -66,6 +68,7 @@ impl OrderMatching for Order {
                 });
             }
         }
+        last_price
     }
     fn is_complete(&self) -> bool {
         if let OrderStatus::Pending = self.state.status {

@@ -11,6 +11,8 @@ use enoki_exchange_shared::has_trading_fees::TradingFees;
 use enoki_exchange_shared::is_owned::{self, assert_is_owner, OwnershipData};
 #[allow(unused_imports)]
 use enoki_exchange_shared::types::{Result, BidAskCurve};
+#[allow(unused_imports)]
+use price_history::LastPricePoint;
 
 #[allow(unused_imports)]
 use crate::brokers::BrokerState;
@@ -22,6 +24,7 @@ mod orders;
 mod shared_candid_methods;
 mod synchronize;
 mod upgrade;
+mod price_history;
 
 #[init]
 #[candid_method(init)]

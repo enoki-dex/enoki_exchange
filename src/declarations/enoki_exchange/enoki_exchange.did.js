@@ -8,6 +8,11 @@ export const idlFactory = ({ IDL }) => {
     'bids' : IDL.Vec(IDL.Tuple(IDL.Nat64, IDL.Nat)),
     'num_decimals' : IDL.Nat64,
   });
+  const LastPricePoint = IDL.Record({
+    'time' : IDL.Nat64,
+    'price_was_lifted' : IDL.Bool,
+    'price' : IDL.Float64,
+  });
   const TokenInfo = IDL.Record({ 'principal' : IDL.Principal });
   const TokenPairInfo = IDL.Record({
     'token_a' : TokenInfo,
@@ -32,6 +37,7 @@ export const idlFactory = ({ IDL }) => {
     'getBrokerIds' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getLiquidityLocation' : IDL.Func([], [IDL.Principal], []),
     'getOwner' : IDL.Func([], [IDL.Principal], ['query']),
+    'getPriceHistory' : IDL.Func([], [IDL.Vec(LastPricePoint)], ['query']),
     'getTokenInfo' : IDL.Func([], [TokenPairInfo], ['query']),
     'getTradingFees' : IDL.Func([], [TradingFees], ['query']),
     'initPool' : IDL.Func([IDL.Principal], [], []),
