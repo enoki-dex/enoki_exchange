@@ -110,8 +110,6 @@ const Swap = () => {
   }
 
   React.useEffect(() => {
-    console.log("canisterIdA", canisterIdA);
-    console.log("canisterIdB", canisterIdB);
     // update data
     let value = parseFloat(lastUpdatedLeft ? leftSwapValue : rightSwapValue);
     if (typeof value !== 'number' || isNaN(value) || value < 0) {
@@ -168,10 +166,16 @@ const Swap = () => {
       ))
       .then(price => {
         if (stop) return;
+        console.log(`expected price for ${quantity} is ${price}`);
         setPrice(price);
       })
       .catch(err => {
         console.error(err);
+        if (/Insufficient Liquidity/i.test(err.message)) {
+          setErrorDetails("Insufficient liquidity. Try a lower value.");
+        } else {
+          setErrorDetails("An unexpected pricing error occurred.");
+        }
       })
       .then(() => {
         if (stop) return;
@@ -222,7 +226,11 @@ const Swap = () => {
       })
       .catch(err => {
         console.error(err);
-        setErrorDetails("swap error");
+        if (/slippage/i.test(err.message)) {
+          setErrorDetails("slippage exceeded: swap cancelled");
+        } else {
+          setErrorDetails("swap error");
+        }
       })
       .then(() => {
         setExecutingSwap(false);

@@ -1,6 +1,6 @@
 import {createSlice} from '@reduxjs/toolkit'
 
-const AUTO_VALUE = 0.1;
+const AUTO_VALUE = 0.3;
 
 export const swapSlice = createSlice({
   name: 'swap',

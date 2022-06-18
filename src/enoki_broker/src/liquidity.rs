@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
-use std::ops::{AddAssign};
+use std::ops::AddAssign;
 
 use candid::{candid_method, CandidType, Nat};
 use ic_cdk_macros::*;
@@ -10,7 +10,9 @@ use num_traits::Pow;
 use enoki_exchange_shared::has_token_info::{
     get_number_of_price_decimals, quantity_a_to_b, quantity_b_to_a, QuantityTranslator,
 };
-use enoki_exchange_shared::has_trading_fees::{get_swap_fee, get_swap_market_maker_reward};
+use enoki_exchange_shared::has_trading_fees::{
+    get_deposit_fee, get_swap_fee, get_swap_market_maker_reward,
+};
 use enoki_exchange_shared::liquidity::{
     RequestForNewLiquidityTarget, ResponseAboutLiquidityChanges,
 };
@@ -72,6 +74,17 @@ pub fn update_liquidity_target(
 #[query(name = "getExpectedSwapPrice")]
 #[candid_method(query, rename = "getExpectedSwapPrice")]
 fn get_expected_swap_price(side: Side, quantity: Nat) -> f64 {
+    let token = match side {
+        Side::Buy => EnokiToken::TokenB,
+        Side::Sell => EnokiToken::TokenA,
+    };
+    let deposit_fee = get_deposit_fee(&token);
+    let mut quantity = quantity - deposit_fee;
+    if let Some(transfer_fee) = payoffs::try_get_fee_for_transfer(&token) {
+        quantity -= transfer_fee;
+    };
+    let swap_fee = get_swap_fee();
+    quantity = nat_x_float(quantity, 1.0 - swap_fee).unwrap();
     let price_int = STATE
         .with(|s| s.borrow().bid_ask.get_avg_price_for(side, quantity))
         .unwrap();
@@ -96,7 +109,11 @@ pub async fn swap(mut order: ProcessedOrderInput) {
             Side::Buy => avg_price > order.limit_price_in_b,
             Side::Sell => avg_price < order.limit_price_in_b,
         } {
-            return Err(TxError::SlippageExceeded.into());
+            return Err(TxError::SlippageExceeded {
+                limit_price: order.limit_price_in_b,
+                actual_price: avg_price,
+            }
+            .into());
         }
 
         Ok(s.bid_ask

@@ -47,11 +47,16 @@ make test
 ```
 
 ### Local Frontend
+to add some test liquidity:
+```bash
+make liquidity
+```
 to build the frontend:
 ```bash
-dfx deploy
+npm i
+dfx deploy enoki_exchange_assets
 ```
-The app's local URL should be displayed.
+The app's local URL should be displayed under the name `enoki_exchange_assets`
 
 # Pending Features
 

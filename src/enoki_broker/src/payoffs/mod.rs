@@ -11,7 +11,7 @@ use enoki_exchange_shared::has_token_info::AssignedShards;
 use enoki_exchange_shared::interfaces::enoki_wrapped_token::ShardedTransferNotification;
 use enoki_exchange_shared::types::*;
 pub use exchange_tokens::exchange_tokens;
-pub use fees::charge_deposit_fee;
+pub use fees::{charge_deposit_fee, try_get_fee_for_transfer, get_fee_for_transfer};
 pub use fees::{
     export_stable_storage as export_stable_storage_fees,
     import_stable_storage as import_stable_storage_fees, AccruedFees,

@@ -11,5 +11,6 @@ while [ $i -le "$num_brokers" ]; do
   dfx deploy "${CANISTER_NAME}_$i"
   dfx canister call "${CANISTER_NAME}_$i" finishInit "($MANAGER_ID)"
   dfx canister call enoki_exchange addBroker "(principal \"$(dfx canister id "${CANISTER_NAME}_$i")\")"
+  dfx canister call "${CANISTER_NAME}_$i" updateUpstreamFees
   true $((i++))
 done

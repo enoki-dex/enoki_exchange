@@ -15,8 +15,8 @@ pub enum TxError {
     },
     #[error("Insufficient Liquidity Available")]
     InsufficientLiquidityAvailable,
-    #[error("Slippage Exceeded: swap was cancelled")]
-    SlippageExceeded,
+    #[error("Slippage Exceeded (limit {limit_price} vs actual {actual_price}): swap was cancelled")]
+    SlippageExceeded {limit_price: u64, actual_price: u64},
     #[error("Unauthorized")]
     Unauthorized,
     #[error("User {user} Not Registered at {registry}")]

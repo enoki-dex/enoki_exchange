@@ -4,6 +4,7 @@ use candid::{candid_method, CandidType, Nat};
 use ic_cdk_macros::*;
 
 use enoki_exchange_shared::has_token_info;
+use enoki_exchange_shared::has_token_info::quantity_b_to_a;
 use enoki_exchange_shared::liquidity::ResponseAboutLiquidityChanges;
 use enoki_exchange_shared::types::*;
 use enoki_exchange_shared::utils::flat_map_vecs;
@@ -121,7 +122,7 @@ pub fn get_bid_ask_curve() -> BidAskCurve {
         bids: bid_ask
             .bids
             .into_iter()
-            .map(|(price, bids)| (price, sum(bids)))
+            .map(|(price, bids)| (price, quantity_b_to_a(sum(bids), price).unwrap()))
             .collect(),
         asks: bid_ask
             .asks

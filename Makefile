@@ -27,6 +27,11 @@ test:
 	./tests/test_exchange.sh
 	./tests/test_liquidity_pool_withdrawing.sh
 
+.PHONY: liquidity
+.SILENT: liquidity
+liquidity:
+	./scripts/add_liquidity.sh
+
 .PHONY: clean
 .SILENT: clean
 clean:
