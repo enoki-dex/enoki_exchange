@@ -303,7 +303,7 @@ const Swap = ({setShowWalletButtons}) => {
                   ) : (
                     <span>
                     1 {pair[1]} = {
-                      isFetching ? (
+                      (isLoggedIn && isFetching) ? (
                         <img style={{width: 17, margin: "0 3px 3px"}} src="img/spinner.svg"/>
                       ) : (
                         (typeof price !== 'undefined' && price !== null) ? priceInRightToken.toFixed(priceDecimals) :
@@ -326,7 +326,7 @@ const Swap = ({setShowWalletButtons}) => {
             {
               isLoggedIn ? (
                 executingSwap ? (
-                  <LoadingButton className="btn-big" hiddenText="SWAP" />
+                  <LoadingButton className="btn-big" hiddenText="SWAP"/>
                 ) : (
                   readyToExecuteSwap ? (
                     <a className="btn connect btn-black btn-big" onClick={() => swap()}>SWAP</a>

@@ -6,7 +6,7 @@ const SwitchCheckbox = ({textOff, textOn, style = {}, styleOff = {}, styleOn = {
     <div style={style} className="mode-switch">
       <p style={styleOff} className={!checked ? "active" : ""}>{textOff}</p>
       <div>
-        <label className={checked ? "input-checked" : ""}>
+        <label className={checked ? "input-checked" : ""} style={{margin: 0}}>
           <input type="checkbox"
                  checked={checked}
                  onChange={handleOnChange}/>

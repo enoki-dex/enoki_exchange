@@ -72,6 +72,23 @@
     #page_main_tab .content_wrap {
         padding: 4rem 0;
     }
+
+    .top_icon_before.clickable img:hover {
+        border-color: var(--transparent-color);
+    }
+
+    .top_icon_before.clickable img:active {
+        border-color: white;
+    }
+
+    header .connect:hover {
+        text-decoration: none;
+    }
+
+    header .connect:active {
+        text-decoration: underline;
+    }
+
 }
 
 /*Medium devices (tablets, 767px and down)*/

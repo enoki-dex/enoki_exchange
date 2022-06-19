@@ -151,7 +151,7 @@ const EmptyOrder = () => {
   return (
     <div style={{
       position: "absolute",
-      bottom: "30%",
+      bottom: "37%",
       marginLeft: "auto",
       marginRight: "auto",
       left: 0,
