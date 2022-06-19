@@ -4,38 +4,40 @@ import getEnokiExchange from "../actors/getEnokiExchange";
 
 // TODO: remove this hook when exchange updates automatically
 const useHeartbeat = () => {
-    const {
-        isLoggedIn, getIdentity
-    } = useLogin();
-    const [lastUpdateTime, setLastUpdateTime] = React.useState(null);
+  const {
+    isLoggedIn, getIdentity
+  } = useLogin();
+  const [lastUpdateTime, setLastUpdateTime] = React.useState(null);
 
-    React.useEffect(() => {
-        if (!isLoggedIn) {
-            return;
+  React.useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+    let stop = false;
+
+    const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
+    const run = async () => {
+      while (!stop) {
+        try {
+          await getEnokiExchange(getIdentity()).triggerRun();
+          if (stop) return;
+          setLastUpdateTime(Date.now());
+        } catch (err) {
+          console.error("error with exchange heartbeat: ", err);
         }
-        let stop = false;
+        await wait(5000);
+      }
+    }
+    run()
+      .catch(e => console.error("error with heartbeat: ", e));
 
-        const wait = delay => new Promise(resolve => setTimeout(resolve, delay));
-        const run = async () => {
-            while (!stop) {
-                try {
-                    await getEnokiExchange(getIdentity()).triggerRun();
-                    setLastUpdateTime(Date.now());
-                } catch (err) {
-                    console.error("error with exchange heartbeat: ", err);
-                }
-                await wait(5000);
-            }
-        }
-        let _ = run();
-
-        return () => {
-            stop = true;
-        }
-    }, [isLoggedIn])
+    return () => {
+      stop = true;
+    }
+  }, [isLoggedIn])
 
 
-    return lastUpdateTime;
+  return lastUpdateTime;
 }
 
 export default useHeartbeat;

@@ -57,7 +57,8 @@ const useOrderBook = () => {
       }
     }
 
-    let _ = run();
+    run()
+      .catch(e => console.error("error with order book: ", e))
 
     return () => {
       stop = true;

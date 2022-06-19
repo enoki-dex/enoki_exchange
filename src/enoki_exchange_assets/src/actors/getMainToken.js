@@ -29,16 +29,19 @@ const getMainToken = (identity, canisterId) => {
 
 export default getMainToken;
 
+export const getAssignedTokenShardPrincipal = async (identity, mainCanisterId) => {
+  try {
+    return await getMainToken(identity, mainCanisterId).getAssignedShardId(identity.getPrincipal());
+  } catch (err) {
+    return await getMainToken(identity, mainCanisterId).register(identity.getPrincipal());
+  }
+}
+
 /**
  *
  * @return {Promise<import("@dfinity/agent").ActorSubclass<import("../../../declarations/enoki_wrapped_token_shard_1/enoki_wrapped_token_shard_1.did.js")._SERVICE>>}
  */
 export const getAssignedTokenShard = async (identity, mainCanisterId) => {
-  let assigned_shard;
-  try {
-    assigned_shard = await getMainToken(identity, mainCanisterId).getAssignedShardId(identity.getPrincipal());
-  } catch (err) {
-    assigned_shard = await getMainToken(identity, mainCanisterId).register(identity.getPrincipal());
-  }
+  let assigned_shard = await getAssignedTokenShardPrincipal(identity, mainCanisterId);
   return getTokenShard(identity, assigned_shard);
 }

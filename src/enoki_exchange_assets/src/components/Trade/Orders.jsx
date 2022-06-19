@@ -79,7 +79,8 @@ const Orders = () => {
       }
     }
 
-    let _ = run();
+    run()
+      .catch(e => console.error("error retrieving orders: ", e));
 
     return () => {
       stop = true;

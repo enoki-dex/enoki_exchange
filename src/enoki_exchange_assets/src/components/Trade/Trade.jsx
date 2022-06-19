@@ -86,7 +86,6 @@ const Trade = ({setShowWalletButtons}) => {
     // update data
 
     if (!leftQuantity && !rightQuantity && !price) {
-      console.log('side: ', side)
       if (side === 'buy') {
         if (asks && asks.length) {
           setPrice(asks[asks.length - 1][0]);
@@ -178,7 +177,8 @@ const Trade = ({setShowWalletButtons}) => {
       }
     }
 
-    let _ = run();
+    run()
+      .catch(e => console.error("error retrieving last prices", e));
 
     return () => {
       stop = true;
