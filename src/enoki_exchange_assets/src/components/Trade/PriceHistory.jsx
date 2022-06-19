@@ -25,6 +25,7 @@ ChartJS.register(
 
 export const options = {
   responsive: true,
+  maintainAspectRatio: false,
   scales: {
     x: {
       type: 'time',
@@ -47,7 +48,7 @@ export const options = {
 
 const PriceHistory = ({lastPrices}) => {
 
-  console.log(lastPrices);
+  // console.log(lastPrices);
 
   const bullish = lastPrices && lastPrices.length && (lastPrices[0].price <= lastPrices[lastPrices.length - 1].price);
 

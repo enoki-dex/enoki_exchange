@@ -11,6 +11,7 @@ import {setTradeOccurred} from "../../state/lastTradeSlice";
 import {getAssignedTokenShard} from "../../actors/getMainToken";
 import {Actor} from "@dfinity/agent";
 import useLogo from "../../hooks/useLogo";
+import LoadingButton from "../shared/LoadingButton";
 
 const getTokenBalances = async identity => {
     let principal = identity.getPrincipal();
@@ -246,10 +247,7 @@ const ChangePool = ({adding, setDone}) => {
                 {
                     isLoggedIn ? (
                         executing ? (
-                            <div style={{position: "absolute", left: "45%"}}>
-                                <img style={{width: 30, margin: 12}} src="img/spinner.svg"/>
-                                <LoadingText style={{fontSize: "large"}} text={nameWaiting} speed={200}/>
-                            </div>
+                            <LoadingButton className="btn-big" hiddenText={nameBtn} />
                         ) : (
                             readyToExecute ? (
                                 <a className="btn connect btn-black btn-big" onClick={() => execute()}>{nameBtn}</a>

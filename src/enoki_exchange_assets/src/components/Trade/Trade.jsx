@@ -19,6 +19,8 @@ import Orders from "./Orders";
 import OrderBook from "./OrderBook";
 import useHeartbeat from "../../hooks/useHeartbeat";
 import PriceHistory from "./PriceHistory";
+import useOrderBook from "../../hooks/useOrderBook";
+import LoadingButton from "../shared/LoadingButton";
 
 const NUM_DECIMALS_QUANTITY = {
   'eICP': 4,
@@ -65,6 +67,7 @@ const Trade = ({setShowWalletButtons}) => {
   const [executing, setExecuting] = React.useState(false);
   const [lastPrices, setLastPrices] = React.useState([]);
   const lastPrice = (lastPrices && lastPrices[lastPrices.length - 1]) || null;
+  const {bids, asks} = useOrderBook();
 
   const balances = {
     'eICP': useTokenBalance({principal: canisterIdA}),
@@ -81,6 +84,20 @@ const Trade = ({setShowWalletButtons}) => {
 
   React.useEffect(() => {
     // update data
+
+    if (!leftQuantity && !rightQuantity && !price) {
+      console.log('side: ', side)
+      if (side === 'buy') {
+        if (asks && asks.length) {
+          setPrice(asks[asks.length - 1][0]);
+        }
+      } else {
+        if (bids && bids.length) {
+          setPrice(bids[0][0]);
+        }
+      }
+    }
+
     let valueStr = lastUpdated === 'right' ? rightQuantity : leftQuantity;
     if (!valueStr) {
       return;
@@ -124,7 +141,7 @@ const Trade = ({setShowWalletButtons}) => {
       setErrorDetails(err.message);
     }
 
-  }, [lastUpdated, leftQuantity, rightQuantity, price, side]);
+  }, [lastUpdated, leftQuantity, rightQuantity, price, side, bids, asks]);
 
   React.useEffect(() => {
     if (!isLoggedIn) return;
@@ -206,6 +223,7 @@ const Trade = ({setShowWalletButtons}) => {
     setUsingMax(true);
   }
   const changeSide = newSide => {
+    setPrice('');
     setSide(newSide);
   }
   const handleToggleAllowTaker = e => {
@@ -298,14 +316,16 @@ const Trade = ({setShowWalletButtons}) => {
                     <div className="form_group">
                       <label htmlFor="">Amount <a onClick={() => handleSetMax()}>MAX</a> </label>
                       <div className={"input_wrap" + (isError === "left" ? " error_border" : "")}>
-                        <input value={leftQuantity} onChange={handleLeftChange} type="number" name="" id="" placeholder="0.0" />
+                        <input value={leftQuantity} onChange={handleLeftChange} type="number" name="" id=""
+                               placeholder="0.0"/>
                         <div className="icon"><img src={logoA} alt=""/><span>eICP</span></div>
                       </div>
                     </div>
                     <div className="form_group">
                       <label htmlFor="">Limit Price</label>
                       <div className="input_wrap">
-                        <input value={price} onChange={handlePriceChange} type="number" name="" id="" placeholder="0.0" />
+                        <input value={price} onChange={handlePriceChange} type="number" name="" id=""
+                               placeholder="0.0"/>
                         <div className="icon"><img src={logoB} alt=""/><span>eXTC</span></div>
                       </div>
                     </div>
@@ -313,17 +333,18 @@ const Trade = ({setShowWalletButtons}) => {
                     <div className="form_group mt-0">
                       <label htmlFor="">Total</label>
                       <div className={"input_wrap" + (isError === "right" ? " error_border" : "")}>
-                        <input value={rightQuantity} onChange={handleRightChange} type="number" name="" id="" placeholder="0.0" />
+                        <input value={rightQuantity} onChange={handleRightChange} type="number" name="" id=""
+                               placeholder="0.0"/>
                         <div className="icon"><img src={logoB} alt=""/><span>eXTC</span></div>
                       </div>
                     </div>
                     <div className="text-end">
                       <SwitchCheckbox style={{
-                        justifyContent: "space-around", maxWidth: 250,
+                        padding: 0, maxWidth: 250,
                         marginLeft: "auto", marginRight: "auto"
                       }} checked={allowTaker} handleOnChange={handleToggleAllowTaker} textOff="Only Maker"
                                       textOn="Allow Taker"
-                                      styleOff={{width: 34}} styleOn={{width: 53}}/>
+                                      styleOff={{width: 85}} styleOn={{width: 85}}/>
                     </div>
                     {/*<div className="text-end">*/}
                     {/*<a className="advanced" href="#">Advanced</a>*/}
@@ -343,10 +364,7 @@ const Trade = ({setShowWalletButtons}) => {
                           <a className="btn btn-black" onClick={() => setShowWalletButtons(true)}>CONNECT WALLET</a>
                         ) : (
                           executing ? (
-                            <div style={{position: "absolute", left: "33%", bottom: "5px"}}>
-                              <img style={{width: 30, margin: 12}} src="img/spinner.svg"/>
-                              <LoadingText style={{fontSize: "large"}} text="Submitting" speed={200}/>
-                            </div>
+                            <LoadingButton hiddenText="SUBMIT ORDER" />
                           ) : (
                             readyToTrade ? (
                               <button className="btn btn-black" onClick={() => execute()}>SUBMIT ORDER</button>
@@ -362,7 +380,7 @@ const Trade = ({setShowWalletButtons}) => {
               </div>
             </div>
           </div>
-          <OrderBook lastPrice={lastPrice}/>
+          <OrderBook bids={bids} asks={asks} lastPrice={lastPrice}/>
           <PriceHistory lastPrices={lastPrices}/>
         </div>
         <div className="content_wrap2" style={{height: 250}}>

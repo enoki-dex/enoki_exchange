@@ -110,7 +110,7 @@ const Orders = () => {
       </ul>
       <div className="tab-content" id="myTabContent">
         <div className="tab-pane show active" id="open-orders" role="tabpanel" aria-labelledby="open-orders-tab">
-          <div className="openOrder_table_body">
+          <div className="openOrder_table_body" style={{position: "relative"}}>
             <div className="wrapper1">
               <div className="wrapper2">
                 <table>
@@ -130,15 +130,15 @@ const Orders = () => {
                              pendingCancel={pendingCancel} cancel={id => cancelOrder(id)}/>
                     ))
                   }
-                  {
-                    !list.length && (
-                      <EmptyOrder />
-                    )
-                  }
                   </tbody>
                 </table>
               </div>
             </div>
+            {
+              !list.length && (
+                <EmptyOrder/>
+              )
+            }
           </div>
         </div>
       </div>
@@ -149,9 +149,19 @@ const Orders = () => {
 const EmptyOrder = () => {
 
   return (
-    <tr>
-      <td colSpan={6} style={{textAlign: "left"}}>No orders found</td>
-    </tr>
+    <div style={{
+      position: "absolute",
+      bottom: "30%",
+      marginLeft: "auto",
+      marginRight: "auto",
+      left: 0,
+      right: 0,
+      width: 120,
+      textAlign: "center",
+      opacity: "50%"
+    }}>
+      No orders found
+    </div>
   );
 }
 

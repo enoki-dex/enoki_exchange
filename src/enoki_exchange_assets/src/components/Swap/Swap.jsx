@@ -14,6 +14,7 @@ import {Actor} from "@dfinity/agent";
 import {setTradeOccurred} from "../../state/lastTradeSlice";
 import useLogo from "../../hooks/useLogo";
 import useHeartbeat from "../../hooks/useHeartbeat";
+import LoadingButton from "../shared/LoadingButton";
 
 const NUM_DECIMALS_QUANTITY = {
   'eICP': 4,
@@ -230,8 +231,8 @@ const Swap = ({setShowWalletButtons}) => {
     setErrorDetails(undefined);
     execute_swap(getIdentity(), canisterId, pair[0] === 'eICP', quantity, limit_price)
       .then(() => {
-        setLeftSwapValue("0");
-        setRightSwapValue("0");
+        setLeftSwapValue("");
+        setRightSwapValue("");
       })
       .catch(err => {
         console.error(err);
@@ -325,10 +326,7 @@ const Swap = ({setShowWalletButtons}) => {
             {
               isLoggedIn ? (
                 executingSwap ? (
-                  <div style={{position: "absolute", left: "45%"}}>
-                    <img style={{width: 30, margin: 12}} src="img/spinner.svg"/>
-                    <LoadingText style={{fontSize: "large"}} text="Swapping" speed={200}/>
-                  </div>
+                  <LoadingButton className="btn-big" hiddenText="SWAP" />
                 ) : (
                   readyToExecuteSwap ? (
                     <a className="btn connect btn-black btn-big" onClick={() => swap()}>SWAP</a>

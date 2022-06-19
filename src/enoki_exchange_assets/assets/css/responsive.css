@@ -27,20 +27,20 @@
 
 @media (min-width: 1400px) {
     .chart-wrapper {
-        margin: 130px 10px 0;
+        margin: 20px 10px;
     }
     .cal_area {
-        width: 25%;
+        width: 23%;
         margin-right: 2%;
     }
 
     .trades_table {
-        width: 25%;
+        width: 23%;
         margin-right: 1%;
     }
 
     .chart {
-        width: 47%;
+        width: 51%;
     }
 }
 
@@ -147,7 +147,7 @@
 
     #past-orders .wrapper2,
     #open-orders .wrapper2 {
-        min-height: 100%;
+        min-height: 10rem;
     }
 
     .content_wrap2 {

@@ -894,7 +894,7 @@ header .wallet .arrow.active {
 .cal .icon img {
     margin-right: 5px;
     width: 30px;
-    margin-top: -5px;
+    margin-top: -3px;
 }
 
 .symbol {
@@ -1061,6 +1061,15 @@ th:last-child {
     padding: 1.5rem 2rem;
     border: 1px solid var(--border-color);
     border-radius: 1.6rem;
+    display: flex;
+    /*flex-wrap: wrap;*/
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.chart-wrapper {
+    height: 88%;
+    width: 95%;
 }
 
 .chart .select {
@@ -1766,7 +1775,7 @@ th:last-child {
 }
 
 .btn-black-disabled {
-    cursor: not-allowed;
+    cursor: not-allowed !important;
     text-transform: uppercase;
     letter-spacing: 2px;
     background: #969696;

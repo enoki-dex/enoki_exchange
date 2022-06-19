@@ -55,16 +55,16 @@ const Order = ({order, pendingCancel, isPending, cancel}) => {
       <td>{amount}</td>
       <td>{price}</td>
       {/*<td>2022-06-01 15:32 PM</td>*/}
-      <td style={{height: 46}}>
+      <td style={{height: 46, position: "relative"}}>
         {isPending && (
           <>
-            {cancelling ? (
-              <div style={{position: "absolute", left: "45%"}}>
-                <img style={{width: 10, margin: 3}} src="img/spinner.svg"/>
+            {(cancelling || status === "Cancelling") ? (
+              <div style={{position: "absolute", left: "30%", top: "35%"}}>
+                <img style={{width: 10, margin: "3px 8px"}} src="img/spinner.svg"/>
                 <LoadingText style={{}} text="Cancelling" speed={200}/>
               </div>
             ) : (
-              <a className="btn" onClick={() => tryCancel()}>CANCEL</a>
+              <a className="btn btn-black" onClick={() => tryCancel()}>CANCEL</a>
             )}
           </>
         )}
