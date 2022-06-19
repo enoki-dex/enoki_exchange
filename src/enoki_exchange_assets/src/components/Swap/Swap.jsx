@@ -79,7 +79,7 @@ const Swap = ({setShowWalletButtons}) => {
   const slippage = useSelector(state => state.swap.slippage.currentValue);
   const [executingSwap, setExecutingSwap] = React.useState(false);
   const [lastUpdatedLeft, setLastUpdatedLeft] = React.useState(true);
-  const [isFetching, setIsFetching] = React.useState(false);
+  const [isFetching, setIsFetching] = React.useState(true);
   const dispatch = useDispatch();
   const logoA = useLogo({canisterId: canisterIdA});
   const logoB = useLogo({canisterId: canisterIdB});
@@ -179,7 +179,7 @@ const Swap = ({setShowWalletButtons}) => {
         if (/Insufficient Liquidity/i.test(err.message)) {
           setErrorDetails("Insufficient liquidity. Try a lower value.");
         } else {
-          setErrorDetails("An unexpected pricing error occurred.");
+          setErrorDetails("An error occurred - try again in a bit.");
         }
       })
       .then(() => {
@@ -248,7 +248,8 @@ const Swap = ({setShowWalletButtons}) => {
   }
 
   const priceInRightToken = pair[1] === 'eICP' ? price : (price && 1 / price);
-  const readyToExecuteSwap = isLoggedIn && !isError && !isFetching && price;
+  const readyToExecuteSwap = isLoggedIn && !isError && !isFetching && price && leftSwapValue && rightSwapValue;
+  const letsGetSomeTokens = isLoggedIn && !isFetching && !balances[pair[0]] && !balances[pair[1]];
 
   return (
     <div className="container">
@@ -289,21 +290,27 @@ const Swap = ({setShowWalletButtons}) => {
           <div className="cal_details">
             <p>
               {
-                errorDetails ? (
-                  <span className="error_text">
-                    {errorDetails}
+                letsGetSomeTokens ? (
+                  <span className="info_text">
+                    Let's mint some tokens on your wallet!
                     </span>
                 ) : (
-                  <span>
+                  errorDetails ? (
+                    <span className="error_text">
+                    {errorDetails}
+                    </span>
+                  ) : (
+                    <span>
                     1 {pair[1]} = {
-                    isFetching ? (
-                      <img style={{width: 17, margin: "0 3px 3px"}} src="img/spinner.svg"/>
-                    ) : (
-                      (typeof price !== 'undefined' && price !== null) ? priceInRightToken.toFixed(priceDecimals) :
-                        <span>&nbsp;--</span>
-                    )
-                  } {pair[0]}
+                      isFetching ? (
+                        <img style={{width: 17, margin: "0 3px 3px"}} src="img/spinner.svg"/>
+                      ) : (
+                        (typeof price !== 'undefined' && price !== null) ? priceInRightToken.toFixed(priceDecimals) :
+                          <span>&nbsp;--</span>
+                      )
+                    } {pair[0]}
                   </span>
+                  )
                 )
               }
             </p>

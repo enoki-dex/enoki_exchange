@@ -1730,6 +1730,11 @@ th:last-child {
     font-weight: bold;
 }
 
+.info_text {
+    color: #31af90 !important;
+    font-weight: bold;
+}
+
 .btn-big {
     font-size: 18px;
     display: inline-block;
