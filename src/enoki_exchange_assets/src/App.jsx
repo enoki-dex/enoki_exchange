@@ -15,15 +15,16 @@ import Nav from "./components/Nav/Nav";
 import {enoki_exchange} from "../../declarations/enoki_exchange";
 
 const App = () => {
+  const [showWalletButtons, setShowWalletButtons] = React.useState(false);
   return (
     <Provider store={store}>
       <Router>
-        <Nav/>
+        <Nav showWalletButtons={showWalletButtons} setShowWalletButtons={setShowWalletButtons} />
         <div className="tab-content" id="page_main_tab">
           <Switch>
-            <Route path="/swap" component={Swap}/>
-            <Route path="/pool" component={Pool}/>
-            <Route path="/trade" component={Trade}/>
+            <Route path="/swap" render={props => <Swap {...props} showWalletButtons={showWalletButtons} setShowWalletButtons={setShowWalletButtons} />}  />
+            <Route path="/pool" render={props => <Pool {...props} showWalletButtons={showWalletButtons} setShowWalletButtons={setShowWalletButtons} />}  />
+            <Route path="/trade" render={props => <Trade {...props} showWalletButtons={showWalletButtons} setShowWalletButtons={setShowWalletButtons} />}  />
             {/*<Redirect path="/" exact to="/swap" />*/}
             {/*<Route render={() => <h1>404</h1>} />*/}
             <Redirect to="/swap"/>

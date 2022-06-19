@@ -8,13 +8,12 @@ let shortenPrincipal = principal => {
   return principal;
 }
 
-const Wallet = ({showWallet, toggleShowWallet}) => {
+const Wallet = ({showWallet, toggleShowWallet, showWalletButtons, setShowWalletButtons}) => {
   let {isLoggedIn, getIdentity, login, logout} = useLogin();
   let principal = isLoggedIn ? shortenPrincipal(getIdentity().getPrincipal().toString()) : null;
-  const [show, setShow] = React.useState(false);
   const doLogin = provider => {
     login(provider);
-    setShow(false);
+    setShowWalletButtons(false);
   }
 
   return (
@@ -27,12 +26,12 @@ const Wallet = ({showWallet, toggleShowWallet}) => {
             <img className={`arrow${showWallet ? " active" : ""}`} src="img/dropdown.svg" alt=""/>
           </a>
         ) : (
-          <a className={`connect${show ? " active" : ""}`} onClick={() => setShow(true)}>CONNECT WALLET</a>
+          <a className={`connect wallet-connect${showWalletButtons ? " active" : ""}`} onClick={() => setShowWalletButtons(true)}>CONNECT WALLET</a>
         )
       }
-      {show && (
+      {showWalletButtons && (
         <>
-          <div className="overly" onClick={() => setShow(false)}></div>
+          <div className="overly right_links_overly" onClick={() => setShowWalletButtons(false)}></div>
           <div className="right_links">
             <a onClick={() => doLogin("nfid")}><img src="img/nfid_icon.png" alt=""/></a>
             {/*<a><img src="img/plug_icon.png" alt=""/></a>*/}

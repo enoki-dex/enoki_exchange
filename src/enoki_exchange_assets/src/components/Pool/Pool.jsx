@@ -9,7 +9,7 @@ import ChangePool from "./ChangePool";
 import useLogo from "../../hooks/useLogo";
 import useHeartbeat from "../../hooks/useHeartbeat";
 
-const Pool = () => {
+const Pool = ({setShowWalletButtons}) => {
   const {isLoggedIn, getIdentity} = useLogin();
   // noinspection JSUnusedLocalSymbols
   const lastExchangeUpdate = useHeartbeat();
@@ -80,7 +80,7 @@ const Pool = () => {
       <div className="pool_content">
         <div className="content_wrap">
           <div className="">
-            <h1 style={{marginBottom: 25}}>{title}</h1>
+            <h1 style={{marginBottom: 27}}>{title}</h1>
             {
               show === 'add' ? (
                 <ChangePool adding={true} setDone={setActionDone}/>
@@ -107,27 +107,42 @@ const Pool = () => {
                           <li>
                             <span>Pooled eICP:</span>
                             <span>{
-                              isLoadingBalances ? <img style={{width: 20}} src="img/spinner.svg" /> : liquidity[0]
+                              isLoadingBalances ? <img style={{width: 20}} src="img/spinner.svg"/> : liquidity[0]
                             }</span>
                           </li>
                           <li>
                             <span>Pooled eXTC:</span>
                             <span>{
-                              isLoadingBalances ? <img style={{width: 20}} src="img/spinner.svg" /> : liquidity[1]
+                              isLoadingBalances ? <img style={{width: 20}} src="img/spinner.svg"/> : liquidity[1]
                             }</span>
                           </li>
                           <li>
                             <span>Your net withdrawals:</span>
                             <span>{
-                              isLoadingNetWithdrawals ? <img style={{width: 20}} src="img/spinner.svg" /> : netWithdrawals[0].toFixed(2)
+                              isLoadingNetWithdrawals ?
+                                <img style={{width: 20}} src="img/spinner.svg"/> : netWithdrawals[0].toFixed(2)
                             } eICP / {
-                              isLoadingNetWithdrawals ? <img style={{width: 20}} src="img/spinner.svg" /> : netWithdrawals[1].toFixed(2)
+                              isLoadingNetWithdrawals ?
+                                <img style={{width: 20}} src="img/spinner.svg"/> : netWithdrawals[1].toFixed(2)
                             } eXTC</span>
                           </li>
                         </ul>
                         <div className="btns">
-                          <a className="btn btn-black" onClick={() => setShow('add')}>+ ADD</a>
-                          <a className="btn btn-black" onClick={() => setShow('remove')}>- REMOVE</a>
+                          {
+                            isLoggedIn ? (
+                              <>
+                                <a className="btn btn-black" onClick={() => setShow('add')}>+ ADD</a>
+                                <a className="btn btn-black" onClick={() => setShow('remove')}>- REMOVE</a>
+                              </>
+                            ) : (
+                              <a style={{
+                                width: "auto",
+                                padding: "12px 25px",
+                                marginTop: "20px"
+                              }} className="btn connect btn-black btn-big" onClick={() => setShowWalletButtons(true)}>CONNECT
+                                WALLET</a>
+                            )
+                          }
                         </div>
                       </div>
                     </div>

@@ -73,14 +73,12 @@ const PriceHistory = ({lastPrices}) => {
 
   return (
     <div className="chart">
-      <div className="select">
-        <p>eICP/eXTC</p>
-        {/*<select name="" id="">*/}
-        {/*  <option value="">1D</option>*/}
-        {/*  <option value="">2D</option>*/}
-        {/*  <option value="">3D</option>*/}
-        {/*</select>*/}
-      </div>
+      <h3 style={{
+        marginLeft: "17px",
+        fontWeight: 600,
+        marginBottom: "15px",
+        marginTop: "5px"
+      }}>eICP/eXTC</h3>
       <div className="chart-wrapper">
         <Line options={options} data={data} />
       </div>

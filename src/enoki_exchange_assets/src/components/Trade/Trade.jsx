@@ -45,7 +45,7 @@ const executeOrder = async (identity, canisterId, sellingTokenA, quantity, price
   console.log("trade id: ", message);
 }
 
-const Trade = () => {
+const Trade = ({setShowWalletButtons}) => {
   const dispatch = useDispatch();
   const allowTaker = useSelector(state => state.trade.allowTaker);
   const {isLoggedIn, getIdentity} = useLogin();
@@ -261,7 +261,7 @@ const Trade = () => {
       <div className="trade_content">
         <div className="content_wrap1">
           <div className="cal_area">
-            <div className="eicp_box" style={{border: "none", cursor: "default"}}>
+            <div className="eicp_box" style={{cursor: "default"}}>
               <div style={{marginRight: 10}}>
                 <img style={{width: 30}} src={logoA} alt=""/>
                 <img style={{width: 30}} src={logoB} alt=""/>
@@ -298,14 +298,14 @@ const Trade = () => {
                     <div className="form_group">
                       <label htmlFor="">Amount <a onClick={() => handleSetMax()}>MAX</a> </label>
                       <div className={"input_wrap" + (isError === "left" ? " error_border" : "")}>
-                        <input value={leftQuantity} onChange={handleLeftChange} type="number" name="" id=""/>
+                        <input value={leftQuantity} onChange={handleLeftChange} type="number" name="" id="" placeholder="0.0" />
                         <div className="icon"><img src={logoA} alt=""/><span>eICP</span></div>
                       </div>
                     </div>
                     <div className="form_group">
                       <label htmlFor="">Limit Price</label>
                       <div className="input_wrap">
-                        <input value={price} onChange={handlePriceChange} type="number" name="" id=""/>
+                        <input value={price} onChange={handlePriceChange} type="number" name="" id="" placeholder="0.0" />
                         <div className="icon"><img src={logoB} alt=""/><span>eXTC</span></div>
                       </div>
                     </div>
@@ -313,7 +313,7 @@ const Trade = () => {
                     <div className="form_group mt-0">
                       <label htmlFor="">Total</label>
                       <div className={"input_wrap" + (isError === "right" ? " error_border" : "")}>
-                        <input value={rightQuantity} onChange={handleRightChange} type="number" name="" id=""/>
+                        <input value={rightQuantity} onChange={handleRightChange} type="number" name="" id="" placeholder="0.0" />
                         <div className="icon"><img src={logoB} alt=""/><span>eXTC</span></div>
                       </div>
                     </div>
@@ -340,7 +340,7 @@ const Trade = () => {
                     <div className="text-center">
                       {
                         !isLoggedIn ? (
-                          <a className="btn btn-black-disabled">CONNECT WALLET</a>
+                          <a className="btn btn-black" onClick={() => setShowWalletButtons(true)}>CONNECT WALLET</a>
                         ) : (
                           executing ? (
                             <div style={{position: "absolute", left: "33%", bottom: "5px"}}>

@@ -52,7 +52,7 @@ const WalletModal = ({toggleShowWallet}) => {
 
   return (
     <div className="wallet-modal">
-      <div className="overlay" onClick={() => toggleShowWallet()}></div>
+      <div className="overlay wallet-modal-overlay" onClick={() => toggleShowWallet()}></div>
       <div className="modal-dialog">
         <div className="modal-content">
           <div className="modal-header">

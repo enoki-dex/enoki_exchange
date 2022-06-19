@@ -64,13 +64,13 @@ const execute_swap = async (identity, canisterId, sellingTokenA, quantity, price
   console.log("swap success: ", message);
 }
 
-const Swap = () => {
+const Swap = ({setShowWalletButtons}) => {
   const {isLoggedIn, getIdentity} = useLogin();
   // noinspection JSUnusedLocalSymbols
   const lastExchangeUpdate = useHeartbeat();
   const [pair, setPair] = React.useState(['eICP', 'eXTC']);
-  const [leftSwapValue, setLeftSwapValue] = React.useState("0.0");
-  const [rightSwapValue, setRightSwapValue] = React.useState("0.0");
+  const [leftSwapValue, setLeftSwapValue] = React.useState("");
+  const [rightSwapValue, setRightSwapValue] = React.useState("");
   const [price, setPrice] = React.useState(undefined);
   const [priceDecimals, setPriceDecimals] = React.useState(undefined);
   const [isError, setIsError] = React.useState(null);
@@ -112,7 +112,11 @@ const Swap = () => {
 
   React.useEffect(() => {
     // update data
-    let value = parseFloat(lastUpdatedLeft ? leftSwapValue : rightSwapValue);
+
+    if (!leftSwapValue && !rightSwapValue) {
+      return;
+    }
+    let value = parseFloat((lastUpdatedLeft ? leftSwapValue : rightSwapValue) || '0');
     if (typeof value !== 'number' || isNaN(value) || value < 0) {
       setIsError(lastUpdatedLeft ? "left" : "right");
       return;
@@ -254,7 +258,7 @@ const Swap = () => {
                 <img src={logos[pair[0]]} alt=""/>
                 <h3>{pair[0]}</h3>
               </div>
-              <input type='number' value={leftSwapValue} onChange={handleLeftChange}/>
+              <input type='number' value={leftSwapValue} onChange={handleLeftChange} placeholder="0.0" />
             </div>
             <div className="box_footer">
               <p>Balance: {balancesStr[pair[0]] || "--"} {pair[0]} <a style={{cursor: "pointer"}}
@@ -271,7 +275,7 @@ const Swap = () => {
                 <img src={logos[pair[1]]} alt=""/>
                 <h3>{pair[1]}</h3>
               </div>
-              <input type='number' value={rightSwapValue} onChange={handleRightChange}/>
+              <input type='number' value={rightSwapValue} onChange={handleRightChange} placeholder="0.0" />
             </div>
             <div className="box_footer">
               <p>Balance: {balancesStr[pair[1]] || "--"} {pair[1]}</p>
@@ -322,7 +326,7 @@ const Swap = () => {
                   )
                 )
               ) : (
-                <a className="btn connect btn-black-disabled btn-big">CONNECT WALLET</a>
+                <a className="btn connect btn-black btn-big" onClick={() => setShowWalletButtons(true)}>CONNECT WALLET</a>
               )
             }
           </div>

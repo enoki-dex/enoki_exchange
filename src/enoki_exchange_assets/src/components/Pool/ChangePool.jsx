@@ -82,8 +82,8 @@ const ChangePool = ({adding, setDone}) => {
     const [errorDetails, setErrorDetails] = React.useState(undefined);
     const lastTradeTime = useSelector(state => state.lastTrade.lastTradeTime);
     const [executing, setExecuting] = React.useState(false);
-    const [leftValue, setLeftValue] = React.useState("0.0");
-    const [rightValue, setRightValue] = React.useState("0.0");
+    const [leftValue, setLeftValue] = React.useState("");
+    const [rightValue, setRightValue] = React.useState("");
     const [isMaxA, setIsMaxA] = React.useState(false);
     const [isMaxB, setIsMaxB] = React.useState(false);
     const dispatch = useDispatch();
@@ -130,7 +130,7 @@ const ChangePool = ({adding, setDone}) => {
         setIsMaxA(false);
         setIsErrorA(false);
         setErrorDetails(undefined);
-        let value = parseFloat(e.target.value);
+        let value = parseFloat(e.target.value || '0');
         if (typeof value !== 'number' || isNaN(value)) {
             setIsErrorA(true);
         }
@@ -146,7 +146,7 @@ const ChangePool = ({adding, setDone}) => {
         setIsMaxB(false);
         setIsErrorB(false);
         setErrorDetails(undefined);
-        let value = parseFloat(e.target.value);
+        let value = parseFloat(e.target.value || '0');
         if (typeof value !== 'number' || isNaN(value)) {
             setIsErrorB(true);
         }
@@ -200,7 +200,7 @@ const ChangePool = ({adding, setDone}) => {
                         <img src={logoA} alt=""/>
                         <h3>eICP</h3>
                     </div>
-                    <input type='number' value={leftValue} onChange={handleLeftChange}/>
+                    <input type='number' value={leftValue} onChange={handleLeftChange} placeholder="0.0" />
                 </div>
                 <div className="box_footer">
                     <p>Balance: {balancesStr[0] || "--"} {nameA} <a style={{cursor: "pointer"}}
@@ -217,7 +217,7 @@ const ChangePool = ({adding, setDone}) => {
                         <img src={logoB} alt=""/>
                         <h3>eXTC</h3>
                     </div>
-                    <input type='number' value={rightValue} onChange={handleRightChange}/>
+                    <input type='number' value={rightValue} onChange={handleRightChange} placeholder="0.0" />
                 </div>
                 <div className="box_footer">
                     <p>Balance: {balancesStr[1] || "--"} {nameB} <a style={{cursor: "pointer"}}

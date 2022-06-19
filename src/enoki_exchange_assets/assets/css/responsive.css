@@ -27,10 +27,10 @@
 
 @media (min-width: 1400px) {
     .chart-wrapper {
-        margin-top: 130px;
+        margin: 130px 10px 0;
     }
     .cal_area {
-        width: 35%;
+        width: 25%;
         margin-right: 2%;
     }
 
@@ -40,7 +40,7 @@
     }
 
     .chart {
-        width: 37%;
+        width: 47%;
     }
 }
 
@@ -110,18 +110,14 @@
         padding: 3rem 0 1rem;
     }
 
-    .swap_content .right_links a {
+    .right_links a {
         width: 8rem;
         height: 3.3rem;
         font-size: 1.5rem;
     }
 
-    .swap_content .right_links a:nth-child(1) img {
-        width: 5rem;
-    }
-
-    .swap_content .right_links a:nth-child(2) img {
-        width: 1.5rem;
+    .right_links img {
+        width: 4.5rem;
     }
 
     .cal_area {
@@ -183,15 +179,19 @@
         padding-right: 3rem;
     }
 
+    .wallet-modal-overlay {
+        background: #fefefebf;
+    }
+
     h1 {
         font-size: 3.3rem;
     }
 
-    .swap_content .right_links {
+    .right_links {
         right: 3rem;
     }
 
-    .swap_content .right_links a {
+    .right_links a {
         margin-top: 7px;
     }
 
@@ -278,7 +278,7 @@
         width: 3.5rem;
         height: 3.5rem;
         background-size: contain;
-        top: -2.3rem;
+        top: -3.1rem;
     }
 
     .top_icon::before {
