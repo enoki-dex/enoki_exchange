@@ -130,6 +130,11 @@ const Orders = () => {
                              pendingCancel={pendingCancel} cancel={id => cancelOrder(id)}/>
                     ))
                   }
+                  {
+                    !list.length && (
+                      <EmptyOrder />
+                    )
+                  }
                   </tbody>
                 </table>
               </div>
@@ -139,6 +144,15 @@ const Orders = () => {
       </div>
     </div>
   )
+}
+
+const EmptyOrder = () => {
+
+  return (
+    <tr>
+      <td colSpan={6} style={{textAlign: "left"}}>No orders found</td>
+    </tr>
+  );
 }
 
 export default Orders;
