@@ -216,7 +216,10 @@ const Swap = ({setShowWalletButtons}) => {
     let quantity = usingMax ?
       balances[pair[0]] :
       floatToBigInt(parseFloat(leftSwapValue), pair[0]);
-    let limit_price = price * (1 + (slippage / 100));
+    let slippage_factor = (1 + (slippage / 100));
+    let limit_price =
+      pair[0] === 'eICP' ? (price / slippage_factor) :
+        (price * slippage_factor);
     let canisterId;
     if (pair[0] === 'eICP') {
       canisterId = canisterIdA;
@@ -224,6 +227,7 @@ const Swap = ({setShowWalletButtons}) => {
       canisterId = canisterIdB;
     }
     setExecutingSwap(true);
+    setErrorDetails(undefined);
     execute_swap(getIdentity(), canisterId, pair[0] === 'eICP', quantity, limit_price)
       .then(() => {
         setLeftSwapValue("0");
@@ -258,7 +262,7 @@ const Swap = ({setShowWalletButtons}) => {
                 <img src={logos[pair[0]]} alt=""/>
                 <h3>{pair[0]}</h3>
               </div>
-              <input type='number' value={leftSwapValue} onChange={handleLeftChange} placeholder="0.0" />
+              <input type='number' value={leftSwapValue} onChange={handleLeftChange} placeholder="0.0"/>
             </div>
             <div className="box_footer">
               <p>Balance: {balancesStr[pair[0]] || "--"} {pair[0]} <a style={{cursor: "pointer"}}
@@ -275,7 +279,7 @@ const Swap = ({setShowWalletButtons}) => {
                 <img src={logos[pair[1]]} alt=""/>
                 <h3>{pair[1]}</h3>
               </div>
-              <input type='number' value={rightSwapValue} onChange={handleRightChange} placeholder="0.0" />
+              <input type='number' value={rightSwapValue} onChange={handleRightChange} placeholder="0.0"/>
             </div>
             <div className="box_footer">
               <p>Balance: {balancesStr[pair[1]] || "--"} {pair[1]}</p>
@@ -326,7 +330,8 @@ const Swap = ({setShowWalletButtons}) => {
                   )
                 )
               ) : (
-                <a className="btn connect btn-black btn-big" onClick={() => setShowWalletButtons(true)}>CONNECT WALLET</a>
+                <a className="btn connect btn-black btn-big" onClick={() => setShowWalletButtons(true)}>CONNECT
+                  WALLET</a>
               )
             }
           </div>
