@@ -41,7 +41,7 @@ const OrderBook = ({lastPrice, bids, asks}) => {
                     >{price}</td>
                     <td
                       style={{background: `linear-gradient(to left, var(--red-light-color) 0%, var(--red-light-color) ${(2 * Math.min(50, mappingFun(amount))).toFixed(0)}%, var(--transparent-color) ${(2 * Math.min(50, mappingFun(amount))).toFixed(0)}%, var(--transparent-color) 100%)`}}
-                    >{amount.toFixed(0)}({mappingFun(amount).toFixed(0)})
+                    >{amount.toFixed(0)}
                     </td>
                   </tr>
                 ))
