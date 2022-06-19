@@ -2,7 +2,7 @@ import React from "react";
 import getEnokiExchange from "../actors/getEnokiExchange";
 import {bigIntToFloat} from "../utils/utils";
 
-const ORDER_BOOK_LENGTH = 8;
+const ORDER_BOOK_LENGTH = 7;
 
 const priceToFloat = (priceInt, numDecimals) => {
   return Number(priceInt) / Math.pow(10, Number(numDecimals));

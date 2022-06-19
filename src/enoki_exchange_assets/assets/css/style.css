@@ -171,8 +171,10 @@
     --white-color: #FFFFFF;
     --border-color: #CCCCCC;
     --secondary-color: #E7EBEF;
-    --red-color: #FF6473;
-    --green-color: #00C363;
+    --red-color: rgb(255,100, 115);
+    --red-light-color: rgba(255,100, 115, 0.2);
+    --green-color: rgb(0, 195, 99);
+    --green-light-color: rgba(0, 195, 99, 0.2);
     --transparent-color: rgba(255, 255, 255, 0);
 }
 
@@ -794,6 +796,14 @@ header .wallet .arrow.active {
 .trades_table {
     width: 400px;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.trades_table div, .trades_table table {
+    height: 100%;
+    margin-top: 0 !important;
 }
 
 /* calculator */
@@ -1010,6 +1020,11 @@ th:last-child {
 .trades_table table td:last-child,
 th:last-child {
     border-radius: 0 3px 3px 0;
+}
+
+.trades_table table td:first-child,
+th:first-child {
+    border-radius: 3px 0 0 3px;
 }
 
 .invert-y {
