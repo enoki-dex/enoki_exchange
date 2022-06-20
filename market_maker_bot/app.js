@@ -50,7 +50,6 @@ class App {
   }
 
   async trade() {
-    await this.exchange.cancelAllOrders();
 
     let [balanceA, balanceB] = await Promise.all([
       this.exchange.getBalance(false),
@@ -84,6 +83,9 @@ class App {
     let diffs = [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06];
     let bids = diffs.map(diff => bidPrice - diff);
     let asks = diffs.map(diff => askPrice + diff);
+
+    //TODO: cancel only necessary orders
+    await this.exchange.cancelAllOrders();
 
     await Promise.all([
       bids.map(bid => this.exchange.sendLimitOrder({
