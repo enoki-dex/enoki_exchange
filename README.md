@@ -64,19 +64,26 @@ The current iteration of Enoki Exchange and the Market Maker Bot mints and uses 
 
 The Market Maker Bot retrieves pricing data from CoinGecko and uses it to set limit buy and sell orders.
 
-To run the bot, first follow the above instructions up to and including `Run`.
+To run the bot:
 
-Then, still in this root directory, for local testnet run:
+For mainnet, make sure you have `dfx` installed and simply run:
 ```bash
-  node ./market_maker_bot/index.js mint
+  node ./market_maker_bot/index.js --network ic
+```
+
+or with docker:
+```bash
+  docker compose -f .bot.docker-compose.yml up 
+```
+
+For local testnet, first follow the above instructions up to and including `Run`.
+
+Then, still in this root directory, run:
+```bash
   node ./market_maker_bot/index.js
 ```
 
-or for mainnet:
-```bash
-  node ./market_maker_bot/index.js --network ic mint
-  node ./market_maker_bot/index.js --network ic
-```
+to stop trading, press `ctr-c` once and wait for open orders to be cancelled.
 
 # Pending Features
 

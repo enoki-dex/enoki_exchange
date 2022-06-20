@@ -1,0 +1,6 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: .bot.Dockerfile
+    restart: on-failure
