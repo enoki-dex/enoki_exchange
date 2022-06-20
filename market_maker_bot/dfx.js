@@ -32,7 +32,13 @@ class Dfx {
           } else if (arg.nat) {
             return `${(arg.nat).toString()} : nat`;
           } else {
-            throw new Error(`invalid argument: ${JSON.stringify(arg)}`);
+            let argStr;
+            try {
+              argStr = JSON.stringify(arg)
+            } catch (e) {
+              argStr = arg
+            }
+            throw new Error(`invalid argument: ${argStr}`);
           }
         }).join(', ') +
         ")'";

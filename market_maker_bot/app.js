@@ -52,12 +52,29 @@ class App {
   async trade() {
     await this.exchange.cancelAllOrders();
 
-    let bidPrice = (this.currentPriceCents - BID_ASK_SPREAD_EACH_IN_CENTS) / 100;
-    let askPrice = (this.currentPriceCents + BID_ASK_SPREAD_EACH_IN_CENTS) / 100;
-    let [bidAmount, askAmount] = (await Promise.all([
+    let [balanceA, balanceB] = await Promise.all([
       this.exchange.getBalance(false),
       this.exchange.getBalance(true),
-    ])).map(balance => balance / BigInt(FRACTION_OF_BALANCE_TO_SPEND));
+    ]);
+    const minBalance = BigInt("500_000_000_000_000".replace(/_/g, ''));
+    if (balanceA < minBalance || balanceB < minBalance) {
+      await this.exchange.mint();
+      [balanceA, balanceB] = await Promise.all([
+        this.exchange.getBalance(false),
+        this.exchange.getBalance(true),
+      ]);
+    }
+    const maxBalanceToUseA = BigInt("1_000_000_000_000_000_000".replace(/_/g, ''));
+    const maxBalanceToUseB = BigInt("3_700_000_000_000_000_000".replace(/_/g, ''));
+    if (balanceA > maxBalanceToUseA) {
+      balanceA = maxBalanceToUseA;
+    }
+    if (balanceB > maxBalanceToUseB) {
+      balanceB = maxBalanceToUseB;
+    }
+    let bidPrice = (this.currentPriceCents - BID_ASK_SPREAD_EACH_IN_CENTS) / 100;
+    let askPrice = (this.currentPriceCents + BID_ASK_SPREAD_EACH_IN_CENTS) / 100;
+    let [bidAmount, askAmount] = [balanceA, balanceB].map(balance => balance / BigInt(FRACTION_OF_BALANCE_TO_SPEND));
 
     // send only one order:
     // await this.exchange.sendLimitOrder({side: 'buy', quantity: bidAmount, limitPriceInB: bidPrice, allowTaker: true});
