@@ -23,6 +23,7 @@ process.argv.slice(2).forEach(arg => {
   } else {
     switch (arg) {
       case 'mint':
+      case 'cancel':
         customFunction = arg;
         break;
       default:
@@ -38,6 +39,10 @@ const app = new App(network);
 if (customFunction === 'mint') {
   app.mint()
     .then(() => console.log('done minting'))
+    .catch(e => console.error('error minting: ', e));
+} else if (customFunction === 'cancel') {
+  app.cancelOrders()
+    .then(() => console.log('done cancelling orders'))
     .catch(e => console.error('error minting: ', e));
 } else {
   process.on('SIGINT', function () {

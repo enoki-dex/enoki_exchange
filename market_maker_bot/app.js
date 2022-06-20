@@ -20,6 +20,10 @@ class App {
     await this.exchange.mint();
   }
 
+  async cancelOrders() {
+    await this.exchange.init();
+  }
+
   async run() {
     await this.exchange.init();
     console.log('[app] init done');
