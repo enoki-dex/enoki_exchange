@@ -151,6 +151,13 @@ impl OrderMatcher {
 
         if let Some(last) = last_price {
             price_history::save_last_price(last);
+        } else if ic_cdk::api::time() - price_history::get_last_price_time() > 60_000_000_000u64 {
+            // one minute - add last price to create pricing history chart
+            if let Some(bid) = self.bids.get_highest_price() {
+                if let Some(ask) = self.asks.get_lowest_price() {
+                    price_history::save_last_price_value((bid + ask) / 2)
+                }
+            }
         }
 
         (

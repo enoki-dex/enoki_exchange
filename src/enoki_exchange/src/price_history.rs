@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::collections::VecDeque;
 
 use candid::{candid_method, CandidType};
@@ -41,6 +42,37 @@ pub fn save_last_price(last_price: LastPrice) {
     })
 }
 
+pub fn save_last_price_value(last_price: u64) {
+    let price_was_lifted = STATE.with(|s| {
+        if let Some(previous) = s.borrow().last_prices_by_timestamp.iter().last() {
+            match last_price.cmp(&previous.price) {
+                Ordering::Less => false,
+                Ordering::Equal => previous.price_was_lifted,
+                Ordering::Greater => true,
+            }
+        } else {
+            true
+        }
+    });
+    save_last_price(LastPrice {
+        price: last_price,
+        time: ic_cdk::api::time(),
+        price_was_lifted,
+    })
+}
+
+pub fn get_last_price_time() -> u64 {
+    STATE
+        .with(|s| {
+            s.borrow()
+                .last_prices_by_timestamp
+                .iter()
+                .last()
+                .map(|p| p.time)
+        })
+        .unwrap_or_default()
+}
+
 #[query(name = "getPriceHistory")]
 #[candid_method(query, rename = "getPriceHistory")]
 fn get_price_history() -> Vec<LastPricePoint> {
@@ -55,4 +87,12 @@ fn get_price_history() -> Vec<LastPricePoint> {
             })
             .collect()
     })
+}
+
+pub fn export_stable_storage() -> PriceHistory {
+    STATE.with(|s| s.take())
+}
+
+pub fn import_stable_storage(data: PriceHistory) {
+    STATE.with(|s| s.replace(data));
 }

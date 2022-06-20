@@ -58,6 +58,26 @@ dfx deploy enoki_exchange_assets
 ```
 The app's local URL should be displayed under the name `enoki_exchange_assets`
 
+## Market Maker Bot
+
+The current iteration of Enoki Exchange and the Market Maker Bot mints and uses test tokens.
+
+The Market Maker Bot retrieves pricing data from CoinGecko and uses it to set limit buy and sell orders.
+
+To run the bot, first follow the above instructions up to and including `Run`.
+
+Then, still in this root directory, for local testnet run:
+```bash
+  node ./market_maker_bot/index.js mint
+  node ./market_maker_bot/index.js
+```
+
+or for mainnet:
+```bash
+  node ./market_maker_bot/index.js --network ic mint
+  node ./market_maker_bot/index.js --network ic
+```
+
 # Pending Features
 
 - move order_matcher and order_history states to distributed big-maps to allow more scaling

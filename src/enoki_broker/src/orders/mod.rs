@@ -97,9 +97,22 @@ async fn swap(notification: ShardedTransferNotification) -> String {
 
 #[update(name = "cancelOrder")]
 #[candid_method(update, rename = "cancelOrder")]
-async fn cancel_order(order_id: u64) {
+fn cancel_order(order_id: u64) {
     let from = ic_cdk::caller();
     STATE.with(|s| s.borrow_mut().order_book.try_cancel_order(order_id, from));
+}
+
+#[update(name = "cancelAllOpenOrders")]
+#[candid_method(update, rename = "cancelAllOpenOrders")]
+fn cancel_all_open_orders() {
+    let from = ic_cdk::caller();
+    let orders = get_open_orders(from);
+    STATE.with(|s| {
+        let mut s = s.borrow_mut();
+        for order in orders.open_orders {
+            s.order_book.try_cancel_order(order.id, from);
+        }
+    });
 }
 
 #[query(name = "getOpenOrders")]
