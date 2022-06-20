@@ -250,7 +250,7 @@ const Swap = ({setShowWalletButtons}) => {
 
   const priceInRightToken = pair[1] === 'eICP' ? price : (price && 1 / price);
   const readyToExecuteSwap = isLoggedIn && !isError && !isFetching && price && leftSwapValue && rightSwapValue;
-  const letsGetSomeTokens = isLoggedIn && !isFetching && !balances[pair[0]] && !balances[pair[1]];
+  const letsGetSomeTokens = isLoggedIn && !isFetching && (!balances[pair[0]] && !balances[pair[1]] && balances[pair[0]] !== null && balances[pair[1]] !== null);
 
   return (
     <div className="container">
@@ -306,7 +306,7 @@ const Swap = ({setShowWalletButtons}) => {
                       (isLoggedIn && isFetching) ? (
                         <img style={{width: 17, margin: "0 3px 3px"}} src="img/spinner.svg"/>
                       ) : (
-                        (typeof price !== 'undefined' && price !== null) ? priceInRightToken.toFixed(priceDecimals) :
+                        (priceInRightToken && parseFloat(priceInRightToken.toFixed(priceDecimals)) !== 0) ? priceInRightToken.toFixed(priceDecimals) :
                           <span>&nbsp;--</span>
                       )
                     } {pair[0]}

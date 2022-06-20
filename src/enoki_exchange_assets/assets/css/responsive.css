@@ -29,6 +29,7 @@
     .chart-wrapper {
         margin: 20px 10px;
     }
+
     .cal_area {
         width: 23%;
         margin-right: 2%;
@@ -41,6 +42,10 @@
 
     .chart {
         width: 51%;
+    }
+
+    .wallet-modal .modal-dialog {
+        right: 7rem;
     }
 }
 
@@ -69,6 +74,7 @@
         padding-right: 2rem;
         padding-top: 0;
     }
+
     #page_main_tab .content_wrap {
         padding: 4rem 0;
     }
@@ -89,6 +95,13 @@
         text-decoration: underline;
     }
 
+    .coming_soon {
+        text-align: center;
+    }
+
+    .cal_details p {
+        max-width: 120px;
+    }
 }
 
 /*Medium devices (tablets, 767px and down)*/

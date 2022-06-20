@@ -26,7 +26,7 @@ const ComingSoon = ({text, customStyle}) => {
   }
 
   return (
-    <div style={newStyle}>
+    <div className="coming_soon" style={newStyle}>
       {text}
     </div>
   );

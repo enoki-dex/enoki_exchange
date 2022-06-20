@@ -37,7 +37,6 @@ const supply = async (identity, quantityA, quantityB) => {
         supplyToken(identity, true, quantityA),
         supplyToken(identity, false, quantityB)
     ]);
-    await worker.triggerHeartbeat();
 }
 
 const supplyToken = async (identity, isTokenA, quantity) => {
@@ -67,7 +66,6 @@ const withdraw = async (identity, quantityA, quantityB, withdrawAll) => {
             {'token_a': quantityA, 'token_b': quantityB}
         )
     }
-    await worker.triggerHeartbeat();
 }
 
 const ChangePool = ({adding, setDone}) => {
@@ -166,7 +164,7 @@ const ChangePool = ({adding, setDone}) => {
         setExecuting(true);
         action(getIdentity(), quantityA, quantityB, isMaxA && isMaxB)
             .then(() => {
-                setDone();
+                setDone(true);
             })
             .catch(e => {
                 console.error("error executing change pool: ", e);

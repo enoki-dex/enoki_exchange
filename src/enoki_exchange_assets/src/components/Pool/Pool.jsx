@@ -19,8 +19,9 @@ const Pool = ({setShowWalletButtons}) => {
   const [liquidity, setLiquidity] = React.useState([0, 0]);
   const [netWithdrawals, setNetWithdrawals] = React.useState([0, 0]);
   const [show, setShow] = React.useState(null);
-  const [isLoadingBalances, setIsLoadingBalances] = React.useState(true);
-  const [isLoadingNetWithdrawals, setIsLoadingNetWithdrawals] = React.useState(true);
+  const [isLoadingBalances, setIsLoadingBalances] = React.useState(false);
+  const [isLoadingNetWithdrawals, setIsLoadingNetWithdrawals] = React.useState(false);
+  const [waitingForBalanceChange, setWaitingForBalanceChange] = React.useState(false);
 
   React.useEffect(() => {
     if (!isLoggedIn) {
@@ -29,41 +30,89 @@ const Pool = ({setShowWalletButtons}) => {
       return;
     }
     let stop = false;
+    setIsLoadingBalances(true);
+    setIsLoadingNetWithdrawals(true);
 
-    //TODO: remove if/when we switch to canister heartbeat
-    enoki_liquidity_pool_worker.triggerHeartbeat().then(() => {
-      enoki_liquidity_pool_worker.getLiquidity(getIdentity().getPrincipal())
-        .then(liquidity => {
-          if (stop) return;
+    const triggerHeartbeat = async () => {
+      await enoki_liquidity_pool_worker.triggerHeartbeat();
+    }
 
+    const updateLiquidity = async () => {
+      let liquidity = await enoki_liquidity_pool_worker.getLiquidity(getIdentity().getPrincipal());
+      if (stop) return false;
+      setLiquidity([
+        bigIntToFloat(liquidity.token_a, 'eICP'),
+        bigIntToFloat(liquidity.token_b, 'eXTC'),
+      ]);
+      return true;
+    }
+
+    const updateNetDeposits = async () => {
+      let deposits = await enoki_liquidity_pool_worker.getNetDeposits(getIdentity().getPrincipal());
+      if (stop) return false;
+      let net_a = bigIntToFloat(deposits.decreased.token_a, 'eICP') - bigIntToFloat(deposits.increased.token_a, 'eICP');
+      let net_b = bigIntToFloat(deposits.decreased.token_b, 'eXTC') - bigIntToFloat(deposits.increased.token_b, 'eXTC');
+      setNetWithdrawals([net_a, net_b]);
+      return true;
+    }
+
+    const wait = time => new Promise(resolve => setTimeout(resolve, time));
+    const updateLiquidityWhileItDoesntChange = async () => {
+
+      let liquidityOriginal = await enoki_liquidity_pool_worker.getLiquidity(getIdentity().getPrincipal());
+
+      while (!stop) {
+        await wait(200);
+        await enoki_liquidity_pool_worker.triggerHeartbeat();
+        let liquidity = await enoki_liquidity_pool_worker.getLiquidity(getIdentity().getPrincipal());
+        if (stop) return false;
+        if (liquidity.token_a !== liquidityOriginal.token_a || liquidity.token_b !== liquidityOriginal.token_b) {
+          console.log("liquidity changed! from ", liquidityOriginal, "to ", liquidity)
           setLiquidity([
             bigIntToFloat(liquidity.token_a, 'eICP'),
             bigIntToFloat(liquidity.token_b, 'eXTC'),
           ]);
-          setIsLoadingBalances(false);
-        })
-        .catch(e => console.error("error getting liquidity: ", e));
+          return true;
+        } else {
+          console.log("liquidity unchanged from ", liquidityOriginal, "to ", liquidity)
+        }
+      }
+      return false;
+    }
 
-      enoki_liquidity_pool_worker.getNetDeposits(getIdentity().getPrincipal())
-        .then(deposits => {
-          if (stop) return;
-
-          let net_a = bigIntToFloat(deposits.decreased.token_a, 'eICP') - bigIntToFloat(deposits.increased.token_a, 'eICP');
-          let net_b = bigIntToFloat(deposits.decreased.token_b, 'eXTC') - bigIntToFloat(deposits.increased.token_b, 'eXTC');
-          setNetWithdrawals([net_a, net_b]);
-          setIsLoadingNetWithdrawals(false);
+    if (waitingForBalanceChange) {
+      triggerHeartbeat().then(() => Promise.all([updateLiquidityWhileItDoesntChange(), updateNetDeposits()]))
+        .then(([updatedBalances, updatedDeposits]) => {
+          if (updatedBalances && updatedDeposits) {
+            setIsLoadingBalances(false);
+            setIsLoadingNetWithdrawals(false);
+            setWaitingForBalanceChange(false);
+          }
         })
-        .catch(e => console.error("error getting net deposits: ", e));
-    })
-      .catch(e => console.error("error triggering heartbeat: ", e));
+        .catch(err => console.error("error updating pool values: ", err));
+    } else {
+      triggerHeartbeat().then(() => Promise.all([updateLiquidity(), updateNetDeposits()]))
+        .then(([updatedBalances, updatedDeposits]) => {
+          if (updatedBalances) {
+            setIsLoadingBalances(false);
+          }
+          if (updatedDeposits) {
+            setIsLoadingNetWithdrawals(false);
+          }
+        })
+        .catch(err => console.error("error updating pool values: ", err));
+    }
 
     return () => {
       stop = true;
     }
-  }, [isLoggedIn, lastTradeTime]);
+  }, [isLoggedIn, lastTradeTime, waitingForBalanceChange]);
 
-  const setActionDone = () => {
+  const setActionDone = balancesWillChange => {
     setShow(null);
+    if (balancesWillChange) {
+      setWaitingForBalanceChange(true);
+    }
   }
 
   let title;

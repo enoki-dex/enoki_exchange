@@ -33,7 +33,7 @@ const useTokenBalance = ({principal}) => {
     return () => {
       stop = true;
     }
-  }, [principal]);
+  }, [principal, isLoggedIn]);
 
   React.useEffect(() => {
     if (!isLoggedIn || !assignedShard) {

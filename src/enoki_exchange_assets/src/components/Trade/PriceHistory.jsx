@@ -26,6 +26,11 @@ ChartJS.register(
 export const options = {
   responsive: true,
   maintainAspectRatio: false,
+  interaction: {
+    intersect: false,
+    axis: 'x',
+    mode: 'nearest'
+  },
   scales: {
     x: {
       type: 'time',
@@ -36,6 +41,13 @@ export const options = {
         displayFormats: {
           "minute": "hh:mm a"
         }
+      },
+      ticks: {
+        // For a category axis, the val is the index so the lookup via getLabelForValue is needed
+        callback: function(val, index) {
+          // Hide every 2nd tick label
+          return index % 2 === 0 ? val : '';
+        }
       }
     }
   },
@@ -43,6 +55,9 @@ export const options = {
     legend: {
       position: 'none'
     },
+    tooltip: {
+      displayColors: false
+    }
   }
 };
 
@@ -58,12 +73,15 @@ const PriceHistory = ({lastPrices}) => {
   }
 
   const data = {
-    labels: lastPrices.map(last => bigIntToTimestamp(last.time)) ,
+    labels: lastPrices.map(last => bigIntToTimestamp(last.time)),
     datasets: [
       {
         data: lastPrices.map(last => last.price),
         borderColor: bullish ? "#00C363" : "#FF6473",
-        cubicInterpolationMode: "monotone",
+        // cubicInterpolationMode: "default",
+        fill: false,
+        pointRadius: 0,
+        stepped: false,
       }
     ],
   };
@@ -81,7 +99,7 @@ const PriceHistory = ({lastPrices}) => {
         marginTop: "5px"
       }}>eICP/eXTC</h3>
       <div className="chart-wrapper">
-        <Line options={options} data={data} />
+        <Line options={options} data={data}/>
       </div>
     </div>
   )

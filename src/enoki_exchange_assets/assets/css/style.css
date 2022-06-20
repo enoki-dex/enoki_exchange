@@ -565,7 +565,7 @@ header .wallet .arrow.active {
     padding: 0 2rem;
 }
 
-.swap_content .btn {
+.swap_content .btn, .pool_content .btn {
     margin-top: 3rem;
 }
 
