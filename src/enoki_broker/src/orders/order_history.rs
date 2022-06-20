@@ -5,6 +5,8 @@ use candid::{CandidType, Principal};
 
 use enoki_exchange_shared::types::*;
 
+const MAX_ORDERS_TO_ARCHIVE_PER_USER: usize = 200;
+
 #[derive(serde::Serialize, serde::Deserialize, CandidType, Clone, Debug, Default)]
 pub struct OrderHistory {
     current_orders: HashMap<Principal, Vec<u64>>,
@@ -17,13 +19,24 @@ impl OrderHistory {
         self.current_orders.entry(user).or_default().push(order_id);
     }
     pub fn add_completed_order(&mut self, order: Order) {
+        let user = order.info.user;
         self.current_orders
-            .get_mut(&order.info.user)
+            .get_mut(&user)
             .map(|user_orders| user_orders.retain(|&o| o != order.info.id));
         self.past_orders
-            .entry(order.info.user)
+            .entry(user)
             .or_default()
             .insert(order.info.id, order);
+        // clear old orders to prevent state buildup. TODO: send to archive canister
+        if let Some(past_orders) = self.past_orders.get_mut(&user) {
+            if past_orders.len() > MAX_ORDERS_TO_ARCHIVE_PER_USER {
+                let mut ids: Vec<_> = past_orders.keys().copied().collect();
+                ids.sort();
+                for id in ids.into_iter().rev().skip(MAX_ORDERS_TO_ARCHIVE_PER_USER) {
+                    past_orders.remove(&id);
+                }
+            }
+        }
     }
     pub fn add_accrued_extra_reward(
         &mut self,
