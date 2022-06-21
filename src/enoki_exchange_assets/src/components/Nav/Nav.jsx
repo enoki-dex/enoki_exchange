@@ -15,7 +15,8 @@ const Nav = ({showWalletButtons, setShowWalletButtons}) => {
       <div className="container position-relative">
         <div className="row align-items-center">
           <div className="col-md-3 col-3 text-start order-1 order-md-1">
-            <a className="logo" href="/"><img src="img/logo.svg" className="img-fluid" alt="" style={{width: 130}}/></a>
+            <a className="logo" href="https://enoki.ooo"><img src="img/logo.svg" className="img-fluid" alt=""
+                                                              style={{width: 130}}/></a>
           </div>
           <div className="col-md-6 col-12 text-center order-3 order-md-2">
             <ul className="nav nav-tabs" id="myTab" role="tablist">
