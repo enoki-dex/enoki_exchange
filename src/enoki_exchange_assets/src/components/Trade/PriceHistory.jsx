@@ -23,6 +23,16 @@ ChartJS.register(
   TimeSeriesScale,
 );
 
+function getAvgAndStandardDeviation(data) {
+  if (!data || !data.length) return {avg: 0, stdDev: 0};
+  const n = data.length;
+  const avg = data.reduce((a, b) => a + b) / n;
+  return {
+    avg,
+    stdDev: Math.sqrt(data.map(x => Math.pow(x - avg, 2)).reduce((a, b) => a + b) / n)
+  };
+}
+
 export const options = {
   responsive: true,
   maintainAspectRatio: false,
@@ -37,14 +47,14 @@ export const options = {
       time: {
         unit: "minute",
         stepSize: 5,
-        tooltipFormat: "hh:mm a",
+        tooltipFormat: "MMM D hh:mm a",
         displayFormats: {
-          "minute": "hh:mm a"
+          "minute": "MMM D hh:mm a"
         }
       },
       ticks: {
         // For a category axis, the val is the index so the lookup via getLabelForValue is needed
-        callback: function(val, index) {
+        callback: function (val, index) {
           // Hide every 2nd tick label
           return index % 2 === 0 ? val : '';
         }
@@ -65,12 +75,21 @@ const PriceHistory = ({lastPrices}) => {
 
   // console.log(lastPrices);
 
-  const bullish = lastPrices && lastPrices.length && (lastPrices[0].price <= lastPrices[lastPrices.length - 1].price);
-
   const bigIntToTimestamp = val => {
     val /= BigInt(1e6);
     return Number(val);
   }
+
+  for (let i = 0; i < 3; i++) {
+    const {avg, stdDev} = getAvgAndStandardDeviation(lastPrices.map(last => last.price));
+
+    // remove outliers
+    const min = avg - 5 * stdDev;
+    const max = avg + 5 * stdDev;
+    lastPrices = lastPrices.filter(last => last.price >= min && last.price <= max);
+  }
+
+  const bullish = lastPrices && lastPrices.length && (lastPrices[0].price <= lastPrices[lastPrices.length - 1].price);
 
   const data = {
     labels: lastPrices.map(last => bigIntToTimestamp(last.time)),
